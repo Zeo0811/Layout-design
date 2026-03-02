@@ -15,48 +15,35 @@ function findFeishuScroller() {
   return document.documentElement;
 }
 
-// 边滚动边收集块，解决虚拟滚动导致旧块被移除的问题
+// 边滚动边收集块，用文档垂直位置去重，解决虚拟滚动 + 内容相同块丢失问题
 // 返回 Promise<{ blocks, links }>
 function scrollAndCollect() {
   return new Promise(resolve => {
     const scroller = findFeishuScroller();
     const links = [];
-    const seen = new Set();   // 用 outerHTML 前100字符去重
-    const allBlocks = [];
+    const blocksByPos = new Map(); // docTop(px) -> block
+    const scrollerTop = scroller.getBoundingClientRect().top;
 
     function snapshot() {
       const page = document.querySelector('[data-block-type="page"]');
       if (!page) return;
+      const currentScroll = scroller.scrollTop;
       const els = [...page.querySelectorAll('[data-block-type]')].filter(el => {
         const pb = el.parentElement && el.parentElement.closest('[data-block-type]');
         return pb === page;
       });
       for (const el of els) {
-        const bt = el.getAttribute('data-block-type');
-        let key;
-        if (bt === 'image') {
-          // 图片用 block-id 或 img src 区分，textContent 为空无法区分
-          const blockId = el.getAttribute('data-block-id') || el.getAttribute('data-node-id') || el.id;
-          if (blockId) {
-            key = 'image|id:' + blockId;
-          } else {
-            const img = el.querySelector('img');
-            const src = img ? (img.currentSrc || img.getAttribute('src') || img.getAttribute('data-src') || '') : '';
-            key = 'image|src:' + src + '|pos:' + [...el.parentElement.children].indexOf(el);
-          }
-        } else {
-          key = bt + '|' + el.textContent.slice(0, 80);
-        }
-        if (seen.has(key)) continue;
-        seen.add(key);
+        // 用元素距文档顶部的绝对位置作为唯一 key，空行和重复内容都能正确区分
+        const docTop = Math.round(currentScroll + el.getBoundingClientRect().top - scrollerTop);
+        if (blocksByPos.has(docTop)) continue;
         const { type: blockType } = getFeishuBlockType(el);
         if (!blockType) continue;
         const block = parseFeishuBlock(el, blockType, links);
-        if (block) allBlocks.push(block);
+        if (block) blocksByPos.set(docTop, block);
       }
     }
 
-    const step = 500;
+    const step = 300;
     let pos = 0;
 
     function tick() {
@@ -64,12 +51,16 @@ function scrollAndCollect() {
       const maxScroll = scroller.scrollHeight;
       if (pos >= maxScroll) {
         scroller.scrollTop = 0;
-        setTimeout(() => resolve({ blocks: allBlocks, links }), 400);
+        // 按文档位置排序，保证块顺序正确
+        const sorted = [...blocksByPos.entries()]
+          .sort((a, b) => a[0] - b[0])
+          .map(([, block]) => block);
+        setTimeout(() => resolve({ blocks: sorted, links }), 500);
         return;
       }
       scroller.scrollTop = pos;
       pos += step;
-      setTimeout(tick, 120);
+      setTimeout(tick, 150);
     }
     tick();
   });

@@ -32,7 +32,21 @@ function scrollAndCollect() {
         return pb === page;
       });
       for (const el of els) {
-        const key = el.getAttribute('data-block-type') + '|' + el.textContent.slice(0, 80);
+        const bt = el.getAttribute('data-block-type');
+        let key;
+        if (bt === 'image') {
+          // 图片用 block-id 或 img src 区分，textContent 为空无法区分
+          const blockId = el.getAttribute('data-block-id') || el.getAttribute('data-node-id') || el.id;
+          if (blockId) {
+            key = 'image|id:' + blockId;
+          } else {
+            const img = el.querySelector('img');
+            const src = img ? (img.currentSrc || img.getAttribute('src') || img.getAttribute('data-src') || '') : '';
+            key = 'image|src:' + src + '|pos:' + [...el.parentElement.children].indexOf(el);
+          }
+        } else {
+          key = bt + '|' + el.textContent.slice(0, 80);
+        }
         if (seen.has(key)) continue;
         seen.add(key);
         const { type: blockType } = getFeishuBlockType(el);

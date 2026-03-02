@@ -1,10 +1,8 @@
 // Popup 逻辑
-// 负责与 content script 通信、触发转换、展示预览、复制到剪贴板
 
 (function () {
   'use strict';
 
-  // ── DOM 引用 ──────────────────────────────────────────────────
   const badge        = document.getElementById('badge');
   const convertBtn   = document.getElementById('convertBtn');
   const copyBtn      = document.getElementById('copyBtn');
@@ -20,7 +18,6 @@
   let formattedHtml = '';
   let currentTab    = null;
 
-  // 读取持久化偏好
   chrome.storage.local.get(['base64'], (prefs) => {
     if (prefs.base64 !== undefined) base64Toggle.checked = prefs.base64;
   });
@@ -28,7 +25,7 @@
     chrome.storage.local.set({ base64: base64Toggle.checked });
   });
 
-  // ── 初始化：检测页面 + 自动重注入兜底 ──────────────────────────
+  // ── 初始化 ────────────────────────────────────────────────────
 
   async function init() {
     try {
@@ -46,20 +43,14 @@
         return;
       }
 
-      // 先 ping
       let resp = await pingTab(tab.id);
 
-      // ping 失败 → 自动重注入（扩展更新后未刷新页面时常见）
       if (!resp) {
         showStatus('loading', '正在连接页面...');
         try {
           await chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            files: [
-              'content/notion-parser.js',
-              'content/feishu-parser.js',
-              'content/content.js',
-            ],
+            files: ['content/notion-parser.js', 'content/feishu-parser.js', 'content/content.js'],
           });
           await sleep(200);
           resp = await pingTab(tab.id);
@@ -84,71 +75,133 @@
     }
   }
 
-  function pingTab(tabId) {
-    return new Promise(resolve => {
-      chrome.tabs.sendMessage(tabId, { action: 'ping' }, resp => {
-        resolve(chrome.runtime.lastError ? null : resp);
-      });
-    });
-  }
-
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
   // ── 转换逻辑 ──────────────────────────────────────────────────
 
-  convertBtn.addEventListener('click', () => {
+  convertBtn.addEventListener('click', async () => {
     if (!currentTab) return;
-
     convertBtn.disabled = true;
     copyBtn.disabled = true;
     imageNote.classList.add('hidden');
-
-    const withBase64 = base64Toggle.checked;
-    showStatus('loading', withBase64 ? '⏳ 正在解析并转换图片...' : '⏳ 正在解析文档...');
+    showStatus('loading', '⏳ 正在解析文档...');
     setPreviewLoading();
 
-    chrome.tabs.sendMessage(
-      currentTab.id,
-      { action: 'parse', convertImages: withBase64 },
-      (resp) => {
-        convertBtn.disabled = false;
+    try {
+      // 1. 解析文档
+      const resp = await sendMessage(currentTab.id, { action: 'parse' });
+      if (!resp.success) throw new Error(resp.error || '解析失败');
 
-        if (chrome.runtime.lastError) {
-          showStatus('error', '❌ 通信失败，请刷新页面后重试');
-          resetPreview();
-          return;
-        }
-
-        if (!resp || !resp.success) {
-          showStatus('error', '❌ ' + ((resp && resp.error) || '未知错误'));
-          resetPreview();
-          return;
-        }
-
-        try {
-          formattedHtml = formatToWechat(resp.data);
-          renderPreview(formattedHtml, resp.data);
-          copyBtn.disabled = false;
-
-          const hasImages = resp.data.blocks.some(b => b.type === 'image');
-          if (hasImages) {
-            imageNote.classList.remove('hidden');
-            const hasBase64 = resp.data.blocks.some(b => b.type === 'image' && b.base64);
-            imageNoteTxt.textContent = hasBase64
-              ? '图片已转 Base64，粘贴后可离线显示'
-              : '图片 URL 已包含，需在微信编辑器中手动上传';
-          }
-
-          showStatus('success', '✅ 转换成功，点击「复制内容」粘贴到微信编辑器');
-        } catch (fmtErr) {
-          showStatus('error', '❌ 格式化失败：' + fmtErr.message);
-          resetPreview();
-        }
+      // 2. 图片转 Base64（在页面 Main World 执行，Origin=notion.so，绕过 CORS）
+      if (base64Toggle.checked) {
+        showStatus('loading', '⏳ 正在转换图片...');
+        await convertImagesInMainWorld(currentTab.id, resp.data.blocks);
       }
-    );
+
+      // 3. 格式化 & 渲染
+      formattedHtml = formatToWechat(resp.data);
+      renderPreview(formattedHtml, resp.data);
+      copyBtn.disabled = false;
+      convertBtn.disabled = false;
+
+      // 4. 图片提示
+      const blocks = resp.data.blocks;
+      const hasImages  = flatBlocks(blocks).some(b => b.type === 'image');
+      const hasBase64  = flatBlocks(blocks).some(b => b.type === 'image' && b.base64);
+      if (hasImages) {
+        imageNote.classList.remove('hidden');
+        imageNoteTxt.textContent = hasBase64
+          ? '图片已转 Base64，粘贴后可离线显示'
+          : '图片 URL 已包含，需在微信编辑器中手动上传';
+      }
+
+      showStatus('success', '✅ 转换成功，点击「复制内容」粘贴到微信编辑器');
+    } catch (err) {
+      convertBtn.disabled = false;
+      showStatus('error', '❌ ' + err.message);
+      resetPreview();
+    }
   });
 
-  // ── 复制逻辑 ──────────────────────────────────────────────────
+  // ── 图片转 Base64：注入 Main World，使用页面自身 Origin + Cookie ───
+  //
+  //  关键：chrome.scripting.executeScript({ world: 'MAIN' }) 让代码以
+  //  页面身份（如 notion.so）执行 fetch，不受扩展 CORS 限制，同时自动
+  //  携带页面 Cookie，完全不需要手动读取/注入 cookie。
+  // ──────────────────────────────────────────────────────────────
+
+  async function convertImagesInMainWorld(tabId, blocks) {
+    const urlSet = new Set();
+    collectImageUrls(blocks, urlSet);
+    const urls = [...urlSet];
+    if (urls.length === 0) return;
+
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',   // ← 关键：以页面自身身份执行
+        func: async (imageUrls) => {
+          // 此函数在 Notion/飞书页面的 JS 上下文中运行
+          // fetch 请求来自页面 origin，CORS 和 Cookie 均正常
+          const toBase64 = (url) => fetch(url, { credentials: 'include' })
+            .then(r => {
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              return r.blob();
+            })
+            .then(blob => new Promise((res, rej) => {
+              const reader = new FileReader();
+              reader.onloadend = () => res(reader.result);
+              reader.onerror = rej;
+              reader.readAsDataURL(blob);
+            }))
+            .catch(() => null);
+
+          const results = await Promise.all(imageUrls.map(toBase64));
+          const map = {};
+          imageUrls.forEach((url, i) => { if (results[i]) map[url] = results[i]; });
+          return map;
+        },
+        args: [urls],
+      });
+
+      const base64Map = (results[0] && results[0].result) || {};
+      applyBase64(blocks, base64Map);
+    } catch (e) {
+      // 转换失败不影响主流程，保留原始 URL
+    }
+  }
+
+  function collectImageUrls(blocks, urlSet) {
+    for (const block of blocks || []) {
+      if (!block) continue;
+      if (block.type === 'image' && block.url) urlSet.add(block.url);
+      collectImageUrls(block.children, urlSet);
+      if (block.columns) block.columns.forEach(col => collectImageUrls(col, urlSet));
+      if (block.items) block.items.forEach(item => collectImageUrls(item.children, urlSet));
+    }
+  }
+
+  function applyBase64(blocks, map) {
+    for (const block of blocks || []) {
+      if (!block) continue;
+      if (block.type === 'image' && block.url && map[block.url]) {
+        block.base64 = map[block.url];
+      }
+      applyBase64(block.children, map);
+      if (block.columns) block.columns.forEach(col => applyBase64(col, map));
+      if (block.items) block.items.forEach(item => applyBase64(item.children, map));
+    }
+  }
+
+  function flatBlocks(blocks, acc = []) {
+    for (const b of blocks || []) {
+      if (!b) continue;
+      acc.push(b);
+      flatBlocks(b.children, acc);
+      if (b.columns) b.columns.forEach(col => flatBlocks(col, acc));
+    }
+    return acc;
+  }
+
+  // ── 复制：contenteditable + execCommand（WeChat 编辑器最兼容）──
 
   copyBtn.addEventListener('click', async () => {
     if (!formattedHtml) return;
@@ -158,7 +211,6 @@
       copyBtn.classList.add('btn--copied');
       copyBtn.querySelector('.btn-icon').textContent = '✅';
       copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 已复制！';
-
       setTimeout(() => {
         copyBtn.classList.remove('btn--copied');
         copyBtn.querySelector('.btn-icon').textContent = '📋';
@@ -169,41 +221,26 @@
     }
   });
 
-  // ── 剪贴板：contenteditable + execCommand（WeChat 兼容最佳）──
-
   async function copyHtmlToClipboard(html) {
-    // 方案 A：将 HTML 渲染到 contenteditable 元素中，再 execCommand('copy')
-    // 这是与微信公众号编辑器最兼容的方式（与 Markdown Nice 等工具相同）
-    const container = document.createElement('div');
-    container.contentEditable = 'true';
-    container.style.cssText = [
-      'position:fixed', 'top:0', 'left:0',
-      'width:677px',    // 微信文章宽度，保证布局正确渲染
-      'height:1px',
-      'overflow:hidden',
-      'opacity:0.01',   // 不用 0 / hidden，确保浏览器真实渲染
-      'pointer-events:none',
-      'z-index:-9999',
-    ].join(';');
-    container.innerHTML = html;
-    document.body.appendChild(container);
-
-    container.focus();
+    // 方案 A：contenteditable + execCommand（WeChat 识别率最高）
+    const el = document.createElement('div');
+    el.contentEditable = 'true';
+    el.style.cssText = 'position:fixed;top:0;left:0;width:677px;height:1px;overflow:hidden;opacity:0.01;pointer-events:none;z-index:-9999;';
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    el.focus();
     const range = document.createRange();
-    range.selectNodeContents(container);
+    range.selectNodeContents(el);
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
-
     let ok = false;
     try { ok = document.execCommand('copy'); } catch (_) {}
-
     sel.removeAllRanges();
-    document.body.removeChild(container);
-
+    document.body.removeChild(el);
     if (ok) return;
 
-    // 方案 B：Clipboard API 降级（部分浏览器/系统不支持 execCommand）
+    // 方案 B：Clipboard API 降级
     if (navigator.clipboard && window.ClipboardItem) {
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -213,17 +250,34 @@
       ]);
       return;
     }
-
     throw new Error('浏览器不支持复制，请手动选中预览内容后 Ctrl+C');
   }
 
-  function stripTags(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+  // ── 工具函数 ──────────────────────────────────────────────────
+
+  function sendMessage(tabId, msg) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.sendMessage(tabId, msg, resp => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve(resp);
+      });
+    });
   }
 
-  // ── UI 辅助 ───────────────────────────────────────────────────
+  function pingTab(tabId) {
+    return new Promise(resolve => {
+      chrome.tabs.sendMessage(tabId, { action: 'ping' }, resp => {
+        resolve(chrome.runtime.lastError ? null : resp);
+      });
+    });
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function stripTags(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html;
+    return d.textContent || d.innerText || '';
+  }
 
   function setBadge(type, text) {
     badge.textContent = text;
@@ -237,44 +291,32 @@
   }
 
   function setPreviewLoading() {
-    preview.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon spinning">⚙️</div>
-        <div class="empty-text">正在解析并排版...</div>
-      </div>`;
+    preview.innerHTML = `<div class="empty-state"><div class="empty-icon spinning">⚙️</div><div class="empty-text">正在解析并排版...</div></div>`;
   }
 
   function resetPreview() {
-    preview.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📄</div>
-        <div class="empty-text">转换失败，请重试</div>
-      </div>`;
+    preview.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">转换失败，请重试</div></div>`;
     stats.textContent = '';
     formattedHtml = '';
   }
 
   function renderPreview(html, data) {
     preview.innerHTML = html;
-
-    // 图片加载失败时显示占位（popup 无 Notion cookie，原始 URL 会 403）
+    // 图片加载失败时显示占位（popup 域名不同，即使有 URL 也可能 403）
     preview.querySelectorAll('img').forEach(img => {
       if (!img.src.startsWith('data:')) {
         img.addEventListener('error', () => {
           const ph = document.createElement('div');
           ph.className = 'img-placeholder';
-          ph.innerHTML = '🖼 图片已包含在复制内容中，微信编辑器中可正常显示';
+          ph.textContent = '🖼 图片已包含在复制内容中';
           img.parentNode && img.parentNode.replaceChild(ph, img);
         });
       }
     });
-
     const charCount  = stripTags(html).length;
     const blockCount = (data.blocks || []).length;
     stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;
   }
 
-  // ── 启动 ──────────────────────────────────────────────────────
   init();
-
 })();

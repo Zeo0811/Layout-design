@@ -46,10 +46,10 @@
         return;
       }
 
-      // 先尝试 ping
+      // 先 ping
       let resp = await pingTab(tab.id);
 
-      // ping 失败 → 自动重注入 content scripts（常见于扩展更新后未刷新页面）
+      // ping 失败 → 自动重注入（扩展更新后未刷新页面时常见）
       if (!resp) {
         showStatus('loading', '正在连接页面...');
         try {
@@ -73,9 +73,7 @@
         return;
       }
 
-      // 隐藏注入时的 loading 提示
       statusBar.className = 'status-bar status-bar--hidden';
-
       setBadge(
         resp.pageType === 'notion' ? 'notion' : 'feishu',
         resp.pageType === 'notion' ? 'Notion' : '飞书'
@@ -138,7 +136,7 @@
             const hasBase64 = resp.data.blocks.some(b => b.type === 'image' && b.base64);
             imageNoteTxt.textContent = hasBase64
               ? '图片已转 Base64，粘贴后可离线显示'
-              : '图片需在微信编辑器中手动上传替换';
+              : '图片 URL 已包含，需在微信编辑器中手动上传';
           }
 
           showStatus('success', '✅ 转换成功，点击「复制内容」粘贴到微信编辑器');
@@ -171,31 +169,52 @@
     }
   });
 
-  // ── 剪贴板 ────────────────────────────────────────────────────
+  // ── 剪贴板：contenteditable + execCommand（WeChat 兼容最佳）──
 
   async function copyHtmlToClipboard(html) {
-    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+    // 方案 A：将 HTML 渲染到 contenteditable 元素中，再 execCommand('copy')
+    // 这是与微信公众号编辑器最兼容的方式（与 Markdown Nice 等工具相同）
+    const container = document.createElement('div');
+    container.contentEditable = 'true';
+    container.style.cssText = [
+      'position:fixed', 'top:0', 'left:0',
+      'width:677px',    // 微信文章宽度，保证布局正确渲染
+      'height:1px',
+      'overflow:hidden',
+      'opacity:0.01',   // 不用 0 / hidden，确保浏览器真实渲染
+      'pointer-events:none',
+      'z-index:-9999',
+    ].join(';');
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    container.focus();
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) {}
+
+    sel.removeAllRanges();
+    document.body.removeChild(container);
+
+    if (ok) return;
+
+    // 方案 B：Clipboard API 降级（部分浏览器/系统不支持 execCommand）
+    if (navigator.clipboard && window.ClipboardItem) {
       await navigator.clipboard.write([
         new ClipboardItem({
-          'text/html':  new Blob([html], { type: 'text/html' }),
+          'text/html':  new Blob([html],            { type: 'text/html' }),
           'text/plain': new Blob([stripTags(html)], { type: 'text/plain' }),
         }),
       ]);
       return;
     }
-    // 降级
-    const el = document.createElement('div');
-    el.innerHTML = html;
-    el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
-    document.body.appendChild(el);
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    document.execCommand('copy');
-    sel.removeAllRanges();
-    document.body.removeChild(el);
+
+    throw new Error('浏览器不支持复制，请手动选中预览内容后 Ctrl+C');
   }
 
   function stripTags(html) {
@@ -218,17 +237,38 @@
   }
 
   function setPreviewLoading() {
-    preview.innerHTML = `<div class="empty-state"><div class="empty-icon spinning">⚙️</div><div class="empty-text">正在解析并排版...</div></div>`;
+    preview.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon spinning">⚙️</div>
+        <div class="empty-text">正在解析并排版...</div>
+      </div>`;
   }
 
   function resetPreview() {
-    preview.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">转换失败，请重试</div></div>`;
+    preview.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <div class="empty-text">转换失败，请重试</div>
+      </div>`;
     stats.textContent = '';
     formattedHtml = '';
   }
 
   function renderPreview(html, data) {
     preview.innerHTML = html;
+
+    // 图片加载失败时显示占位（popup 无 Notion cookie，原始 URL 会 403）
+    preview.querySelectorAll('img').forEach(img => {
+      if (!img.src.startsWith('data:')) {
+        img.addEventListener('error', () => {
+          const ph = document.createElement('div');
+          ph.className = 'img-placeholder';
+          ph.innerHTML = '🖼 图片已包含在复制内容中，微信编辑器中可正常显示';
+          img.parentNode && img.parentNode.replaceChild(ph, img);
+        });
+      }
+    });
+
     const charCount  = stripTags(html).length;
     const blockCount = (data.blocks || []).length;
     stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;

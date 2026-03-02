@@ -1,28 +1,54 @@
 // 飞书文档 DOM 解析器
 // 支持飞书 docs / docx / wiki 三种页面格式
-// 新增：h4/h5/h6、表格支持
+// 修复：仅处理直接子元素（避免嵌套块重复）；增加多级容器探测策略
 
 function parseFeishu() {
   const title = getFeishuTitle();
   const links = [];
 
-  const contentArea =
-    document.querySelector('.lark-ck-editor') ||
-    document.querySelector('.doc-content') ||
-    document.querySelector('.suite-doc-content') ||
-    document.querySelector('[class*="udoc-editor-main"]') ||
-    document.querySelector('[class*="docx-content"]') ||
-    document.querySelector('.block-content-inner') ||
-    document.querySelector('[class*="editor-content"]') ||
-    document.querySelector('main [class*="editor"]') ||
-    document.querySelector('article');
+  // ── 策略一：已知容器选择器（按优先级排列）──────────────────────────────
+  const containerSelectors = [
+    '[data-block-type="page"]',            // 飞书标准页面根块
+    '.lark-ck-editor',
+    '.doc-content',
+    '.suite-doc-content',
+    '[class*="udoc-editor-main"]',
+    '[class*="docx-content"]',
+    '[class*="render-unit-doc"]',
+    '[class*="ccm-editor-block"]',
+    '[class*="doc-render"]',
+    '.ProseMirror',
+    '[contenteditable="true"][class*="doc"]',
+    '[contenteditable="true"][class*="editor"]',
+    '.block-content-inner',
+    '[class*="editor-content"]',
+    'main [class*="editor"]',
+    'article',
+  ];
 
-  if (!contentArea) {
-    throw new Error('无法找到飞书文档内容，请确保页面已完全加载');
+  for (const sel of containerSelectors) {
+    try {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      const blocks = parseFeishuBlocks(el, links);
+      if (blocks.length > 0) return { type: 'feishu', title, blocks, links };
+    } catch (_) {}
   }
 
-  const blocks = parseFeishuBlocks(contentArea, links);
-  return { type: 'feishu', title, blocks, links };
+  // ── 策略二：找拥有最多 data-block-type 直接子节点的父元素 ───────────────
+  const allBlockEls = [...document.querySelectorAll('[data-block-type]')];
+  if (allBlockEls.length > 0) {
+    const parentMap = new Map();
+    for (const el of allBlockEls) {
+      const p = el.parentElement;
+      if (p) parentMap.set(p, (parentMap.get(p) || 0) + 1);
+    }
+    const best = [...parentMap.entries()].reduce((a, b) => b[1] > a[1] ? b : a);
+    const blocks = parseFeishuBlocks(best[0], links);
+    if (blocks.length > 0) return { type: 'feishu', title, blocks, links };
+  }
+
+  throw new Error('无法找到飞书文档内容，请确保页面已完全加载后重试');
 }
 
 function getFeishuTitle() {
@@ -34,31 +60,41 @@ function getFeishuTitle() {
     document.querySelector('[class*="heading1"]'),
     document.querySelector('[data-block-type="heading1"]'),
   ];
-
   for (const el of candidates) {
     if (el && el.textContent.trim()) return el.textContent.trim();
   }
-
   return document.title.replace(/- 飞书.*/g, '').replace(/\| 飞书.*/g, '').trim();
 }
+
+// ── 核心修复：只处理直接子元素，避免嵌套块被重复计入 ──────────────────────
 
 function parseFeishuBlocks(container, links) {
   const blocks = [];
   let listBuffer = { type: null, items: [] };
 
-  const blockEls = container.querySelectorAll(
-    '[data-block-type], [class*="docx-block"], [class*="block-element"], ' +
-    '[class*="paragraph-element"], [class*="heading"], .block'
-  );
+  // 优先取有 data-block-type 的直接子节点
+  let elements = [...container.children].filter(el => el.hasAttribute('data-block-type'));
 
-  const elements = blockEls.length > 0 ? blockEls : container.children;
+  // 降级：取有块类名的直接子节点
+  if (elements.length === 0) {
+    elements = [...container.children].filter(el => {
+      const cls = el.className || '';
+      return cls.includes('docx-block') || cls.includes('block-element') ||
+             cls.includes('paragraph-element') || cls.includes('heading') ||
+             el.classList.contains('block');
+    });
+  }
+
+  // 最后降级：全部直接子节点
+  if (elements.length === 0) {
+    elements = [...container.children];
+  }
 
   for (const el of elements) {
     const { type: blockType } = getFeishuBlockType(el);
     if (!blockType) continue;
 
     const isList = blockType === 'bulleted_list' || blockType === 'numbered_list';
-
     if (isList) {
       if (listBuffer.type !== blockType) {
         if (listBuffer.items.length > 0) {
@@ -103,23 +139,25 @@ function getFeishuBlockType(el) {
       'heading7': { type: 'h6' },
       'heading8': { type: 'h6' },
       'heading9': { type: 'h6' },
-      'text': { type: 'paragraph' },
-      'paragraph': { type: 'paragraph' },
-      'quote': { type: 'quote' },
-      'code': { type: 'code' },
-      'callout': { type: 'callout' },
-      'divider': { type: 'divider' },
-      'bullet': { type: 'bulleted_list' },
-      'ordered': { type: 'numbered_list' },
-      'image': { type: 'image' },
-      'video': { type: 'video' },
-      'table': { type: 'table' },
-      'embed': { type: 'embed' },
+      'text':     { type: 'paragraph' },
+      'paragraph':{ type: 'paragraph' },
+      'quote':    { type: 'quote' },
+      'code':     { type: 'code' },
+      'callout':  { type: 'callout' },
+      'divider':  { type: 'divider' },
+      'bullet':   { type: 'bulleted_list' },
+      'ordered':  { type: 'numbered_list' },
+      'image':    { type: 'image' },
+      'video':    { type: 'video' },
+      'table':    { type: 'table' },
+      'embed':    { type: 'embed' },
     };
     if (typeMap[blockType]) return typeMap[blockType];
+    // 未知 block type（page / column / table_row 等容器）→ 跳过
+    return { type: null };
   }
 
-  // 通过 class 检测
+  // 通过 class 检测（兜底）
   if (cls.includes('heading1') || cls.includes('heading-1') || cls.includes(' h1')) return { type: 'h1' };
   if (cls.includes('heading2') || cls.includes('heading-2') || cls.includes(' h2')) return { type: 'h2' };
   if (cls.includes('heading3') || cls.includes('heading-3') || cls.includes(' h3')) return { type: 'h3' };
@@ -137,7 +175,7 @@ function getFeishuBlockType(el) {
   if (cls.includes('table') && !cls.includes('table-row') && !cls.includes('table-cell')) return { type: 'table' };
   if (cls.includes('paragraph') || cls.includes('text-block')) return { type: 'paragraph' };
 
-  // 通过 HTML 标签检测
+  // 标准 HTML 标签
   const tag = el.tagName ? el.tagName.toLowerCase() : '';
   if (tag === 'h1') return { type: 'h1' };
   if (tag === 'h2') return { type: 'h2' };
@@ -193,10 +231,10 @@ function parseFeishuBlock(el, blockType, links) {
     case 'image': {
       const imgEl = el.querySelector('img');
       if (!imgEl) return null;
-      const current  = imgEl.currentSrc || '';
-      const domSrc   = imgEl.src || '';
-      const attrSrc  = imgEl.getAttribute('src') || '';
-      const srcset   = imgEl.getAttribute('srcset') || imgEl.srcset || '';
+      const current    = imgEl.currentSrc || '';
+      const domSrc     = imgEl.src || '';
+      const attrSrc    = imgEl.getAttribute('src') || '';
+      const srcset     = imgEl.getAttribute('srcset') || imgEl.srcset || '';
       const srcsetFirst = srcset ? srcset.split(',')[0].trim().split(/\s+/)[0] : '';
       const src = [current, domSrc, attrSrc, srcsetFirst]
         .find(s => s && !s.startsWith('blob:') && !s.startsWith('data:')) || '';
@@ -206,7 +244,7 @@ function parseFeishuBlock(el, blockType, links) {
     }
 
     case 'video': {
-      const videoEl = el.querySelector('video');
+      const videoEl  = el.querySelector('video');
       const iframeEl = el.querySelector('iframe');
       const url = videoEl?.getAttribute('src') || iframeEl?.getAttribute('src') || '';
       const thumbnailUrl = videoEl?.getAttribute('poster') || el.querySelector('img')?.getAttribute('src') || '';
@@ -217,7 +255,7 @@ function parseFeishuBlock(el, blockType, links) {
       return parseFeishuTable(el, links);
 
     case 'embed': {
-      const linkEl = el.querySelector('a');
+      const linkEl   = el.querySelector('a');
       const iframeEl = el.querySelector('iframe');
       const url = (linkEl && linkEl.getAttribute('href')) ||
                   (iframeEl && iframeEl.getAttribute('src')) || '';
@@ -230,31 +268,25 @@ function parseFeishuBlock(el, blockType, links) {
   }
 }
 
-// ── 新增：飞书表格解析 ─────────────────────────────────────────────────────
-
 function parseFeishuTable(el, links) {
   const rows = [];
 
-  // 优先查找 tr 结构
   const trEls = el.querySelectorAll('tr');
   if (trEls.length > 0) {
     trEls.forEach((tr, idx) => {
-      const cellEls = tr.querySelectorAll('td, th');
       const cells = [];
-      cellEls.forEach(cell => cells.push(extractFeishuText(cell, links)));
+      tr.querySelectorAll('td, th').forEach(cell => cells.push(extractFeishuText(cell, links)));
       if (cells.length > 0) rows.push({ cells, isHeader: idx === 0 });
     });
   } else {
-    // 飞书自定义表格块结构
     const rowEls = el.querySelectorAll(
       '[data-block-type="table_row"], [class*="table-row"], [class*="tableRow"]'
     );
     rowEls.forEach((rowEl, idx) => {
-      const cellEls = rowEl.querySelectorAll(
-        '[data-block-type="table_cell"], [class*="table-cell"], [class*="tableCell"], td, th'
-      );
       const cells = [];
-      cellEls.forEach(cell => cells.push(extractFeishuText(cell, links)));
+      rowEl.querySelectorAll(
+        '[data-block-type="table_cell"], [class*="table-cell"], [class*="tableCell"], td, th'
+      ).forEach(cell => cells.push(extractFeishuText(cell, links)));
       if (cells.length > 0) rows.push({ cells, isHeader: idx === 0 });
     });
   }
@@ -276,10 +308,10 @@ function convertFeishuNodeToHtml(node, links) {
     }
     if (child.nodeType !== Node.ELEMENT_NODE) continue;
 
-    const tag = child.tagName.toLowerCase();
-    const cls = child.className || '';
+    const tag   = child.tagName.toLowerCase();
+    const cls   = child.className || '';
     const style = child.getAttribute('style') || '';
-    const innerHtml = convertFeishuNodeToHtml(child, links);
+    const inner = convertFeishuNodeToHtml(child, links);
 
     if (tag === 'br') { html += '<br>'; continue; }
 
@@ -301,15 +333,15 @@ function convertFeishuNodeToHtml(node, links) {
       continue;
     }
 
-    const isBold = tag === 'strong' || tag === 'b' ||
+    const isBold   = tag === 'strong' || tag === 'b' ||
       cls.includes('bold') || style.includes('font-weight:700') ||
       style.includes('font-weight: 700') || style.includes('font-weight:600');
     const isItalic = tag === 'em' || tag === 'i' ||
       cls.includes('italic') || style.includes('font-style:italic');
     const isStrike = tag === 's' || cls.includes('strike') || style.includes('line-through');
 
-    let result = innerHtml;
-    if (isBold) result = `<strong>${result}</strong>`;
+    let result = inner;
+    if (isBold)   result = `<strong>${result}</strong>`;
     if (isItalic) result = `<em>${result}</em>`;
     if (isStrike) result = `<s>${result}</s>`;
     html += result;

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>转公众号排版</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- 顶部 Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">✦</span>
+        <div>
+          <div class="app-name">转公众号排版</div>
+          <div class="app-sub">Notion / 飞书 → 微信公众号</div>
+        </div>
+      </div>
+      <span id="badge" class="badge badge--unknown">检测中...</span>
+    </header>
+
+    <!-- 操作按钮区 -->
+    <div class="toolbar">
+      <button id="convertBtn" class="btn btn--primary">
+        <span class="btn-icon">⚡</span>
+        一键转换
+      </button>
+      <button id="copyBtn" class="btn btn--secondary" disabled>
+        <span class="btn-icon">📋</span>
+        复制内容
+      </button>
+    </div>
+
+    <!-- 状态提示 -->
+    <div id="statusBar" class="status-bar status-bar--hidden">
+      <span id="statusIcon" class="status-icon">⏳</span>
+      <span id="statusText">处理中...</span>
+    </div>
+
+    <!-- 预览区域 -->
+    <div class="preview-panel">
+      <div class="preview-header">
+        <span class="preview-title">预览</span>
+        <span id="stats" class="preview-stats"></span>
+      </div>
+      <div id="preview" class="preview-body">
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <div class="empty-text">打开 Notion 或飞书文章页面<br>点击「一键转换」开始处理</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 图片处理提示（转换后显示） -->
+    <div id="imageNote" class="image-note hidden">
+      <span class="image-note-icon">🖼</span>
+      <span>图片需在微信编辑器中手动上传替换</span>
+    </div>
+
+  </div>
+
+  <script src="formatter.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

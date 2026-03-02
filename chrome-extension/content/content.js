@@ -24,8 +24,10 @@
         if (pageType === 'notion') {
           return parseNotion();
         } else if (pageType === 'feishu') {
-          await scrollToLoadAll();
-          return parseFeishu();
+          const title = getFeishuTitle();
+          const { blocks, links } = await scrollAndCollect();
+          if (!blocks.length) throw new Error('无法找到飞书文档内容，请确保页面已完全加载后重试');
+          return { type: 'feishu', title, blocks, links };
         } else {
           throw new Error('当前页面不是 Notion 或飞书文档，请在文章页面使用本插件');
         }

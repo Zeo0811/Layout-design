@@ -15,23 +15,47 @@ function findFeishuScroller() {
   return document.documentElement;
 }
 
-// 滚动页面触发虚拟滚动懒加载，返回 Promise
-function scrollToLoadAll() {
+// 边滚动边收集块，解决虚拟滚动导致旧块被移除的问题
+// 返回 Promise<{ blocks, links }>
+function scrollAndCollect() {
   return new Promise(resolve => {
     const scroller = findFeishuScroller();
-    const step = 600;
+    const links = [];
+    const seen = new Set();   // 用 outerHTML 前100字符去重
+    const allBlocks = [];
+
+    function snapshot() {
+      const page = document.querySelector('[data-block-type="page"]');
+      if (!page) return;
+      const els = [...page.querySelectorAll('[data-block-type]')].filter(el => {
+        const pb = el.parentElement && el.parentElement.closest('[data-block-type]');
+        return pb === page;
+      });
+      for (const el of els) {
+        const key = el.getAttribute('data-block-type') + '|' + el.textContent.slice(0, 80);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const { type: blockType } = getFeishuBlockType(el);
+        if (!blockType) continue;
+        const block = parseFeishuBlock(el, blockType, links);
+        if (block) allBlocks.push(block);
+      }
+    }
+
+    const step = 500;
     let pos = 0;
 
     function tick() {
+      snapshot();
       const maxScroll = scroller.scrollHeight;
       if (pos >= maxScroll) {
         scroller.scrollTop = 0;
-        setTimeout(resolve, 800);
+        setTimeout(() => resolve({ blocks: allBlocks, links }), 400);
         return;
       }
       scroller.scrollTop = pos;
       pos += step;
-      setTimeout(tick, 100);
+      setTimeout(tick, 120);
     }
     tick();
   });

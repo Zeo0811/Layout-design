@@ -5,9 +5,9 @@ html, body {
   width: 420px;
   height: 600px;
   overflow: hidden;
-  font-family: Optima-Regular, Optima, PingFangSC-light, "PingFang SC", Georgia, serif;
+  font-family: Optima-Regular, Optima, PingFangSC-light, "PingFang SC", -apple-system, sans-serif;
   font-size: 14px;
-  color: #222222;
+  color: #1a1a1a;
   background: #f5f5f5;
   -webkit-font-smoothing: antialiased;
 }
@@ -41,19 +41,19 @@ html, body {
   font-size: 15px; color: #fff; flex-shrink: 0;
 }
 
-.app-name { font-size: 14px; font-weight: 700; color: #222222; line-height: 1.2; letter-spacing: .5px; }
+.app-name { font-size: 14px; font-weight: 700; color: #111; line-height: 1.2; }
 .app-sub  { font-size: 11px; color: #888; margin-top: 1px; }
 
 /* ── Badge ───────────────────────────────────────────────────── */
 .badge {
   font-size: 11px; font-weight: 600;
-  padding: 3px 10px; border-radius: 20px;
+  padding: 3px 10px; border-radius: 0;
   letter-spacing: .3px; white-space: nowrap;
 }
-.badge--notion      { background: #f5f5f5; color: #222222; border: 1px solid #222222; }
-.badge--feishu      { background: #f5f5f5; color: #222222; border: 1px solid #222222; }
-.badge--unknown     { background: #f5f5f5; color: #888;    border: 1px dashed #ccc; }
-.badge--unsupported { background: #fff; color: #888; border: 1px dashed #ccc; }
+.badge--notion      { background: #fff; color: #222222; border: 1px solid #222222; }
+.badge--feishu      { background: #fff; color: #222222; border: 1px solid #222222; }
+.badge--unknown     { background: #f5f5f5; color: #888;  border: 1px dashed #bbb; }
+.badge--unsupported { background: #f5f5f5; color: #888;  border: 1px dashed #bbb; }
 
 /* ── 选项行 ──────────────────────────────────────────────────── */
 .options-row {
@@ -61,7 +61,7 @@ html, body {
   align-items: center;
   padding: 7px 16px;
   background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #efefef;
   flex-shrink: 0;
 }
 
@@ -73,12 +73,12 @@ html, body {
 
 .toggle-slider {
   position: relative; width: 32px; height: 18px;
-  background: #d0d0d0; border-radius: 2px;
+  background: #d0d0d0; border-radius: 9px;
   transition: background .2s; flex-shrink: 0;
 }
 .toggle-slider::after {
   content: ''; position: absolute; left: 2px; top: 2px;
-  width: 14px; height: 14px; background: #fff; border-radius: 1px;
+  width: 14px; height: 14px; background: #fff; border-radius: 50%;
   transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
 .toggle-wrap input:checked + .toggle-slider           { background: #222222; }
@@ -90,7 +90,7 @@ html, body {
   display: flex; gap: 8px;
   padding: 10px 16px;
   background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #efefef;
   flex-shrink: 0;
 }
 
@@ -100,19 +100,18 @@ html, body {
   font-size: 13px; font-weight: 600;
   cursor: pointer; border: none;
   transition: all .15s; white-space: nowrap;
-  letter-spacing: .3px;
 }
 .btn:active:not(:disabled) { transform: scale(.97); }
 
 .btn--primary { background: #222222; color: #fff; flex: 1; justify-content: center; }
-.btn--primary:hover:not(:disabled) { background: #000; }
-.btn--primary:disabled { background: #aaa; cursor: not-allowed; }
+.btn--primary:hover:not(:disabled) { background: #333333; }
+.btn--primary:disabled { background: #888888; cursor: not-allowed; opacity: .5; }
 
 .btn--secondary { background: #f0f0f0; color: #333; flex: 1; justify-content: center; border: 1px solid #e0e0e0; }
 .btn--secondary:hover:not(:disabled) { background: #e5e5e5; }
 .btn--secondary:disabled { opacity: .5; cursor: not-allowed; }
 
-.btn--copied { background: #f5f5f5 !important; color: #222222 !important; border: 1px solid #222222 !important; }
+.btn--copied { background: #f0f0f0 !important; color: #222222 !important; border: 1px solid #222222 !important; }
 .btn-icon { font-size: 15px; }
 
 /* ── 状态栏 ──────────────────────────────────────────────────── */
@@ -122,9 +121,9 @@ html, body {
   flex-shrink: 0;
 }
 .status-bar--hidden  { display: none; }
-.status-bar--loading { background: #f5f5f5; color: #555; border-bottom: 1px dashed #ccc; }
-.status-bar--success { background: #f5f5f5; color: #222222; border-bottom: 1px solid #222222; }
-.status-bar--error   { background: #fff; color: #888; border-bottom: 1px dashed #ccc; }
+.status-bar--loading { background: #fffbe6; color: #8a6d00; border-bottom: 1px solid #ffe58f; }
+.status-bar--success { background: #f5f5f5; color: #222222; border-bottom: 1px solid #aaa; }
+.status-bar--error   { background: #fff1f0; color: #c0392b; border-bottom: 1px solid #f5c4c1; }
 .status-icon { font-size: 13px; }
 
 /* ── 预览区域：flex:1 撑满剩余高度 ──────────────────────────── */
@@ -137,15 +136,15 @@ html, body {
   border-radius: 0;
   border: 1px solid #222222;
   overflow: hidden;
-  min-height: 0;   /* 关键：允许 flex 子项收缩 */
+  min-height: 0;
 }
 
 .preview-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 14px; background: #222222; border-bottom: 1px solid #222222;
+  padding: 7px 14px; background: #222222; border-bottom: none;
   flex-shrink: 0;
 }
-.preview-title  { font-size: 11px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+.preview-title  { font-size: 11px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: .5px; }
 .preview-stats  { font-size: 11px; color: rgba(255,255,255,.5); }
 
 .preview-body {
@@ -155,10 +154,10 @@ html, body {
   font-size: 13px;
   line-height: 1.7;
   color: #333;
-  min-height: 0;  /* 关键：允许 flex 子项收缩并出现滚动条 */
+  min-height: 0;
 }
 .preview-body::-webkit-scrollbar       { width: 4px; }
-.preview-body::-webkit-scrollbar-thumb { background: #222; border-radius: 0; }
+.preview-body::-webkit-scrollbar-thumb { background: #888; border-radius: 2px; }
 
 /* ── 空状态 ──────────────────────────────────────────────────── */
 .empty-state {
@@ -167,8 +166,8 @@ html, body {
   gap: 10px; padding: 30px 20px; text-align: center;
   height: 100%;
 }
-.empty-icon { font-size: 32px; opacity: .3; }
-.empty-text { font-size: 13px; line-height: 1.7; color: #aaa; }
+.empty-icon { font-size: 32px; opacity: .5; }
+.empty-text { font-size: 13px; line-height: 1.7; color: #ccc; }
 
 /* ── 图片无法加载的占位 ──────────────────────────────────────── */
 .img-placeholder {
@@ -180,16 +179,16 @@ html, body {
   border-radius: 0;
   padding: 18px;
   margin: 10px 0;
-  color: #999;
+  color: #bbb;
   font-size: 12px;
-  border: 1px dashed #999;
+  border: 1px dashed #ccc;
 }
 
 /* ── 图片提示 ─────────────────────────────────────────────────── */
 .image-note {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 16px; font-size: 11px; color: #555;
-  background: #f5f5f5; border-top: 1px dashed #ccc;
+  background: #f5f5f5; border-top: 1px solid #ddd;
   flex-shrink: 0;
 }
 .image-note-icon { font-size: 13px; }
@@ -199,13 +198,18 @@ html, body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { display: inline-block; animation: spin 1s linear infinite; }
 
-/* ── 预览内容基础样式 ─────────────────────────────────────────── */
-.preview-body strong { font-weight: bold; color: #222222; }
+/* ── 预览内容基础样式（兜底，inline style 优先）──────────────── */
+.preview-body strong { font-weight: 600; color: #222; }
 .preview-body em     { font-style: italic; }
-.preview-body code   { background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 0; font-family: monospace; font-size: 12px; color: #222222; }
-.preview-body sup    { font-size: 10px; color: #222222; vertical-align: super; }
+.preview-body code   { background: rgba(135,131,120,.15); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; color: #222; }
+.preview-body sup    { font-size: 10px; color: #222; font-weight: bold; vertical-align: super; }
 .preview-body img    { max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 0 auto; }
 .preview-body table  { border-collapse: collapse; width: 100%; font-size: 13px; }
 .preview-body td,
 .preview-body th     { padding: 6px 10px; border: 1px solid rgba(0,0,0,.15); font-size: 12px; }
-.preview-body th     { background: #f5f5f5; font-weight: bold; }
+.preview-body th     { background: rgba(0,0,0,.05); font-weight: bold; }
+.preview-body ul,
+.preview-body ol     { padding-left: 1.5em; margin: 8px 0; }
+.preview-body li     { line-height: 1.75; margin: 2px 0; }
+.preview-body a      { color: #222; border-bottom: 1px solid #222; text-decoration: none; }
+.preview-body blockquote { border-left: 8px solid #222; background: #f5f5f5; padding: 10px; margin: 10px 0; }

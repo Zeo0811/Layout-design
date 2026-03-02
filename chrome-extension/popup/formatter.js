@@ -273,7 +273,8 @@ function renderCodeBlock(block) {
     codeHtml = escHtml(rawCode);
   }
 
-  const topBar = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;"><section style="width:10px;height:10px;border-radius:50%;background-color:#ed6c60;"></section><section style="width:10px;height:10px;border-radius:50%;background-color:#f7c151;"></section><section style="width:10px;height:10px;border-radius:50%;background-color:#64c856;"></section></section>`;
+  const dot = (color) => `<section style="width:10px;height:10px;border-radius:50%;background-color:${color};font-size:0;line-height:0;overflow:hidden;">&nbsp;</section>`;
+  const topBar = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;">${dot('#ed6c60')}${dot('#f7c151')}${dot('#64c856')}</section>`;
   const langBar = lang ? `<div style="${S.code_lang_bar}">${escHtml(lang)}</div>` : '';
   return `<section style="${S.code_wrapper}">${topBar}${langBar}<pre style="${S.code_pre}"><code style="${S.code_text}">${codeHtml}</code></pre></section>`;
 }

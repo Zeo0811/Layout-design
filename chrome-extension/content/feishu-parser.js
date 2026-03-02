@@ -31,12 +31,14 @@ function parseFeishu() {
     try {
       const el = document.querySelector(sel);
       if (!el) continue;
+      console.log('[feishu-parser] 找到容器:', sel, el.tagName);
       const links = [];
       const blocks = parseFeishuBlocks(el, links);
+      console.log('[feishu-parser] 解析块数:', blocks.length);
       if (blocks.length > (best ? best.blocks.length : 0)) {
         best = { blocks, links };
       }
-    } catch (_) {}
+    } catch (e) { console.error('[feishu-parser] 策略一失败:', e); }
   }
 
   // ── 策略二：找拥有最多 data-block-type 直接子节点的 DOM 元素 ─────────────
@@ -56,7 +58,7 @@ function parseFeishu() {
         best = { blocks, links };
       }
     }
-  } catch (_) {}
+  } catch (e) { console.error('[feishu-parser] 策略二失败:', e); }
 
   if (!best || best.blocks.length === 0) {
     throw new Error('无法找到飞书文档内容，请确保页面已完全加载后重试');
@@ -99,6 +101,7 @@ function parseFeishuBlocks(container, links) {
     return !parentBlock || !container.contains(parentBlock);
   });
 
+  console.log('[feishu-parser] blocks过滤后:', elements.length, 'containerIsBlock:', containerIsBlock);
   // 降级：无 data-block-type 时用 class 检测（直接子节点）
   if (elements.length === 0) {
     elements = [...container.children].filter(el => {

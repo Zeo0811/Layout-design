@@ -114,6 +114,28 @@ html, body {
 .btn--copied { background: #f0f0f0 !important; color: #222222 !important; border: 1px solid #222222 !important; }
 .btn-icon { font-size: 15px; }
 
+/* ── 分段复制行 ───────────────────────────────────────────────── */
+.segment-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #efefef;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.segment-label { font-size: 11px; color: #888; white-space: nowrap; flex-shrink: 0; }
+.segment-btns  { display: flex; gap: 5px; flex-wrap: wrap; }
+.btn--seg {
+  font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 0;
+  background: #fff; color: #333;
+  border: 1px solid #d0d0d0;
+  cursor: pointer; white-space: nowrap;
+  transition: all .15s;
+}
+.btn--seg:hover  { background: #f0f0f0; border-color: #bbb; }
+.btn--seg--ok    { background: #f0f9e8 !important; color: #407600 !important; border-color: #407600 !important; }
+
 /* ── 状态栏 ──────────────────────────────────────────────────── */
 .status-bar {
   display: flex; align-items: center; gap: 8px;

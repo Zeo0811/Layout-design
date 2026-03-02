@@ -14,9 +14,12 @@
   const imageNote    = document.getElementById('imageNote');
   const imageNoteTxt = document.getElementById('imageNoteText');
   const base64Toggle = document.getElementById('base64Toggle');
+  const segmentRow   = document.getElementById('segmentRow');
+  const segmentBtns  = document.getElementById('segmentBtns');
 
-  let formattedHtml = '';
-  let currentTab    = null;
+  let formattedHtml     = '';
+  let formattedSegments = [];
+  let currentTab        = null;
 
   chrome.storage.local.get(['base64'], (prefs) => {
     if (prefs.base64 !== undefined) base64Toggle.checked = prefs.base64;
@@ -81,6 +84,7 @@
     if (!currentTab) return;
     convertBtn.disabled = true;
     copyBtn.disabled = true;
+    segmentRow.classList.add('hidden');
     imageNote.classList.add('hidden');
     showStatus('loading', '⏳ 正在解析文档...');
     setPreviewLoading();
@@ -91,8 +95,6 @@
       if (!resp.success) throw new Error(resp.error || '解析失败');
 
       // 2. 图片转 Base64
-      //    策略一：background service worker（利用 host_permissions 绕过 CORS，适用 S3/CDN）
-      //    策略二：MAIN world fallback（以页面身份 fetch，适用需 Cookie 的 Notion 代理图）
       if (base64Toggle.checked) {
         showStatus('loading', '⏳ 正在转换图片...');
         await convertImages(currentTab.id, resp.data.blocks);
@@ -104,10 +106,16 @@
       copyBtn.disabled = false;
       convertBtn.disabled = false;
 
-      // 4. 图片提示
+      // 4. 分段切割（自动按块数决定段数）
+      const blockCount = (resp.data.blocks || []).length;
+      const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
+      formattedSegments = splitFormatToWechat(resp.data, nSeg);
+      renderSegmentButtons(formattedSegments);
+
+      // 5. 图片提示
       const blocks = resp.data.blocks;
-      const hasImages  = flatBlocks(blocks).some(b => b.type === 'image');
-      const hasBase64  = flatBlocks(blocks).some(b => b.type === 'image' && b.base64);
+      const hasImages = flatBlocks(blocks).some(b => b.type === 'image');
+      const hasBase64 = flatBlocks(blocks).some(b => b.type === 'image' && b.base64);
       if (hasImages) {
         imageNote.classList.remove('hidden');
         imageNoteTxt.textContent = hasBase64
@@ -115,7 +123,7 @@
           : '图片 URL 已包含，需在微信编辑器中手动上传';
       }
 
-      showStatus('success', '✅ 转换成功，点击「复制内容」粘贴到微信编辑器');
+      showStatus('success', '✅ 转换成功 — 可完整复制或分段复制到微信编辑器');
     } catch (err) {
       convertBtn.disabled = false;
       showStatus('error', '❌ ' + err.message);
@@ -123,16 +131,38 @@
     }
   });
 
-  // ── 图片转 Base64：双重策略 ─────────────────────────────────────────
-  //
-  //  策略一（background SW）：利用扩展 host_permissions 直接 fetch S3/CDN，
-  //    credentials: 'omit'，不需要页面 Cookie，对公开 CDN 图片最可靠。
-  //
-  //  策略二（MAIN world 兜底）：以页面身份执行 fetch（credentials: 'same-origin'），
-  //    自动携带页面 Cookie，处理需要登录态的 Notion 代理图片。
-  //    注意：不用 'include' 是因为 S3 的 Access-Control-Allow-Origin: * 与
-  //    credentials: include 不兼容（浏览器会直接拒绝该请求）。
-  // ──────────────────────────────────────────────────────────────────
+  // ── 分段按钮渲染 ──────────────────────────────────────────────
+
+  function renderSegmentButtons(segments) {
+    segmentBtns.innerHTML = '';
+    if (segments.length < 2) { segmentRow.classList.add('hidden'); return; }
+
+    segments.forEach((seg, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn--seg';
+      const chars = stripTags(seg).length;
+      const label = `第${i + 1}段 (${chars.toLocaleString()}字)`;
+      btn.textContent = label;
+      btn.addEventListener('click', async () => {
+        try {
+          await copyHtmlToClipboard(seg);
+          btn.classList.add('btn--seg--ok');
+          btn.textContent = `✅ 第${i + 1}段已复制`;
+          setTimeout(() => {
+            btn.classList.remove('btn--seg--ok');
+            btn.textContent = label;
+          }, 2500);
+        } catch (err) {
+          showStatus('error', '❌ 复制失败：' + err.message);
+        }
+      });
+      segmentBtns.appendChild(btn);
+    });
+
+    segmentRow.classList.remove('hidden');
+  }
+
+  // ── 图片转 Base64：双重策略 ───────────────────────────────────
 
   async function convertImages(tabId, blocks) {
     const urlSet = new Set();
@@ -140,7 +170,6 @@
     const urls = [...urlSet];
     if (urls.length === 0) return;
 
-    // 策略一：background service worker fetch
     let base64Map = {};
     try {
       const resp = await new Promise(resolve => {
@@ -149,7 +178,6 @@
       if (resp && resp.success) base64Map = resp.data || {};
     } catch (_) {}
 
-    // 策略二：MAIN world 兜底（处理 service worker 未能转换的图片）
     const remaining = urls.filter(u => !base64Map[u]);
     if (remaining.length > 0) {
       try {
@@ -158,10 +186,7 @@
           world: 'MAIN',
           func: async (imageUrls) => {
             const toBase64 = (url) => fetch(url, { credentials: 'same-origin' })
-              .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.blob();
-              })
+              .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
               .then(blob => new Promise((res, rej) => {
                 const reader = new FileReader();
                 reader.onloadend = () => res(reader.result);
@@ -176,8 +201,7 @@
           },
           args: [remaining],
         });
-        const fallbackMap = (results[0] && results[0].result) || {};
-        Object.assign(base64Map, fallbackMap);
+        Object.assign(base64Map, (results[0] && results[0].result) || {});
       } catch (_) {}
     }
 
@@ -197,9 +221,7 @@
   function applyBase64(blocks, map) {
     for (const block of blocks || []) {
       if (!block) continue;
-      if (block.type === 'image' && block.url && map[block.url]) {
-        block.base64 = map[block.url];
-      }
+      if (block.type === 'image' && block.url && map[block.url]) block.base64 = map[block.url];
       applyBase64(block.children, map);
       if (block.columns) block.columns.forEach(col => applyBase64(col, map));
       if (block.items) block.items.forEach(item => applyBase64(item.children, map));
@@ -216,20 +238,19 @@
     return acc;
   }
 
-  // ── 复制：contenteditable + execCommand（WeChat 编辑器最兼容）──
+  // ── 完整复制 ──────────────────────────────────────────────────
 
   copyBtn.addEventListener('click', async () => {
     if (!formattedHtml) return;
     try {
       await copyHtmlToClipboard(formattedHtml);
-
       copyBtn.classList.add('btn--copied');
       copyBtn.querySelector('.btn-icon').textContent = '✅';
       copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 已复制！';
       setTimeout(() => {
         copyBtn.classList.remove('btn--copied');
         copyBtn.querySelector('.btn-icon').textContent = '📋';
-        copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 复制内容';
+        copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 完整复制';
       }, 2000);
     } catch (err) {
       showStatus('error', '❌ 复制失败：' + err.message);
@@ -237,8 +258,6 @@
   });
 
   async function copyHtmlToClipboard(html) {
-    // 方案 A：Clipboard API（直接写入原始 HTML 字符串，完整保留内联样式，微信粘贴效果最佳）
-    // 参考实现：copyToClipboard($renderContent[0].outerHTML, 'text/html')
     if (navigator.clipboard && window.ClipboardItem) {
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -249,7 +268,6 @@
       return;
     }
 
-    // 方案 B：contenteditable + execCommand 降级（部分旧浏览器不支持 ClipboardItem）
     const el = document.createElement('div');
     el.contentEditable = 'true';
     el.style.cssText = 'position:fixed;top:0;left:0;width:677px;height:1px;overflow:hidden;opacity:0.01;pointer-events:none;z-index:-9999;';
@@ -315,11 +333,12 @@
     preview.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">转换失败，请重试</div></div>`;
     stats.textContent = '';
     formattedHtml = '';
+    formattedSegments = [];
+    segmentRow.classList.add('hidden');
   }
 
   function renderPreview(html, data) {
     preview.innerHTML = html;
-    // 图片加载失败时显示占位（popup 域名不同，即使有 URL 也可能 403）
     preview.querySelectorAll('img').forEach(img => {
       if (!img.src.startsWith('data:')) {
         img.addEventListener('error', () => {

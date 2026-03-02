@@ -383,3 +383,24 @@ function escHtml(text) {
 function escAttr(text) {
   return String(text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+// ── 分段格式化（用于分段复制，避免大内容卡内存）────────────────────────────
+// 返回 n 个 HTML 字符串数组，每段独立可粘贴；footnotes 仅保留在最后一段
+
+function splitFormatToWechat(parsedData, n) {
+  if (!parsedData || !parsedData.blocks || parsedData.blocks.length === 0) return [];
+  const { blocks, links = [] } = parsedData;
+  const size = Math.ceil(blocks.length / n);
+  const result = [];
+
+  for (let i = 0; i < blocks.length; i += size) {
+    const chunk = blocks.slice(i, i + size);
+    const isLast = i + size >= blocks.length;
+    let html = '';
+    for (const block of chunk) html += renderBlock(block, links, 0);
+    if (isLast && links.length > 0) html += renderFootnotes(links);
+    if (html.trim()) result.push(`<section style="${S.wrapper}">${html}</section>`);
+  }
+
+  return result;
+}

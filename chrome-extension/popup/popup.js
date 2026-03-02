@@ -237,7 +237,19 @@
   });
 
   async function copyHtmlToClipboard(html) {
-    // 方案 A：contenteditable + execCommand（WeChat 识别率最高）
+    // 方案 A：Clipboard API（直接写入原始 HTML 字符串，完整保留内联样式，微信粘贴效果最佳）
+    // 参考实现：copyToClipboard($renderContent[0].outerHTML, 'text/html')
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html':  new Blob([html],            { type: 'text/html' }),
+          'text/plain': new Blob([stripTags(html)], { type: 'text/plain' }),
+        }),
+      ]);
+      return;
+    }
+
+    // 方案 B：contenteditable + execCommand 降级（部分旧浏览器不支持 ClipboardItem）
     const el = document.createElement('div');
     el.contentEditable = 'true';
     el.style.cssText = 'position:fixed;top:0;left:0;width:677px;height:1px;overflow:hidden;opacity:0.01;pointer-events:none;z-index:-9999;';
@@ -255,16 +267,6 @@
     document.body.removeChild(el);
     if (ok) return;
 
-    // 方案 B：Clipboard API 降级
-    if (navigator.clipboard && window.ClipboardItem) {
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html':  new Blob([html],            { type: 'text/html' }),
-          'text/plain': new Blob([stripTags(html)], { type: 'text/plain' }),
-        }),
-      ]);
-      return;
-    }
     throw new Error('浏览器不支持复制，请手动选中预览内容后 Ctrl+C');
   }
 

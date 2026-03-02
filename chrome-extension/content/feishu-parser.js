@@ -2,35 +2,36 @@
 // 支持飞书 docs / docx / wiki 三种页面格式
 // v3：遍历所有容器策略，取块数最多的结果；使用"块父 === 容器"过滤避免嵌套重复
 
+// 找 page 块的可滚动父级容器
+function findFeishuScroller() {
+  const page = document.querySelector('[data-block-type="page"]');
+  if (page) {
+    let node = page.parentElement;
+    while (node && node !== document.body) {
+      if (node.scrollHeight > node.clientHeight) return node;
+      node = node.parentElement;
+    }
+  }
+  return document.documentElement;
+}
+
 // 滚动页面触发虚拟滚动懒加载，返回 Promise
 function scrollToLoadAll() {
   return new Promise(resolve => {
-    const scroller =
-      document.querySelector('[class*="scroll"]') ||
-      document.querySelector('[class*="editor-container"]') ||
-      document.querySelector('[class*="doc-content"]') ||
-      document.querySelector('main') ||
-      document.documentElement;
-
-    const step = 800;
+    const scroller = findFeishuScroller();
+    const step = 600;
     let pos = 0;
 
     function tick() {
-      const maxScroll = Math.max(
-        scroller.scrollHeight,
-        document.documentElement.scrollHeight
-      );
+      const maxScroll = scroller.scrollHeight;
       if (pos >= maxScroll) {
-        // 滚回顶部，等 DOM 稳定后 resolve
         scroller.scrollTop = 0;
-        window.scrollTo(0, 0);
-        setTimeout(resolve, 600);
+        setTimeout(resolve, 800);
         return;
       }
       scroller.scrollTop = pos;
-      window.scrollTo(0, pos);
       pos += step;
-      setTimeout(tick, 80);
+      setTimeout(tick, 100);
     }
     tick();
   });

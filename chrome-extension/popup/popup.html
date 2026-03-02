@@ -21,6 +21,24 @@
       <span id="badge" class="badge badge--unknown">检测中...</span>
     </header>
 
+    <!-- 主题 + 选项行 -->
+    <div class="settings-row">
+      <div class="theme-group">
+        <span class="settings-label">主题</span>
+        <div class="theme-swatches">
+          <button class="swatch swatch--wechat active" data-theme="wechat" title="微信绿"></button>
+          <button class="swatch swatch--blue" data-theme="blue" title="商务蓝"></button>
+          <button class="swatch swatch--purple" data-theme="purple" title="优雅紫"></button>
+        </div>
+        <span id="themeName" class="theme-name">微信绿</span>
+      </div>
+      <label class="toggle-wrap" title="将图片转换为 Base64，粘贴后图片可离线显示">
+        <input type="checkbox" id="base64Toggle" checked />
+        <span class="toggle-slider"></span>
+        <span class="toggle-label">图片 Base64</span>
+      </label>
+    </div>
+
     <!-- 操作按钮区 -->
     <div class="toolbar">
       <button id="convertBtn" class="btn btn--primary">
@@ -53,10 +71,10 @@
       </div>
     </div>
 
-    <!-- 图片处理提示（转换后显示） -->
+    <!-- 图片提示 -->
     <div id="imageNote" class="image-note hidden">
       <span class="image-note-icon">🖼</span>
-      <span>图片需在微信编辑器中手动上传替换</span>
+      <span id="imageNoteText">图片已转 Base64，可离线显示</span>
     </div>
 
   </div>

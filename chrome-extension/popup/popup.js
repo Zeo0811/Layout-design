@@ -1,31 +1,63 @@
 // Popup 逻辑
 // 负责与 content script 通信、触发转换、展示预览、复制到剪贴板
+// 新增：主题切换、图片 Base64 开关
 
 (function () {
   'use strict';
 
-  // DOM 引用
-  const badge       = document.getElementById('badge');
-  const convertBtn  = document.getElementById('convertBtn');
-  const copyBtn     = document.getElementById('copyBtn');
-  const statusBar   = document.getElementById('statusBar');
-  const statusIcon  = document.getElementById('statusIcon');
-  const statusText  = document.getElementById('statusText');
-  const preview     = document.getElementById('preview');
-  const stats       = document.getElementById('stats');
-  const imageNote   = document.getElementById('imageNote');
+  // ── DOM 引用 ──────────────────────────────────────────────────
+  const badge        = document.getElementById('badge');
+  const convertBtn   = document.getElementById('convertBtn');
+  const copyBtn      = document.getElementById('copyBtn');
+  const statusBar    = document.getElementById('statusBar');
+  const statusIcon   = document.getElementById('statusIcon');
+  const statusText   = document.getElementById('statusText');
+  const preview      = document.getElementById('preview');
+  const stats        = document.getElementById('stats');
+  const imageNote    = document.getElementById('imageNote');
+  const imageNoteTxt = document.getElementById('imageNoteText');
+  const base64Toggle = document.getElementById('base64Toggle');
+  const themeNameEl  = document.getElementById('themeName');
+  const swatches     = document.querySelectorAll('.swatch');
 
-  let formattedHtml = '';   // 当前转换结果（带内联样式的 HTML）
+  let formattedHtml = '';
   let currentTab    = null;
+  let selectedTheme = 'wechat';
 
-  // ── 初始化：检测当前页面类型 ──────────────────────────────────
+  // ── 主题初始化 ─────────────────────────────────────────────────
+
+  const THEME_NAMES = { wechat: '微信绿', blue: '商务蓝', purple: '优雅紫' };
+
+  function applyTheme(themeName) {
+    selectedTheme = themeName;
+    themeNameEl.textContent = THEME_NAMES[themeName] || themeName;
+    swatches.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === themeName);
+    });
+    chrome.storage.local.set({ theme: themeName });
+  }
+
+  swatches.forEach(btn => {
+    btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+  });
+
+  // 读取存储的偏好
+  chrome.storage.local.get(['theme', 'base64'], (prefs) => {
+    if (prefs.theme) applyTheme(prefs.theme);
+    if (prefs.base64 !== undefined) base64Toggle.checked = prefs.base64;
+  });
+
+  base64Toggle.addEventListener('change', () => {
+    chrome.storage.local.set({ base64: base64Toggle.checked });
+  });
+
+  // ── 初始化：检测当前页面类型 ───────────────────────────────────
 
   async function init() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       currentTab = tab;
 
-      // 向 content script 发送 ping
       chrome.tabs.sendMessage(tab.id, { action: 'ping' }, (resp) => {
         if (chrome.runtime.lastError || !resp) {
           setBadge('unknown', '不支持');
@@ -34,8 +66,7 @@
           return;
         }
 
-        const pageType = resp.pageType;
-
+        const { pageType } = resp;
         if (pageType === 'notion') {
           setBadge('notion', 'Notion');
         } else if (pageType === 'feishu') {
@@ -52,18 +83,24 @@
     }
   }
 
-  // ── 转换逻辑 ─────────────────────────────────────────────────
+  // ── 转换逻辑 ──────────────────────────────────────────────────
 
   convertBtn.addEventListener('click', async () => {
     if (!currentTab) return;
 
     convertBtn.disabled = true;
     copyBtn.disabled = true;
-    showStatus('loading', '⏳ 正在解析文档...');
+    imageNote.classList.add('hidden');
+
+    const withBase64 = base64Toggle.checked;
+    const loadingMsg = withBase64 ? '⏳ 正在解析并转换图片...' : '⏳ 正在解析文档...';
+    showStatus('loading', loadingMsg);
     setPreviewLoading();
 
-    try {
-      chrome.tabs.sendMessage(currentTab.id, { action: 'parse' }, (resp) => {
+    chrome.tabs.sendMessage(
+      currentTab.id,
+      { action: 'parse', convertImages: withBase64 },
+      (resp) => {
         convertBtn.disabled = false;
 
         if (chrome.runtime.lastError) {
@@ -73,37 +110,36 @@
         }
 
         if (!resp || !resp.success) {
-          const msg = (resp && resp.error) || '未知错误';
-          showStatus('error', '❌ ' + msg);
+          showStatus('error', '❌ ' + ((resp && resp.error) || '未知错误'));
           resetPreview();
           return;
         }
 
-        // 调用 formatter 生成 WeChat HTML
         try {
-          formattedHtml = formatToWechat(resp.data);
+          formattedHtml = formatToWechat(resp.data, selectedTheme);
           renderPreview(formattedHtml, resp.data);
           copyBtn.disabled = false;
 
-          // 显示图片提示
+          // 图片提示
           const hasImages = resp.data.blocks.some(b => b.type === 'image');
-          if (hasImages) imageNote.classList.remove('hidden');
-          else imageNote.classList.add('hidden');
+          if (hasImages) {
+            imageNote.classList.remove('hidden');
+            const hasBase64 = resp.data.blocks.some(b => b.type === 'image' && b.base64);
+            imageNoteTxt.textContent = hasBase64
+              ? '图片已转 Base64，粘贴后可离线显示'
+              : '图片需在微信编辑器中手动上传替换';
+          }
 
           showStatus('success', '✅ 转换成功，点击「复制内容」粘贴到微信编辑器');
         } catch (fmtErr) {
           showStatus('error', '❌ 格式化失败：' + fmtErr.message);
           resetPreview();
         }
-      });
-    } catch (err) {
-      convertBtn.disabled = false;
-      showStatus('error', '❌ ' + err.message);
-      resetPreview();
-    }
+      }
+    );
   });
 
-  // ── 复制逻辑 ─────────────────────────────────────────────────
+  // ── 复制逻辑 ──────────────────────────────────────────────────
 
   copyBtn.addEventListener('click', async () => {
     if (!formattedHtml) return;
@@ -111,28 +147,26 @@
     try {
       await copyHtmlToClipboard(formattedHtml);
 
-      // 按钮反馈
+      const origText = copyBtn.querySelector('.btn-icon').nextSibling.textContent;
       copyBtn.classList.add('btn--copied');
-      const origIcon = copyBtn.querySelector('.btn-icon').textContent;
       copyBtn.querySelector('.btn-icon').textContent = '✅';
       copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 已复制！';
 
       setTimeout(() => {
         copyBtn.classList.remove('btn--copied');
-        copyBtn.querySelector('.btn-icon').textContent = origIcon;
+        copyBtn.querySelector('.btn-icon').textContent = '📋';
         copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 复制内容';
       }, 2000);
     } catch (err) {
-      showStatus('error', '❌ 复制失败：' + err.message + '，请尝试手动选择内容复制');
+      showStatus('error', '❌ 复制失败：' + err.message + '，请尝试手动选择复制');
     }
   });
 
-  // ── 剪贴板 API ───────────────────────────────────────────────
+  // ── 剪贴板 ────────────────────────────────────────────────────
 
   async function copyHtmlToClipboard(html) {
-    // 优先使用现代 ClipboardItem API（支持 text/html）
     if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
-      const blob = new Blob([html], { type: 'text/html' });
+      const blob     = new Blob([html], { type: 'text/html' });
       const textBlob = new Blob([stripHtmlTags(html)], { type: 'text/plain' });
       await navigator.clipboard.write([
         new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob }),
@@ -140,12 +174,11 @@
       return;
     }
 
-    // 降级：创建临时 DOM 并选中复制
+    // 降级方案
     const el = document.createElement('div');
     el.innerHTML = html;
     el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
     document.body.appendChild(el);
-
     const range = document.createRange();
     range.selectNodeContents(el);
     const sel = window.getSelection();
@@ -162,7 +195,7 @@
     return tmp.textContent || tmp.innerText || '';
   }
 
-  // ── UI 辅助 ──────────────────────────────────────────────────
+  // ── UI 辅助 ───────────────────────────────────────────────────
 
   function setBadge(type, text) {
     badge.textContent = text;
@@ -196,16 +229,13 @@
   }
 
   function renderPreview(html, data) {
-    // 在预览区渲染格式化结果
     preview.innerHTML = html;
-
-    // 统计信息
-    const charCount = stripHtmlTags(html).length;
+    const charCount  = stripHtmlTags(html).length;
     const blockCount = (data.blocks || []).length;
     stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;
   }
 
-  // ── 启动 ─────────────────────────────────────────────────────
+  // ── 启动 ──────────────────────────────────────────────────────
   init();
 
 })();

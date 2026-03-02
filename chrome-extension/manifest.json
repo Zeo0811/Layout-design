@@ -1,18 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Notion/飞书 转公众号排版",
-  "version": "1.0.0",
-  "description": "将Notion/飞书文档自动排版转换为微信公众号格式，支持一键复制粘贴",
+  "version": "1.2.0",
+  "description": "将Notion/飞书文档自动排版转换为微信公众号格式，支持多主题、图片Base64、表格、一键复制",
   "permissions": [
     "activeTab",
     "scripting",
-    "clipboardWrite"
+    "clipboardWrite",
+    "storage"
   ],
   "host_permissions": [
-    "https://*.notion.so/*",
-    "https://*.notion.site/*",
-    "https://*.feishu.cn/*",
-    "https://*.larksuite.com/*"
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup/popup.html",

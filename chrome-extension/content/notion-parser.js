@@ -1,14 +1,18 @@
 // Notion 页面 DOM 解析器
 // 将 Notion DOM 结构转换为中间 JSON 表示
+// 支持旧版 class 检测 + 新版 data-block-type 检测
 
 function parseNotion() {
   const title = getNotionTitle();
-  const links = []; // 脚注收集器
+  const links = [];
 
-  // 查找页面内容区域（支持多种选择器以应对版本变化）
+  // 新版 Notion 使用 data-content-editable-root 或 .notion-page-content
   const contentArea =
     document.querySelector('.notion-page-content') ||
     document.querySelector('[class*="notionPage"]') ||
+    document.querySelector('[data-content-editable-root]') ||
+    document.querySelector('[class*="layout-content"]') ||
+    document.querySelector('main [class*="content"]') ||
     document.querySelector('main');
 
   if (!contentArea) {
@@ -16,26 +20,23 @@ function parseNotion() {
   }
 
   const blocks = parseNotionBlocks(Array.from(contentArea.children), links, 0);
-
   return { type: 'notion', title, blocks, links };
 }
 
 function getNotionTitle() {
-  // 优先级顺序尝试获取标题
   const candidates = [
     document.querySelector('.notion-page-block [data-content-editable-leaf]'),
     document.querySelector('.notion-title [data-content-editable-leaf]'),
     document.querySelector('[placeholder="Untitled"][contenteditable]'),
+    document.querySelector('[data-block-type="page"] [data-content-editable-leaf]'),
     document.querySelector('.notion-page-block .notranslate'),
   ];
 
   for (const el of candidates) {
-    if (el && el.textContent.trim()) {
-      return el.textContent.trim();
-    }
+    if (el && el.textContent.trim()) return el.textContent.trim();
   }
 
-  return document.title.replace(' - Notion', '').replace(' | Notion', '').trim();
+  return document.title.replace(/ ?[–—-] ?Notion$/, '').replace(/ ?\| ?Notion$/, '').trim();
 }
 
 function parseNotionBlocks(elements, links, depth) {
@@ -58,18 +59,15 @@ function parseNotionBlocks(elements, links, depth) {
       }
       listBuffer.items.push(parseNotionListItem(el, blockType, links, depth));
     } else {
-      // 刷新列表缓冲
       if (listBuffer.items.length > 0) {
         blocks.push({ type: listBuffer.type, items: listBuffer.items });
         listBuffer = { type: null, items: [] };
       }
-
       const block = parseNotionBlock(el, blockType, links, depth);
       if (block) blocks.push(block);
     }
   }
 
-  // 刷新末尾的列表
   if (listBuffer.items.length > 0) {
     blocks.push({ type: listBuffer.type, items: listBuffer.items });
   }
@@ -78,9 +76,38 @@ function parseNotionBlocks(elements, links, depth) {
 }
 
 function getNotionBlockType(el) {
-  if (!el || !el.className) return null;
-  const cls = typeof el.className === 'string' ? el.className : '';
+  if (!el) return null;
 
+  // ── 新版 Notion：优先检查 data-block-type ──
+  const dataType = el.getAttribute && el.getAttribute('data-block-type');
+  if (dataType) {
+    const dataMap = {
+      'header': 'h1',
+      'sub_header': 'h2',
+      'sub_sub_header': 'h3',
+      'text': 'paragraph',
+      'quote': 'quote',
+      'code': 'code',
+      'callout': 'callout',
+      'divider': 'divider',
+      'bulleted_list': 'bulleted_list',
+      'numbered_list': 'numbered_list',
+      'image': 'image',
+      'video': 'video',
+      'toggle': 'toggle',
+      'column_list': 'column_list',
+      'bookmark': 'bookmark',
+      'to_do': 'todo',
+      'table': 'table',
+      'embed': 'embed',
+      'link_preview': 'embed',
+      'synced_block': 'synced',
+    };
+    if (dataMap[dataType]) return dataMap[dataType];
+  }
+
+  // ── 旧版 Notion：通过 class 检测 ──
+  const cls = typeof el.className === 'string' ? el.className : '';
   const typeMap = [
     ['notion-header-block', 'h1'],
     ['notion-sub_header-block', 'h2'],
@@ -98,10 +125,12 @@ function getNotionBlockType(el) {
     ['notion-column_list-block', 'column_list'],
     ['notion-bookmark-block', 'bookmark'],
     ['notion-to_do-block', 'todo'],
+    ['notion-table-block', 'table'],
+    ['notion-embed-block', 'embed'],
   ];
 
-  for (const [cls_check, type] of typeMap) {
-    if (cls.includes(cls_check)) return type;
+  for (const [clsCheck, type] of typeMap) {
+    if (cls.includes(clsCheck)) return type;
   }
   return null;
 }
@@ -111,6 +140,9 @@ function parseNotionBlock(el, blockType, links, depth) {
     case 'h1':
     case 'h2':
     case 'h3':
+    case 'h4':
+    case 'h5':
+    case 'h6':
       return { type: blockType, content: extractNotionRichText(el, links) };
 
     case 'paragraph':
@@ -147,6 +179,16 @@ function parseNotionBlock(el, blockType, links, depth) {
         checked: !!el.querySelector('[aria-checked="true"]'),
       };
 
+    case 'table':
+      return parseNotionTable(el, links);
+
+    case 'embed':
+      return parseNotionEmbed(el, links);
+
+    case 'synced':
+      // 同步块：递归解析内部内容
+      return parseNotionSynced(el, links, depth);
+
     case 'column_list':
       return parseNotionColumnList(el, links, depth);
 
@@ -155,9 +197,8 @@ function parseNotionBlock(el, blockType, links, depth) {
   }
 }
 
-// 提取 Notion 块内的富文本内容（保留加粗、斜体、代码、链接）
+// 提取 Notion 块内的富文本（保留粗体、斜体、代码、链接）
 function extractNotionRichText(blockEl, links) {
-  // 找到真正的文字容器
   const contentEl =
     blockEl.querySelector('[contenteditable]') ||
     blockEl.querySelector('[data-content-editable-leaf]') ||
@@ -174,17 +215,13 @@ function convertNodeToHtml(node, links) {
       html += escapeHtml(child.textContent);
       continue;
     }
-
     if (child.nodeType !== Node.ELEMENT_NODE) continue;
 
     const tag = child.tagName.toLowerCase();
     const style = child.getAttribute('style') || '';
     const innerHtml = convertNodeToHtml(child, links);
 
-    if (tag === 'br') {
-      html += '<br>';
-      continue;
-    }
+    if (tag === 'br') { html += '<br>'; continue; }
 
     if (tag === 'code') {
       html += `<code>${escapeHtml(child.textContent)}</code>`;
@@ -205,20 +242,17 @@ function convertNodeToHtml(node, links) {
     }
 
     if (tag === 'span') {
-      // 检测 Notion 的内联样式
       const isBold =
-        style.includes('font-weight:600') ||
-        style.includes('font-weight: 600') ||
+        style.includes('font-weight:600') || style.includes('font-weight: 600') ||
+        style.includes('font-weight:700') || style.includes('font-weight: 700') ||
         child.classList.contains('notion-bold');
       const isItalic =
-        style.includes('font-style:italic') ||
-        style.includes('font-style: italic') ||
+        style.includes('font-style:italic') || style.includes('font-style: italic') ||
         child.classList.contains('notion-italic');
       const isStrike =
-        style.includes('line-through') ||
-        child.classList.contains('notion-strikethrough');
+        style.includes('line-through') || child.classList.contains('notion-strikethrough');
       const isUnder =
-        style.includes('underline') && !style.includes('line-through') ||
+        (style.includes('underline') && !style.includes('line-through')) ||
         child.classList.contains('notion-underline');
 
       let result = innerHtml;
@@ -230,7 +264,6 @@ function convertNodeToHtml(node, links) {
       continue;
     }
 
-    // 其他元素递归处理
     html += innerHtml;
   }
 
@@ -238,11 +271,11 @@ function convertNodeToHtml(node, links) {
 }
 
 function parseNotionCodeBlock(el) {
-  // 语言标签可能在不同位置
   const langEl =
     el.querySelector('.notion-code-block-language') ||
     el.querySelector('[aria-label]') ||
-    el.querySelector('select');
+    el.querySelector('select') ||
+    el.querySelector('[class*="language"]');
 
   let language = 'plaintext';
   if (langEl) {
@@ -253,32 +286,28 @@ function parseNotionCodeBlock(el) {
       'plaintext';
   }
 
-  // 代码内容
   const codeEl =
     el.querySelector('pre') ||
     el.querySelector('[spellcheck="false"]') ||
     el.querySelector('[contenteditable]');
 
-  const code = codeEl ? codeEl.textContent : '';
-
-  return { type: 'code', language, content: code };
+  return { type: 'code', language, content: codeEl ? codeEl.textContent : '' };
 }
 
 function parseNotionCallout(el, links) {
-  // 获取 Emoji 图标
   const iconEl =
     el.querySelector('.notion-record-icon') ||
-    el.querySelector('[class*="icon"]');
+    el.querySelector('[class*="icon"]') ||
+    el.querySelector('[class*="emoji"]');
   const icon = iconEl ? iconEl.textContent.trim() : '💡';
 
-  // 获取文本内容（排除图标部分）
   const clone = el.cloneNode(true);
-  const cloneIcon = clone.querySelector('.notion-record-icon') || clone.querySelector('[class*="icon"]');
+  const cloneIcon =
+    clone.querySelector('.notion-record-icon') ||
+    clone.querySelector('[class*="icon"]');
   if (cloneIcon) cloneIcon.remove();
 
-  const content = convertNodeToHtml(clone, links);
-
-  return { type: 'callout', icon, content };
+  return { type: 'callout', icon, content: convertNodeToHtml(clone, links) };
 }
 
 function parseNotionImage(el) {
@@ -297,9 +326,7 @@ function parseNotionImage(el) {
 function parseNotionVideo(el) {
   const videoEl = el.querySelector('video');
   const iframeEl = el.querySelector('iframe');
-
-  let url = '';
-  let thumbnailUrl = '';
+  let url = '', thumbnailUrl = '';
 
   if (videoEl) {
     url = videoEl.getAttribute('src') || '';
@@ -308,11 +335,8 @@ function parseNotionVideo(el) {
     url = iframeEl.getAttribute('src') || '';
   }
 
-  // 获取缩略图
   const imgEl = el.querySelector('img');
-  if (imgEl && !thumbnailUrl) {
-    thumbnailUrl = imgEl.getAttribute('src') || '';
-  }
+  if (imgEl && !thumbnailUrl) thumbnailUrl = imgEl.getAttribute('src') || '';
 
   return { type: 'video', url, thumbnailUrl };
 }
@@ -323,7 +347,6 @@ function parseNotionToggle(el, links, depth) {
     el.querySelector('[data-content-editable-leaf]');
   const summary = summaryEl ? convertNodeToHtml(summaryEl, links) : '';
 
-  // 查找子内容容器
   const childrenContainer =
     el.querySelector('[class*="toggle-content"]') ||
     el.querySelector('[class*="children"]');
@@ -341,8 +364,7 @@ function parseNotionColumnList(el, links, depth) {
   const columnBlocks = [];
 
   for (const col of columns) {
-    const blocks = parseNotionBlocks(Array.from(col.children), links, depth + 1);
-    columnBlocks.push(blocks);
+    columnBlocks.push(parseNotionBlocks(Array.from(col.children), links, depth + 1));
   }
 
   return { type: 'column_list', columns: columnBlocks };
@@ -353,23 +375,83 @@ function parseNotionBookmark(el, links) {
   if (!linkEl) return null;
 
   const url = linkEl.getAttribute('href') || '';
-  const titleEl = el.querySelector('[class*="title"]') || el.querySelector('strong');
+  const titleEl =
+    el.querySelector('[class*="title"]') ||
+    el.querySelector('strong') ||
+    el.querySelector('[class*="bookmark-title"]');
   const text = titleEl ? titleEl.textContent.trim() : url;
 
   if (url) {
     links.push({ text, url });
     return { type: 'bookmark', text, url, linkIndex: links.length };
   }
-
   return null;
+}
+
+// ── 新增：表格解析 ─────────────────────────────────────────────────────────
+
+function parseNotionTable(el, links) {
+  const rows = [];
+  // 新旧版都兼容
+  const rowEls = el.querySelectorAll(
+    '.notion-table_row-block, [data-block-type="table_row"], [class*="table-row"]'
+  );
+
+  rowEls.forEach((rowEl, rowIndex) => {
+    const cellEls = rowEl.querySelectorAll(
+      '.notion-cell-block, [class*="cell"], td, [data-block-type="table_cell"]'
+    );
+    const cells = [];
+    cellEls.forEach(cellEl => cells.push(extractNotionRichText(cellEl, links)));
+
+    if (cells.length > 0) {
+      rows.push({ cells, isHeader: rowIndex === 0 });
+    }
+  });
+
+  // 如果没找到标准行元素，尝试直接遍历子元素
+  if (rows.length === 0) {
+    Array.from(el.children).forEach((rowEl, rowIndex) => {
+      const cellEls = rowEl.querySelectorAll('td, th, [class*="cell"]');
+      if (cellEls.length === 0) return;
+      const cells = [];
+      cellEls.forEach(cellEl => cells.push(extractNotionRichText(cellEl, links)));
+      rows.push({ cells, isHeader: rowIndex === 0 });
+    });
+  }
+
+  return rows.length > 0 ? { type: 'table', rows } : null;
+}
+
+// ── 新增：嵌入/数据库块解析 ────────────────────────────────────────────────
+
+function parseNotionEmbed(el, links) {
+  const linkEl = el.querySelector('a');
+  const iframeEl = el.querySelector('iframe');
+  const url = (linkEl && linkEl.getAttribute('href')) ||
+               (iframeEl && iframeEl.getAttribute('src')) || '';
+
+  const titleEl = el.querySelector('[class*="title"]') || el.querySelector('strong');
+  const title = titleEl ? titleEl.textContent.trim() : '嵌入内容';
+
+  return url ? { type: 'embed', url, title } : null;
+}
+
+// ── 新增：同步块解析 ─────────────────────────────────────────────────────
+
+function parseNotionSynced(el, links, depth) {
+  if (depth >= 5) return null;
+  const inner = el.querySelector('[class*="synced-block"]') || el;
+  const children = parseNotionBlocks(Array.from(inner.children), links, depth + 1);
+  // 扁平化同步块内容
+  return children.length > 0 ? children[0] : null;
 }
 
 function parseNotionListItem(el, listType, links, depth) {
   const content = extractNotionRichText(el, links);
-
-  // 查找嵌套列表
   const nestedLists = el.querySelectorAll(
-    ':scope .notion-bulleted_list-block, :scope .notion-numbered_list-block'
+    ':scope .notion-bulleted_list-block, :scope .notion-numbered_list-block, ' +
+    ':scope [data-block-type="bulleted_list"], :scope [data-block-type="numbered_list"]'
   );
 
   let children = [];

@@ -1,6 +1,5 @@
 // Popup 逻辑
 // 负责与 content script 通信、触发转换、展示预览、复制到剪贴板
-// 新增：主题切换、图片 Base64 开关
 
 (function () {
   'use strict';
@@ -17,75 +16,89 @@
   const imageNote    = document.getElementById('imageNote');
   const imageNoteTxt = document.getElementById('imageNoteText');
   const base64Toggle = document.getElementById('base64Toggle');
-  const themeNameEl  = document.getElementById('themeName');
-  const swatches     = document.querySelectorAll('.swatch');
 
   let formattedHtml = '';
   let currentTab    = null;
-  let selectedTheme = 'wechat';
 
-  // ── 主题初始化 ─────────────────────────────────────────────────
-
-  const THEME_NAMES = { wechat: '微信绿', blue: '商务蓝', purple: '优雅紫' };
-
-  function applyTheme(themeName) {
-    selectedTheme = themeName;
-    themeNameEl.textContent = THEME_NAMES[themeName] || themeName;
-    swatches.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.theme === themeName);
-    });
-    chrome.storage.local.set({ theme: themeName });
-  }
-
-  swatches.forEach(btn => {
-    btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
-  });
-
-  // 读取存储的偏好
-  chrome.storage.local.get(['theme', 'base64'], (prefs) => {
-    if (prefs.theme) applyTheme(prefs.theme);
+  // 读取持久化偏好
+  chrome.storage.local.get(['base64'], (prefs) => {
     if (prefs.base64 !== undefined) base64Toggle.checked = prefs.base64;
   });
-
   base64Toggle.addEventListener('change', () => {
     chrome.storage.local.set({ base64: base64Toggle.checked });
   });
 
-  // ── 初始化：检测当前页面类型 ───────────────────────────────────
+  // ── 初始化：检测页面 + 自动重注入兜底 ──────────────────────────
 
   async function init() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       currentTab = tab;
 
-      chrome.tabs.sendMessage(tab.id, { action: 'ping' }, (resp) => {
-        if (chrome.runtime.lastError || !resp) {
-          setBadge('unknown', '不支持');
-          convertBtn.disabled = true;
-          showStatus('error', '⚠️ 请在 Notion 或飞书文章页面使用本插件');
-          return;
-        }
+      const url = tab.url || '';
+      const isNotion = url.includes('notion.so') || url.includes('notion.site');
+      const isFeishu = url.includes('feishu.cn') || url.includes('larksuite.com');
 
-        const { pageType } = resp;
-        if (pageType === 'notion') {
-          setBadge('notion', 'Notion');
-        } else if (pageType === 'feishu') {
-          setBadge('feishu', '飞书');
-        } else {
-          setBadge('unsupported', '不支持');
-          convertBtn.disabled = true;
-          showStatus('error', '⚠️ 当前页面不是 Notion 或飞书文档');
-        }
-      });
+      if (!isNotion && !isFeishu) {
+        setBadge('unsupported', '不支持');
+        convertBtn.disabled = true;
+        showStatus('error', '⚠️ 请在 Notion 或飞书文章页面使用本插件');
+        return;
+      }
+
+      // 先尝试 ping
+      let resp = await pingTab(tab.id);
+
+      // ping 失败 → 自动重注入 content scripts（常见于扩展更新后未刷新页面）
+      if (!resp) {
+        showStatus('loading', '正在连接页面...');
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: [
+              'content/notion-parser.js',
+              'content/feishu-parser.js',
+              'content/content.js',
+            ],
+          });
+          await sleep(200);
+          resp = await pingTab(tab.id);
+        } catch (_) {}
+      }
+
+      if (!resp) {
+        setBadge('unknown', '连接失败');
+        convertBtn.disabled = true;
+        showStatus('error', '⚠️ 无法连接页面，请手动刷新后重试');
+        return;
+      }
+
+      // 隐藏注入时的 loading 提示
+      statusBar.className = 'status-bar status-bar--hidden';
+
+      setBadge(
+        resp.pageType === 'notion' ? 'notion' : 'feishu',
+        resp.pageType === 'notion' ? 'Notion' : '飞书'
+      );
     } catch (err) {
       setBadge('unknown', '错误');
       showStatus('error', '初始化失败：' + err.message);
     }
   }
 
+  function pingTab(tabId) {
+    return new Promise(resolve => {
+      chrome.tabs.sendMessage(tabId, { action: 'ping' }, resp => {
+        resolve(chrome.runtime.lastError ? null : resp);
+      });
+    });
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
   // ── 转换逻辑 ──────────────────────────────────────────────────
 
-  convertBtn.addEventListener('click', async () => {
+  convertBtn.addEventListener('click', () => {
     if (!currentTab) return;
 
     convertBtn.disabled = true;
@@ -93,8 +106,7 @@
     imageNote.classList.add('hidden');
 
     const withBase64 = base64Toggle.checked;
-    const loadingMsg = withBase64 ? '⏳ 正在解析并转换图片...' : '⏳ 正在解析文档...';
-    showStatus('loading', loadingMsg);
+    showStatus('loading', withBase64 ? '⏳ 正在解析并转换图片...' : '⏳ 正在解析文档...');
     setPreviewLoading();
 
     chrome.tabs.sendMessage(
@@ -116,11 +128,10 @@
         }
 
         try {
-          formattedHtml = formatToWechat(resp.data, selectedTheme);
+          formattedHtml = formatToWechat(resp.data);
           renderPreview(formattedHtml, resp.data);
           copyBtn.disabled = false;
 
-          // 图片提示
           const hasImages = resp.data.blocks.some(b => b.type === 'image');
           if (hasImages) {
             imageNote.classList.remove('hidden');
@@ -143,11 +154,9 @@
 
   copyBtn.addEventListener('click', async () => {
     if (!formattedHtml) return;
-
     try {
       await copyHtmlToClipboard(formattedHtml);
 
-      const origText = copyBtn.querySelector('.btn-icon').nextSibling.textContent;
       copyBtn.classList.add('btn--copied');
       copyBtn.querySelector('.btn-icon').textContent = '✅';
       copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 已复制！';
@@ -158,7 +167,7 @@
         copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 复制内容';
       }, 2000);
     } catch (err) {
-      showStatus('error', '❌ 复制失败：' + err.message + '，请尝试手动选择复制');
+      showStatus('error', '❌ 复制失败：' + err.message);
     }
   });
 
@@ -166,15 +175,15 @@
 
   async function copyHtmlToClipboard(html) {
     if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
-      const blob     = new Blob([html], { type: 'text/html' });
-      const textBlob = new Blob([stripHtmlTags(html)], { type: 'text/plain' });
       await navigator.clipboard.write([
-        new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob }),
+        new ClipboardItem({
+          'text/html':  new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([stripTags(html)], { type: 'text/plain' }),
+        }),
       ]);
       return;
     }
-
-    // 降级方案
+    // 降级
     const el = document.createElement('div');
     el.innerHTML = html;
     el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
@@ -189,7 +198,7 @@
     document.body.removeChild(el);
   }
 
-  function stripHtmlTags(html) {
+  function stripTags(html) {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
@@ -205,32 +214,22 @@
   function showStatus(type, text) {
     statusBar.className = `status-bar status-bar--${type}`;
     statusText.textContent = text;
-    statusIcon.textContent =
-      type === 'loading' ? '⏳' :
-      type === 'success' ? '✅' : '❌';
+    statusIcon.textContent = type === 'loading' ? '⏳' : type === 'success' ? '✅' : '❌';
   }
 
   function setPreviewLoading() {
-    preview.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon spinning">⚙️</div>
-        <div class="empty-text">正在解析并排版...</div>
-      </div>`;
+    preview.innerHTML = `<div class="empty-state"><div class="empty-icon spinning">⚙️</div><div class="empty-text">正在解析并排版...</div></div>`;
   }
 
   function resetPreview() {
-    preview.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📄</div>
-        <div class="empty-text">转换失败，请重试</div>
-      </div>`;
+    preview.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">转换失败，请重试</div></div>`;
     stats.textContent = '';
     formattedHtml = '';
   }
 
   function renderPreview(html, data) {
     preview.innerHTML = html;
-    const charCount  = stripHtmlTags(html).length;
+    const charCount  = stripTags(html).length;
     const blockCount = (data.blocks || []).length;
     stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;
   }

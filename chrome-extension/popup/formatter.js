@@ -52,7 +52,7 @@ const S = {
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
-  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
+  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
 
   // commonStyles.h2 + tech_black.h2
   h2: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,

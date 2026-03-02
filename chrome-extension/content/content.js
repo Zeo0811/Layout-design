@@ -19,22 +19,19 @@
     }
 
     if (request.action === 'parse') {
-      try {
-        const pageType = detectPageType();
-        let result;
-
+      const pageType = detectPageType();
+      const run = async () => {
         if (pageType === 'notion') {
-          result = parseNotion();
+          return parseNotion();
         } else if (pageType === 'feishu') {
-          result = parseFeishu();
+          await scrollToLoadAll();
+          return parseFeishu();
         } else {
           throw new Error('当前页面不是 Notion 或飞书文档，请在文章页面使用本插件');
         }
-
-        sendResponse({ success: true, data: result, pageType });
-      } catch (err) {
-        sendResponse({ success: false, error: err.message });
-      }
+      };
+      run().then(result => sendResponse({ success: true, data: result, pageType }))
+           .catch(err  => sendResponse({ success: false, error: err.message }));
       return true;
     }
 

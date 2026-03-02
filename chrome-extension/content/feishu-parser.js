@@ -2,6 +2,40 @@
 // 支持飞书 docs / docx / wiki 三种页面格式
 // v3：遍历所有容器策略，取块数最多的结果；使用"块父 === 容器"过滤避免嵌套重复
 
+// 滚动页面触发虚拟滚动懒加载，返回 Promise
+function scrollToLoadAll() {
+  return new Promise(resolve => {
+    const scroller =
+      document.querySelector('[class*="scroll"]') ||
+      document.querySelector('[class*="editor-container"]') ||
+      document.querySelector('[class*="doc-content"]') ||
+      document.querySelector('main') ||
+      document.documentElement;
+
+    const step = 800;
+    let pos = 0;
+
+    function tick() {
+      const maxScroll = Math.max(
+        scroller.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+      if (pos >= maxScroll) {
+        // 滚回顶部，等 DOM 稳定后 resolve
+        scroller.scrollTop = 0;
+        window.scrollTo(0, 0);
+        setTimeout(resolve, 600);
+        return;
+      }
+      scroller.scrollTop = pos;
+      window.scrollTo(0, pos);
+      pos += step;
+      setTimeout(tick, 80);
+    }
+    tick();
+  });
+}
+
 function parseFeishu() {
   const title = getFeishuTitle();
   let best = null; // { blocks, links }

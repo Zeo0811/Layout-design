@@ -25,14 +25,30 @@
       color: #999;
       margin-bottom: 40px;
     }
+    /* 响应式网格容器 */
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+      body { padding: 24px 12px; }
+    }
     /* 每个示例卡片 */
     .demo-block {
       background: #fff;
       border-radius: 12px;
-      padding: 32px 40px;
-      max-width: 680px;
-      margin: 0 auto 24px auto;
+      padding: 24px 28px;
       box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      /* 防止长内容（代码块等）撑破卡片 */
+      min-width: 0;
+      overflow: hidden;
     }
     .demo-label {
       display: inline-block;
@@ -245,7 +261,7 @@ const blocks = [
 
 ];
 
-document.write(blocks.join(''));
+document.write('<div class="grid">' + blocks.join('') + '</div>');
 </script>
 
 </body>

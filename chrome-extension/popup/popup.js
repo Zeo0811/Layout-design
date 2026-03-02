@@ -24,7 +24,15 @@
 
   async function init() {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      // 独立窗口模式：从 URL 参数读取目标 tab ID；降级到 currentWindow 查询
+      const params = new URLSearchParams(window.location.search);
+      const tabIdParam = parseInt(params.get('tabId'));
+      let tab;
+      if (tabIdParam) {
+        tab = await chrome.tabs.get(tabIdParam);
+      } else {
+        [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      }
       currentTab = tab;
 
       const url = tab.url || '';

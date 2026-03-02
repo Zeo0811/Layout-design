@@ -3,18 +3,19 @@
 // ── 持久窗口：点击图标打开独立窗口，切换 Tab/App 不会自动关闭 ──────────────
 let popupWinId = null;
 
-chrome.action.onClicked.addListener(async () => {
+chrome.action.onClicked.addListener(async (tab) => {
   // 若窗口已存在，聚焦它
   if (popupWinId !== null) {
     try {
       await chrome.windows.update(popupWinId, { focused: true });
       return;
     } catch (_) {
-      popupWinId = null; // 窗口已被用户关闭，重新创建
+      popupWinId = null;
     }
   }
+  // 将当前 tab ID 传给 popup，避免独立窗口中 currentWindow 查询失效
   const win = await chrome.windows.create({
-    url:    chrome.runtime.getURL('popup/popup.html'),
+    url:    chrome.runtime.getURL(`popup/popup.html?tabId=${tab.id}`),
     type:   'popup',
     width:  440,
     height: 640,

@@ -1,8 +1,32 @@
 // Background Service Worker
-// 利用扩展的 host_permissions 直接 fetch CDN/S3 图片，转为 Base64 返回给 popup
-// 适用于不需要登录态的图片（S3、feishucdn、byteimg 等）
-// 需要 Cookie 的 Notion 代理图片由 popup.js 中的 MAIN world 方案兜底
 
+// ── 持久窗口：点击图标打开独立窗口，切换 Tab/App 不会自动关闭 ──────────────
+let popupWinId = null;
+
+chrome.action.onClicked.addListener(async () => {
+  // 若窗口已存在，聚焦它
+  if (popupWinId !== null) {
+    try {
+      await chrome.windows.update(popupWinId, { focused: true });
+      return;
+    } catch (_) {
+      popupWinId = null; // 窗口已被用户关闭，重新创建
+    }
+  }
+  const win = await chrome.windows.create({
+    url:    chrome.runtime.getURL('popup/popup.html'),
+    type:   'popup',
+    width:  440,
+    height: 640,
+  });
+  popupWinId = win.id;
+});
+
+chrome.windows.onRemoved.addListener((winId) => {
+  if (winId === popupWinId) popupWinId = null;
+});
+
+// ── 图片 Base64 转换 ────────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action !== 'fetchImagesAsBase64') return false;
 

@@ -319,9 +319,9 @@ function parseFeishuBlock(el, blockType, links) {
     case 'image': {
       const imgEl = el.querySelector('img');
       if (!imgEl) return null;
-      const src = [imgEl.currentSrc, imgEl.src, imgEl.getAttribute('src'),
-        (imgEl.getAttribute('srcset') || '').split(',')[0].trim().split(/\s+/)[0]]
-        .find(s => s && !s.startsWith('blob:') && !s.startsWith('data:')) || '';
+      // 飞书图片使用 blob: URL，需保留；popup.js 的 convertImages 会在主线程 fetch 转 base64
+      const src = imgEl.currentSrc || imgEl.src || imgEl.getAttribute('src') ||
+        (imgEl.getAttribute('srcset') || '').split(',')[0].trim().split(/\s+/)[0] || '';
       const captionEl = el.querySelector('[class*="caption"]') || el.querySelector('figcaption');
       return src ? { type: 'image', url: src, caption: captionEl?.textContent.trim() || '' } : null;
     }

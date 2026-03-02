@@ -273,8 +273,9 @@ function renderCodeBlock(block) {
     codeHtml = escHtml(rawCode);
   }
 
+  const topBar = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;"><section style="width:10px;height:10px;border-radius:50%;background-color:#ed6c60;"></section><section style="width:10px;height:10px;border-radius:50%;background-color:#f7c151;"></section><section style="width:10px;height:10px;border-radius:50%;background-color:#64c856;"></section></section>`;
   const langBar = lang ? `<div style="${S.code_lang_bar}">${escHtml(lang)}</div>` : '';
-  return `<section style="${S.code_wrapper}">${langBar}<pre style="${S.code_pre}"><code style="${S.code_text}">${codeHtml}</code></pre></section>`;
+  return `<section style="${S.code_wrapper}">${topBar}${langBar}<pre style="${S.code_pre}"><code style="${S.code_text}">${codeHtml}</code></pre></section>`;
 }
 
 // ── 列表（对标 ul.nc-list / nc-list_li / nc-list_li_p）──────────────────

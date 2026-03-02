@@ -90,10 +90,12 @@
       const resp = await sendMessage(currentTab.id, { action: 'parse' });
       if (!resp.success) throw new Error(resp.error || '解析失败');
 
-      // 2. 图片转 Base64（在页面 Main World 执行，Origin=notion.so，绕过 CORS）
+      // 2. 图片转 Base64
+      //    策略一：background service worker（利用 host_permissions 绕过 CORS，适用 S3/CDN）
+      //    策略二：MAIN world fallback（以页面身份 fetch，适用需 Cookie 的 Notion 代理图）
       if (base64Toggle.checked) {
         showStatus('loading', '⏳ 正在转换图片...');
-        await convertImagesInMainWorld(currentTab.id, resp.data.blocks);
+        await convertImages(currentTab.id, resp.data.blocks);
       }
 
       // 3. 格式化 & 渲染
@@ -121,52 +123,65 @@
     }
   });
 
-  // ── 图片转 Base64：注入 Main World，使用页面自身 Origin + Cookie ───
+  // ── 图片转 Base64：双重策略 ─────────────────────────────────────────
   //
-  //  关键：chrome.scripting.executeScript({ world: 'MAIN' }) 让代码以
-  //  页面身份（如 notion.so）执行 fetch，不受扩展 CORS 限制，同时自动
-  //  携带页面 Cookie，完全不需要手动读取/注入 cookie。
-  // ──────────────────────────────────────────────────────────────
+  //  策略一（background SW）：利用扩展 host_permissions 直接 fetch S3/CDN，
+  //    credentials: 'omit'，不需要页面 Cookie，对公开 CDN 图片最可靠。
+  //
+  //  策略二（MAIN world 兜底）：以页面身份执行 fetch（credentials: 'same-origin'），
+  //    自动携带页面 Cookie，处理需要登录态的 Notion 代理图片。
+  //    注意：不用 'include' 是因为 S3 的 Access-Control-Allow-Origin: * 与
+  //    credentials: include 不兼容（浏览器会直接拒绝该请求）。
+  // ──────────────────────────────────────────────────────────────────
 
-  async function convertImagesInMainWorld(tabId, blocks) {
+  async function convertImages(tabId, blocks) {
     const urlSet = new Set();
     collectImageUrls(blocks, urlSet);
     const urls = [...urlSet];
     if (urls.length === 0) return;
 
+    // 策略一：background service worker fetch
+    let base64Map = {};
     try {
-      const results = await chrome.scripting.executeScript({
-        target: { tabId },
-        world: 'MAIN',   // ← 关键：以页面自身身份执行
-        func: async (imageUrls) => {
-          // 此函数在 Notion/飞书页面的 JS 上下文中运行
-          // fetch 请求来自页面 origin，CORS 和 Cookie 均正常
-          const toBase64 = (url) => fetch(url, { credentials: 'include' })
-            .then(r => {
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              return r.blob();
-            })
-            .then(blob => new Promise((res, rej) => {
-              const reader = new FileReader();
-              reader.onloadend = () => res(reader.result);
-              reader.onerror = rej;
-              reader.readAsDataURL(blob);
-            }))
-            .catch(() => null);
-
-          const results = await Promise.all(imageUrls.map(toBase64));
-          const map = {};
-          imageUrls.forEach((url, i) => { if (results[i]) map[url] = results[i]; });
-          return map;
-        },
-        args: [urls],
+      const resp = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls }, resolve);
       });
+      if (resp && resp.success) base64Map = resp.data || {};
+    } catch (_) {}
 
-      const base64Map = (results[0] && results[0].result) || {};
-      applyBase64(blocks, base64Map);
-    } catch (e) {
-      // 转换失败不影响主流程，保留原始 URL
+    // 策略二：MAIN world 兜底（处理 service worker 未能转换的图片）
+    const remaining = urls.filter(u => !base64Map[u]);
+    if (remaining.length > 0) {
+      try {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId },
+          world: 'MAIN',
+          func: async (imageUrls) => {
+            const toBase64 = (url) => fetch(url, { credentials: 'same-origin' })
+              .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.blob();
+              })
+              .then(blob => new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onloadend = () => res(reader.result);
+                reader.onerror = rej;
+                reader.readAsDataURL(blob);
+              }))
+              .catch(() => null);
+            const results = await Promise.all(imageUrls.map(toBase64));
+            const map = {};
+            imageUrls.forEach((url, i) => { if (results[i]) map[url] = results[i]; });
+            return map;
+          },
+          args: [remaining],
+        });
+        const fallbackMap = (results[0] && results[0].result) || {};
+        Object.assign(base64Map, fallbackMap);
+      } catch (_) {}
     }
+
+    applyBase64(blocks, base64Map);
   }
 
   function collectImageUrls(blocks, urlSet) {

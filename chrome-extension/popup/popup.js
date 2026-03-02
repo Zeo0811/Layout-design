@@ -13,20 +13,12 @@
   const stats        = document.getElementById('stats');
   const imageNote    = document.getElementById('imageNote');
   const imageNoteTxt = document.getElementById('imageNoteText');
-  const base64Toggle = document.getElementById('base64Toggle');
   const segmentRow   = document.getElementById('segmentRow');
   const segmentBtns  = document.getElementById('segmentBtns');
 
   let formattedHtml     = '';
   let formattedSegments = [];
   let currentTab        = null;
-
-  chrome.storage.local.get(['base64'], (prefs) => {
-    if (prefs.base64 !== undefined) base64Toggle.checked = prefs.base64;
-  });
-  base64Toggle.addEventListener('change', () => {
-    chrome.storage.local.set({ base64: base64Toggle.checked });
-  });
 
   // ── 初始化 ────────────────────────────────────────────────────
 
@@ -94,11 +86,9 @@
       const resp = await sendMessage(currentTab.id, { action: 'parse' });
       if (!resp.success) throw new Error(resp.error || '解析失败');
 
-      // 2. 图片转 Base64
-      if (base64Toggle.checked) {
-        showStatus('loading', '⏳ 正在转换图片...');
-        await convertImages(currentTab.id, resp.data.blocks);
-      }
+      // 2. 图片转 Base64（默认开启）
+      showStatus('loading', '⏳ 正在转换图片...');
+      await convertImages(currentTab.id, resp.data.blocks);
 
       // 3. 格式化 & 渲染
       formattedHtml = formatToWechat(resp.data);

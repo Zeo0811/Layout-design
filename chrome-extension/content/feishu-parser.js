@@ -1,14 +1,15 @@
 // 飞书文档 DOM 解析器
 // 支持飞书 docs / docx / wiki 三种页面格式
-// 修复：仅处理直接子元素（避免嵌套块重复）；增加多级容器探测策略
+// v3：遍历所有容器策略，取块数最多的结果；使用"块父 === 容器"过滤避免嵌套重复
 
 function parseFeishu() {
   const title = getFeishuTitle();
-  const links = [];
+  let best = null; // { blocks, links }
 
-  // ── 策略一：已知容器选择器（按优先级排列）──────────────────────────────
+  // ── 策略一：遍历所有已知容器选择器，记录块数最多的结果 ───────────────────
   const containerSelectors = [
-    '[data-block-type="page"]',            // 飞书标准页面根块
+    '[data-block-type="page"]',
+    '[data-block-type="doc"]',
     '.lark-ck-editor',
     '.doc-content',
     '.suite-doc-content',
@@ -30,25 +31,38 @@ function parseFeishu() {
     try {
       const el = document.querySelector(sel);
       if (!el) continue;
+      const links = [];
       const blocks = parseFeishuBlocks(el, links);
-      if (blocks.length > 0) return { type: 'feishu', title, blocks, links };
+      if (blocks.length > (best ? best.blocks.length : 0)) {
+        best = { blocks, links };
+      }
     } catch (_) {}
   }
 
-  // ── 策略二：找拥有最多 data-block-type 直接子节点的父元素 ───────────────
-  const allBlockEls = [...document.querySelectorAll('[data-block-type]')];
-  if (allBlockEls.length > 0) {
-    const parentMap = new Map();
-    for (const el of allBlockEls) {
-      const p = el.parentElement;
-      if (p) parentMap.set(p, (parentMap.get(p) || 0) + 1);
+  // ── 策略二：找拥有最多 data-block-type 直接子节点的 DOM 元素 ─────────────
+  try {
+    const allBlockEls = [...document.querySelectorAll('[data-block-type]')];
+    if (allBlockEls.length > 0) {
+      const parentMap = new Map();
+      for (const el of allBlockEls) {
+        const p = el.parentElement;
+        if (p) parentMap.set(p, (parentMap.get(p) || 0) + 1);
+      }
+      const [bestContainer] = [...parentMap.entries()]
+        .reduce((a, b) => b[1] > a[1] ? b : a);
+      const links = [];
+      const blocks = parseFeishuBlocks(bestContainer, links);
+      if (blocks.length > (best ? best.blocks.length : 0)) {
+        best = { blocks, links };
+      }
     }
-    const best = [...parentMap.entries()].reduce((a, b) => b[1] > a[1] ? b : a);
-    const blocks = parseFeishuBlocks(best[0], links);
-    if (blocks.length > 0) return { type: 'feishu', title, blocks, links };
+  } catch (_) {}
+
+  if (!best || best.blocks.length === 0) {
+    throw new Error('无法找到飞书文档内容，请确保页面已完全加载后重试');
   }
 
-  throw new Error('无法找到飞书文档内容，请确保页面已完全加载后重试');
+  return { type: 'feishu', title, blocks: best.blocks, links: best.links };
 }
 
 function getFeishuTitle() {
@@ -66,16 +80,26 @@ function getFeishuTitle() {
   return document.title.replace(/- 飞书.*/g, '').replace(/\| 飞书.*/g, '').trim();
 }
 
-// ── 核心修复：只处理直接子元素，避免嵌套块被重复计入 ──────────────────────
+// ── 核心：找"块父 === 容器"的块，避免嵌套块被重复处理 ─────────────────────
+// 同时支持中间有普通 div 包装的情况（不只限于直接子节点）
 
 function parseFeishuBlocks(container, links) {
   const blocks = [];
   let listBuffer = { type: null, items: [] };
 
-  // 优先取有 data-block-type 的直接子节点
-  let elements = [...container.children].filter(el => el.hasAttribute('data-block-type'));
+  const containerIsBlock = container.hasAttribute('data-block-type');
 
-  // 降级：取有块类名的直接子节点
+  // 找属于"本容器一级"的 data-block-type 元素
+  // 规则：el 的最近块祖先 === container（containerIsBlock 时）
+  //       或：el 在 container 内且没有块祖先（container 不是块时）
+  let elements = [...container.querySelectorAll('[data-block-type]')].filter(el => {
+    const parentBlock = el.parentElement && el.parentElement.closest('[data-block-type]');
+    if (containerIsBlock) return parentBlock === container;
+    // 非块容器：el 的块祖先必须不在 container 内部
+    return !parentBlock || !container.contains(parentBlock);
+  });
+
+  // 降级：无 data-block-type 时用 class 检测（直接子节点）
   if (elements.length === 0) {
     elements = [...container.children].filter(el => {
       const cls = el.className || '';
@@ -85,10 +109,8 @@ function parseFeishuBlocks(container, links) {
     });
   }
 
-  // 最后降级：全部直接子节点
-  if (elements.length === 0) {
-    elements = [...container.children];
-  }
+  // 最终降级：所有直接子节点
+  if (elements.length === 0) elements = [...container.children];
 
   for (const el of elements) {
     const { type: blockType } = getFeishuBlockType(el);
@@ -127,37 +149,38 @@ function getFeishuBlockType(el) {
   const cls = el.className || '';
   const blockType = el.getAttribute('data-block-type') || '';
 
-  // data-block-type 最可靠
   if (blockType) {
     const typeMap = {
-      'heading1': { type: 'h1' },
-      'heading2': { type: 'h2' },
-      'heading3': { type: 'h3' },
-      'heading4': { type: 'h4' },
-      'heading5': { type: 'h5' },
-      'heading6': { type: 'h6' },
-      'heading7': { type: 'h6' },
-      'heading8': { type: 'h6' },
-      'heading9': { type: 'h6' },
-      'text':     { type: 'paragraph' },
-      'paragraph':{ type: 'paragraph' },
-      'quote':    { type: 'quote' },
-      'code':     { type: 'code' },
-      'callout':  { type: 'callout' },
-      'divider':  { type: 'divider' },
-      'bullet':   { type: 'bulleted_list' },
-      'ordered':  { type: 'numbered_list' },
-      'image':    { type: 'image' },
-      'video':    { type: 'video' },
-      'table':    { type: 'table' },
-      'embed':    { type: 'embed' },
+      'heading1':  { type: 'h1' },
+      'heading2':  { type: 'h2' },
+      'heading3':  { type: 'h3' },
+      'heading4':  { type: 'h4' },
+      'heading5':  { type: 'h5' },
+      'heading6':  { type: 'h6' },
+      'heading7':  { type: 'h6' },
+      'heading8':  { type: 'h6' },
+      'heading9':  { type: 'h6' },
+      'text':      { type: 'paragraph' },
+      'paragraph': { type: 'paragraph' },
+      'quote':     { type: 'quote' },
+      'code':      { type: 'code' },
+      'callout':   { type: 'callout' },
+      'divider':   { type: 'divider' },
+      'bullet':    { type: 'bulleted_list' },
+      'ordered':   { type: 'numbered_list' },
+      'todo':      { type: 'todo' },
+      'image':     { type: 'image' },
+      'video':     { type: 'video' },
+      'table':     { type: 'table' },
+      'embed':     { type: 'embed' },
+      'bookmark':  { type: 'bookmark' },
     };
     if (typeMap[blockType]) return typeMap[blockType];
-    // 未知 block type（page / column / table_row 等容器）→ 跳过
+    // 容器类型（page/doc/table_row/table_cell/column 等）直接跳过
     return { type: null };
   }
 
-  // 通过 class 检测（兜底）
+  // class 兜底
   if (cls.includes('heading1') || cls.includes('heading-1') || cls.includes(' h1')) return { type: 'h1' };
   if (cls.includes('heading2') || cls.includes('heading-2') || cls.includes(' h2')) return { type: 'h2' };
   if (cls.includes('heading3') || cls.includes('heading-3') || cls.includes(' h3')) return { type: 'h3' };
@@ -175,7 +198,6 @@ function getFeishuBlockType(el) {
   if (cls.includes('table') && !cls.includes('table-row') && !cls.includes('table-cell')) return { type: 'table' };
   if (cls.includes('paragraph') || cls.includes('text-block')) return { type: 'paragraph' };
 
-  // 标准 HTML 标签
   const tag = el.tagName ? el.tagName.toLowerCase() : '';
   if (tag === 'h1') return { type: 'h1' };
   if (tag === 'h2') return { type: 'h2' };
@@ -195,12 +217,8 @@ function getFeishuBlockType(el) {
 
 function parseFeishuBlock(el, blockType, links) {
   switch (blockType) {
-    case 'h1':
-    case 'h2':
-    case 'h3':
-    case 'h4':
-    case 'h5':
-    case 'h6':
+    case 'h1': case 'h2': case 'h3':
+    case 'h4': case 'h5': case 'h6':
       return { type: blockType, content: extractFeishuText(el, links) };
 
     case 'paragraph':
@@ -211,8 +229,7 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'code': {
       const language = el.getAttribute('data-language') ||
-        el.querySelector('[class*="lang"]')?.textContent?.trim() ||
-        'plaintext';
+        el.querySelector('[class*="lang"]')?.textContent?.trim() || 'plaintext';
       const codeEl = el.querySelector('pre') || el.querySelector('code') || el;
       return { type: 'code', language, content: codeEl.textContent };
     }
@@ -221,8 +238,15 @@ function parseFeishuBlock(el, blockType, links) {
       const iconEl = el.querySelector('[class*="icon"]') || el.querySelector('[class*="emoji"]');
       const icon = iconEl ? iconEl.textContent.trim() : '💡';
       const clone = el.cloneNode(true);
-      if (clone.querySelector('[class*="icon"]')) clone.querySelector('[class*="icon"]').remove();
+      const cloneIcon = clone.querySelector('[class*="icon"]') || clone.querySelector('[class*="emoji"]');
+      if (cloneIcon) cloneIcon.remove();
       return { type: 'callout', icon, content: extractFeishuText(clone, links) };
+    }
+
+    case 'todo': {
+      const checked = el.querySelector('[class*="checkbox"][class*="checked"]') !== null ||
+                      el.querySelector('input[type="checkbox"]:checked') !== null;
+      return { type: 'todo', checked, content: extractFeishuText(el, links) };
     }
 
     case 'divider':
@@ -231,36 +255,35 @@ function parseFeishuBlock(el, blockType, links) {
     case 'image': {
       const imgEl = el.querySelector('img');
       if (!imgEl) return null;
-      const current    = imgEl.currentSrc || '';
-      const domSrc     = imgEl.src || '';
-      const attrSrc    = imgEl.getAttribute('src') || '';
-      const srcset     = imgEl.getAttribute('srcset') || imgEl.srcset || '';
-      const srcsetFirst = srcset ? srcset.split(',')[0].trim().split(/\s+/)[0] : '';
-      const src = [current, domSrc, attrSrc, srcsetFirst]
+      const src = [imgEl.currentSrc, imgEl.src, imgEl.getAttribute('src'),
+        (imgEl.getAttribute('srcset') || '').split(',')[0].trim().split(/\s+/)[0]]
         .find(s => s && !s.startsWith('blob:') && !s.startsWith('data:')) || '';
       const captionEl = el.querySelector('[class*="caption"]') || el.querySelector('figcaption');
-      const caption = captionEl ? captionEl.textContent.trim() : '';
-      return src ? { type: 'image', url: src, caption } : null;
+      return src ? { type: 'image', url: src, caption: captionEl?.textContent.trim() || '' } : null;
     }
 
     case 'video': {
       const videoEl  = el.querySelector('video');
       const iframeEl = el.querySelector('iframe');
-      const url = videoEl?.getAttribute('src') || iframeEl?.getAttribute('src') || '';
-      const thumbnailUrl = videoEl?.getAttribute('poster') || el.querySelector('img')?.getAttribute('src') || '';
-      return { type: 'video', url, thumbnailUrl };
+      return {
+        type: 'video',
+        url: videoEl?.getAttribute('src') || iframeEl?.getAttribute('src') || '',
+        thumbnailUrl: videoEl?.getAttribute('poster') || el.querySelector('img')?.getAttribute('src') || '',
+      };
     }
 
     case 'table':
       return parseFeishuTable(el, links);
 
-    case 'embed': {
+    case 'embed':
+    case 'bookmark': {
       const linkEl   = el.querySelector('a');
       const iframeEl = el.querySelector('iframe');
       const url = (linkEl && linkEl.getAttribute('href')) ||
                   (iframeEl && iframeEl.getAttribute('src')) || '';
       const titleEl = el.querySelector('[class*="title"]');
-      return url ? { type: 'embed', url, title: titleEl ? titleEl.textContent.trim() : '嵌入内容' } : null;
+      const text    = titleEl ? titleEl.textContent.trim() : (linkEl?.textContent.trim() || '嵌入内容');
+      return url ? { type: 'embed', url, title: text } : null;
     }
 
     default:
@@ -270,7 +293,6 @@ function parseFeishuBlock(el, blockType, links) {
 
 function parseFeishuTable(el, links) {
   const rows = [];
-
   const trEls = el.querySelectorAll('tr');
   if (trEls.length > 0) {
     trEls.forEach((tr, idx) => {
@@ -290,7 +312,6 @@ function parseFeishuTable(el, links) {
       if (cells.length > 0) rows.push({ cells, isHeader: idx === 0 });
     });
   }
-
   return rows.length > 0 ? { type: 'table', rows } : null;
 }
 
@@ -300,7 +321,6 @@ function extractFeishuText(el, links) {
 
 function convertFeishuNodeToHtml(node, links) {
   let html = '';
-
   for (const child of node.childNodes) {
     if (child.nodeType === Node.TEXT_NODE) {
       html += escapeFeishuHtml(child.textContent);
@@ -346,7 +366,6 @@ function convertFeishuNodeToHtml(node, links) {
     if (isStrike) result = `<s>${result}</s>`;
     html += result;
   }
-
   return html;
 }
 

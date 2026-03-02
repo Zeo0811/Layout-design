@@ -314,7 +314,20 @@ function parseNotionImage(el) {
   const imgEl = el.querySelector('img');
   if (!imgEl) return null;
 
-  const src = imgEl.getAttribute('src') || '';
+  // currentSrc = 浏览器实际加载的 URL（经 srcset 选择后的绝对 URL）
+  // img.src    = JS 属性，给出绝对 URL（比 getAttribute 更可靠）
+  // 跳过 blob: 地址（本地缓存，无法被外部 fetch 重取）
+  const current  = imgEl.currentSrc || '';
+  const domSrc   = imgEl.src || '';
+  const attrSrc  = imgEl.getAttribute('src') || '';
+  const srcset   = imgEl.getAttribute('srcset') || imgEl.srcset || '';
+  const srcsetFirst = srcset ? srcset.split(',')[0].trim().split(/\s+/)[0] : '';
+
+  const src = [current, domSrc, attrSrc, srcsetFirst]
+    .find(s => s && !s.startsWith('blob:') && !s.startsWith('data:')) || '';
+
+  if (!src) return null;
+
   const captionEl =
     el.querySelector('[placeholder="Add a caption"]') ||
     el.querySelector('[class*="caption"]');

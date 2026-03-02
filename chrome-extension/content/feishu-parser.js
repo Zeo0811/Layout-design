@@ -192,7 +192,14 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'image': {
       const imgEl = el.querySelector('img');
-      const src = imgEl ? (imgEl.getAttribute('src') || '') : '';
+      if (!imgEl) return null;
+      const current  = imgEl.currentSrc || '';
+      const domSrc   = imgEl.src || '';
+      const attrSrc  = imgEl.getAttribute('src') || '';
+      const srcset   = imgEl.getAttribute('srcset') || imgEl.srcset || '';
+      const srcsetFirst = srcset ? srcset.split(',')[0].trim().split(/\s+/)[0] : '';
+      const src = [current, domSrc, attrSrc, srcsetFirst]
+        .find(s => s && !s.startsWith('blob:') && !s.startsWith('data:')) || '';
       const captionEl = el.querySelector('[class*="caption"]') || el.querySelector('figcaption');
       const caption = captionEl ? captionEl.textContent.trim() : '';
       return src ? { type: 'image', url: src, caption } : null;

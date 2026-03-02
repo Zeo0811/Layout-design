@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Notion/飞书 转公众号排版",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "将Notion/飞书文档自动排版转换为微信公众号格式，支持图片Base64、表格、一键复制",
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": [
     "activeTab",
     "scripting",
@@ -16,7 +19,10 @@
     "https://*.larksuite.com/*",
     "https://*.amazonaws.com/*",
     "https://*.feishucdn.com/*",
-    "https://*.byteimg.com/*"
+    "https://*.byteimg.com/*",
+    "https://*.larksuitecdn.com/*",
+    "https://*.cloudfront.net/*",
+    "https://*.bytescm.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",

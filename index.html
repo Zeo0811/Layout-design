@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>十字路口排版工具</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ── Tab 导航 ── */
+    .tab-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 0;
+    }
+    .tab-nav .brand {
+      font-size: 15px;
+      font-weight: bold;
+      color: #407600;
+      margin-right: 32px;
+      white-space: nowrap;
+      letter-spacing: .02em;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 16px 20px;
+      font-size: 14px;
+      color: #888;
+      border-bottom: 3px solid transparent;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+      outline: none;
+    }
+    .tab-btn:hover { color: #407600; }
+    .tab-btn.active {
+      color: #407600;
+      border-bottom-color: #407600;
+      font-weight: 600;
+    }
+
+    /* ── 内容区 ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ────────────────────────────────
+       Tab 1  样式预览
+    ──────────────────────────────── */
+    #panel-preview {
+      padding: 40px 20px;
+    }
+    .page-title {
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .page-sub {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 40px;
+    }
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px)  { .grid { grid-template-columns: 1fr; } body { padding: 0; } #panel-preview { padding: 24px 12px; } }
+    .demo-block {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      min-width: 0;
+      overflow: hidden;
+    }
+    .demo-label {
+      display: inline-block;
+      background: #f4f4f4;
+      border: 1px solid #e0e0e0;
+      color: #666;
+      font-size: 11px;
+      font-family: monospace;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+    .divider-line { border: none; border-top: 1px dashed #ddd; margin: 0 0 16px 0; }
+
+    /* ────────────────────────────────
+       Tab 2  安装教程
+    ──────────────────────────────── */
+    #panel-guide {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    .guide-hero {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .guide-hero h1 {
+      font-size: 26px;
+      font-weight: bold;
+      color: #222;
+      margin: 0 0 10px;
+    }
+    .guide-hero p {
+      font-size: 15px;
+      color: #888;
+      margin: 0;
+    }
+    .guide-hero .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #f0f6e8;
+      color: #407600;
+      border: 1px solid #c8e09b;
+    }
+
+    /* 章节标题 */
+    .guide-section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #222;
+      margin: 48px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #407600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .guide-section-title .num {
+      width: 28px;
+      height: 28px;
+      background: #407600;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* 步骤卡片 */
+    .step-list { display: flex; flex-direction: column; gap: 16px; }
+    .step-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.07);
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-card .step-num {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      background: #f0f6e8;
+      border: 2px solid #407600;
+      border-radius: 50%;
+      color: #407600;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-card .step-body { flex: 1; min-width: 0; }
+    .step-card .step-body h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #222;
+    }
+    .step-card .step-body p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+      line-height: 1.7;
+    }
+    .step-card .step-body .tip {
+      margin-top: 8px;
+      background: #f0f6e8;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #407600;
+    }
+    .step-card .step-body .code-path {
+      display: inline-block;
+      background: #f4f4f4;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 1px 7px;
+      color: #333;
+      word-break: break-all;
+    }
+
+    /* 图示占位 */
+    .step-img {
+      margin-top: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e8e8e8;
+    }
+    .step-img-inner {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e8f0d8 100%);
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-img-inner .icon { font-size: 32px; }
+
+    /* 平台 badge */
+    .platform-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .platform-badge {
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .platform-badge.feishu { background: #fff2e8; color: #d46b08; border-color: #ffd591; }
+    .platform-badge.notion { background: #f0f0f0; color: #333; border-color: #d9d9d9; }
+
+    /* 提示框 */
+    .alert {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 20px 0;
+      font-size: 14px;
+      line-height: 1.7;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert.warning {
+      background: #fffbe6;
+      border: 1px solid #ffe58f;
+      color: #7c5600;
+    }
+    .alert.info {
+      background: #f0f6e8;
+      border: 1px solid #b7d87c;
+      color: #3d6300;
+    }
+    .alert .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* FAQ */
+    .faq-list { display: flex; flex-direction: column; gap: 12px; }
+    .faq-item {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+    }
+    .faq-q {
+      font-weight: 600;
+      color: #222;
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+    }
+    .faq-q .q-icon { color: #407600; flex-shrink: 0; }
+    .faq-a {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.7;
+      padding-left: 20px;
+    }
+
+    /* 下载按钮 */
+    .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #407600;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 8px;
+      transition: background .2s;
+    }
+    .dl-btn:hover { background: #336000; }
+  </style>
+</head>
+<body>
+
+<!-- ── 顶部 Tab 导航 ── -->
+<nav class="tab-nav">
+  <span class="brand">十字路口排版</span>
+  <button class="tab-btn active" onclick="switchTab('preview')">样式预览</button>
+  <button class="tab-btn" onclick="switchTab('guide')">插件安装教程</button>
+</nav>
+
+<!-- ══════════════════════════════════
+     Tab 1  样式预览
+══════════════════════════════════ -->
+<div class="tab-panel active" id="panel-preview">
+  <div class="page-title">十字路口排版 · 样式预览</div>
+  <div class="page-sub">以下为插件转换后粘贴到微信公众号的实际渲染效果</div>
+  <div class="grid" id="preview-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════
+     Tab 2  安装教程
+══════════════════════════════════ -->
+<div class="tab-panel" id="panel-guide">
+
+  <div class="guide-hero">
+    <h1>十字路口排版插件</h1>
+    <p>一键将飞书 / Notion 文章转换为微信公众号排版格式</p>
+    <div class="badge-row">
+      <span class="badge">🌐 Chrome 扩展</span>
+      <span class="badge">📄 支持飞书文档</span>
+      <span class="badge">📝 支持 Notion</span>
+      <span class="badge">✅ 免费开源</span>
+    </div>
+  </div>
+
+  <!-- 第一部分：下载安装 -->
+  <div class="guide-section-title">
+    <span class="num">1</span>
+    下载 &amp; 安装插件
+  </div>
+
+  <div class="alert info">
+    <span class="alert-icon">ℹ️</span>
+    <span>目前插件尚未上架 Chrome 应用商店，需要通过「开发者模式」手动安装，整个过程约 1 分钟。</span>
+  </div>
+
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>下载插件压缩包</h3>
+        <p>点击下方按钮，下载最新版 <span class="code-path">chrome-extension.zip</span>。</p>
+        <a class="dl-btn" href="https://github.com/Zeo0811/Layout-design/raw/main/chrome-extension.zip" target="_blank">
+          ⬇️ 下载 chrome-extension.zip
+        </a>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>解压文件</h3>
+        <p>将下载的 zip 包解压到任意位置。解压后你会看到一个 <span class="code-path">chrome-extension/</span> 文件夹，里面包含 <span class="code-path">manifest.json</span> 等文件。</p>
+        <div class="tip">⚠️ 请保留解压后的文件夹，删除它会导致插件失效。</div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>打开 Chrome 扩展管理页</h3>
+        <p>在 Chrome 地址栏输入并回车：</p>
+        <p style="margin-top:8px;"><span class="code-path">chrome://extensions/</span></p>
+        <div class="step-img">
+          <div class="step-img-inner">
+            <span class="icon">🌐</span>
+            <span>Chrome 扩展管理页（地址栏输入 chrome://extensions/）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>开启「开发者模式」</h3>
+        <p>在扩展管理页右上角，找到「<strong>开发者模式</strong>」开关并打开（开关变蓝即可）。</p>
+        <div class="step-img">
+          <div class="step-img-inner">
+            <span class="icon">🔧</span>
+            <span>右上角开启「开发者模式」开关</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>加载已解压的扩展程序</h3>
+        <p>开启开发者模式后，左上角会出现「<strong>加载已解压的扩展程序</strong>」按钮，点击它，在弹出的文件选择框中选择刚刚解压的 <span class="code-path">chrome-extension/</span> 文件夹（不是 zip 文件本身）。</p>
+        <div class="step-img">
+          <div class="step-img-inner">
+            <span class="icon">📂</span>
+            <span>选择解压后的 chrome-extension/ 文件夹</span>
+          </div>
+        </div>
+        <div class="tip">✅ 安装成功后，扩展管理页会出现「十字路口排版」卡片，Chrome 工具栏右侧也会显示插件图标。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第二部分：使用方法 -->
+  <div class="guide-section-title">
+    <span class="num">2</span>
+    使用方法
+  </div>
+
+  <div class="step-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>打开需要转换的文章</h3>
+        <p>在 Chrome 中打开你想要转换的飞书文档或 Notion 页面。</p>
+        <div class="platform-row">
+          <span class="platform-badge feishu">🦅 飞书文档</span>
+          <span class="platform-badge notion">⬜ Notion Page</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>点击插件图标</h3>
+        <p>点击 Chrome 工具栏右侧的插件图标（叶子形状 🌿），弹出插件面板。</p>
+        <p style="margin-top:8px;color:#888;font-size:13px;">如果找不到图标，点击工具栏的拼图图标 🧩 → 在列表中点击「十字路口排版」旁边的图钉图标固定到工具栏。</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>点击「一键转换」</h3>
+        <p>在插件面板中，点击「<strong>一键转换</strong>」按钮。插件会自动解析当前页面内容并生成微信公众号格式的 HTML。</p>
+        <div class="step-img">
+          <div class="step-img-inner">
+            <span class="icon">⚡</span>
+            <span>点击「一键转换」，稍等片刻即可完成转换</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>复制并粘贴到公众号编辑器</h3>
+        <p>转换完成后，点击「<strong>复制内容</strong>」按钮。然后打开微信公众号后台编辑器，直接 <span class="code-path">Ctrl + V</span>（Mac: <span class="code-path">⌘ + V</span>）粘贴即可。</p>
+        <div class="tip">✅ 粘贴后样式会自动应用，包括标题、正文、引用块、代码块、表格等全部格式。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 支持的内容类型 -->
+  <div class="guide-section-title">
+    <span class="num">3</span>
+    支持的内容类型
+  </div>
+
+  <div style="background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 1px 6px rgba(0,0,0,.07);">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="border-bottom:2px solid #f0f0f0;">
+          <th style="text-align:left;padding:8px 12px;color:#888;font-weight:600;width:40%;">内容类型</th>
+          <th style="text-align:center;padding:8px 12px;color:#888;font-weight:600;">飞书</th>
+          <th style="text-align:center;padding:8px 12px;color:#888;font-weight:600;">Notion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #f5f5f5;">
+          <td style="padding:10px 12px;color:#333;">标题 H1–H6</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
+          <td style="padding:10px 12px;color:#333;">正文段落（加粗 / 斜体 / 删除线 / 行内代码）</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;">
+          <td style="padding:10px 12px;color:#333;">有序 / 无序列表</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
+          <td style="padding:10px 12px;color:#333;">待办事项（Todo）</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;">
+          <td style="padding:10px 12px;color:#333;">引用块 / 高亮块（Callout）</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
+          <td style="padding:10px 12px;color:#333;">代码块（带语言标识）</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;">
+          <td style="padding:10px 12px;color:#333;">表格</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
+          <td style="padding:10px 12px;color:#333;">图片</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f5f5f5;">
+          <td style="padding:10px 12px;color:#333;">折叠块（Toggle）</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+        <tr style="background:#fafafa;">
+          <td style="padding:10px 12px;color:#333;">分割线 / 脚注 / 嵌入链接</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 常见问题 -->
+  <div class="guide-section-title">
+    <span class="num">4</span>
+    常见问题
+  </div>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q"><span class="q-icon">Q</span> 为什么点击「一键转换」没有反应？</div>
+      <div class="faq-a">请确认当前页面是飞书文档或 Notion 页面，插件不支持其他网站。如果是首次使用，刷新页面后再试。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q"><span class="q-icon">Q</span> Chrome 提示「此扩展程序可能已损坏」怎么办？</div>
+      <div class="faq-a">这是因为插件未上架应用商店的正常提示，不影响使用。点击「取消」忽略即可。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q"><span class="q-icon">Q</span> 粘贴到公众号后样式不对？</div>
+      <div class="faq-a">请确保使用的是公众号后台的「富文本编辑器」，不要使用「源码编辑器」模式。部分样式（如自定义字体）在公众号预览中会降级为系统字体，属于正常现象。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q"><span class="q-icon">Q</span> 图片显示不出来？</div>
+      <div class="faq-a">飞书图片需要登录授权，粘贴后在公众号编辑器中会自动上传为微信 CDN 图片，首次粘贴需等待几秒。Notion 图片通过 CDN 直链处理，一般可以正常显示。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q"><span class="q-icon">Q</span> Chrome 更新后插件消失了？</div>
+      <div class="faq-a">重新打开 <span class="code-path">chrome://extensions/</span> 页面，点击「加载已解压的扩展程序」重新加载即可（之前解压的文件夹不要删除）。</div>
+    </div>
+  </div>
+
+</div><!-- /panel-guide -->
+
+<!-- ── Tab 切换逻辑 ── -->
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (name === 'preview' && i === 0) || (name === 'guide' && i === 1));
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+<!-- ── 样式预览数据（Tab 1） ── -->
+<script>
+const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
+const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
+
+const S = {
+  wrapper:             `font-family:${FONT};font-size:15px;color:rgb(63,63,63);line-height:1.75;letter-spacing:0.1em;word-wrap:break-word;`,
+  h1:                  `display:block;line-height:1.5;font-size:24px;font-family:${FONT};font-weight:bold;margin:80px auto 40px auto;width:fit-content;color:#407600;text-align:center;padding:0 1em;border-bottom:8px solid #407600;`,
+  h2:                  `display:block;line-height:1.5;font-family:${FONT};font-size:20px;font-weight:bold;margin:40px auto;width:fit-content;color:#222222;text-align:center;padding:0 0.2em;`,
+  h3:                  `display:block;line-height:1.5;font-family:${FONT};font-size:17px;font-weight:bold;margin:40px 0;width:fit-content;color:#222222;text-align:left;`,
+  h4:                  `display:block;line-height:1.5;font-family:${FONT};font-size:16px;font-weight:bold;margin:1em 0 .5em;color:#222222;`,
+  h5:                  `display:block;line-height:1.5;font-family:${FONT};font-size:15px;font-weight:bold;margin:.8em 0 .4em;color:#222222;`,
+  h6:                  `display:block;line-height:1.5;font-family:${FONT};font-size:14px;font-weight:bold;margin:.7em 0 .35em;color:#555555;`,
+  p:                   `text-align:left;line-height:26px;font-family:${FONT};margin:10px 0;letter-spacing:0.1em;white-space:pre-line;color:rgb(63,63,63);font-size:15px;`,
+  strong:              `word-break:break-all;font-weight:600;color:#407600;`,
+  em:                  `font-style:italic;`,
+  code_inline:         `background:rgba(135,131,120,.15);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:#222222;font-family:${MONO};`,
+  s:                   `text-decoration:line-through;color:#888888;`,
+  blockquote_wrapper:  `line-height:26px;word-spacing:normal;hyphens:auto;text-align:left;outline:0;max-width:100%;border-top:none;border-right:none;border-bottom:none;display:block;overflow:auto;padding:10px;margin:20px 0;border-left:8px solid #222222;background-color:#f5f5f5;font-family:${FONT};`,
+  blockquote_text:     `text-align:left;line-height:26px;font-family:${FONT};margin:0;letter-spacing:0.1em;color:rgb(63,63,63);font-size:15px;`,
+  callout_wrapper:     `font-size:15px;white-space:normal;margin:20px 0;color:rgba(0,0,0,.9);font-family:${FONT};line-height:26px;background-color:#fff;border-bottom:1px dashed #222222;border-right:1px dashed #222222;`,
+  callout_header:      `width:90%;padding-right:10px;padding-left:10px;border-style:solid;border-width:1px 0 0 10px;border-color:#222222;`,
+  callout_content:     `padding:0 12px 15px;color:#3f3f3f;letter-spacing:0.1em;`,
+  code_wrapper:        `margin:20px 10px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:${MONO};`,
+  code_lang_bar:       `font-size:11px;color:#999;font-family:${MONO};padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
+  code_pre:            `margin:0;padding:0;overflow-x:auto;background:transparent;`,
+  code_text:           `font-family:${MONO};font-size:14px;line-height:1.65;white-space:pre;word-break:normal;display:block;color:#333;`,
+  hr:                  `border-style:solid;border-width:1px 0 0;border-color:#797979;margin:15px 0;`,
+  ul:                  `padding-left:1.5em;font-size:15px;line-height:1.75;font-family:${FONT};vertical-align:baseline;white-space:normal;color:rgb(63,63,63);margin-bottom:8px;margin-top:0;`,
+  ol:                  `padding-left:1.5em;font-size:15px;line-height:26px;font-family:${FONT};vertical-align:baseline;white-space:normal;color:rgb(63,63,63);margin-bottom:8px;margin-top:0;`,
+  li_ul:               `font-size:15px;line-height:26px;font-family:${FONT};list-style-position:outside;list-style-type:disc;`,
+  li_ol:               `font-size:15px;line-height:1.75;font-family:${FONT};list-style-position:outside;list-style-type:decimal;`,
+  li_p:                `font-family:inherit;vertical-align:baseline;margin:10px 0;`,
+  img_wrapper:         `margin:15px 0;text-align:center;`,
+  img:                 `max-width:100%;height:auto;border-radius:10px;display:inline-block;`,
+  img_caption:         `font-size:12px;color:#888888;margin-top:5px;text-align:center;`,
+  video_wrapper:       `margin:1em 0;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
+  video_label:         `color:rgba(255,255,255,.45);font-size:14px;`,
+  toggle_summary:      `font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${FONT};`,
+  toggle_content:      `padding-left:15px;border-left:2px solid rgba(0,0,0,.15);margin-left:4px;`,
+  table_wrapper:       `overflow-x:auto;margin:1em 0;`,
+  table:               `border-collapse:collapse;width:100%;font-size:15px;line-height:1.6;font-family:${FONT};`,
+  th:                  `background:rgba(0,0,0,.05);padding:7px 13px;border:1px solid rgba(0,0,0,.15);font-weight:bold;text-align:left;color:#222222;`,
+  td:                  `padding:7px 13px;border:1px solid rgba(0,0,0,.15);color:#222222;`,
+  td_even:             `padding:7px 13px;border:1px solid rgba(0,0,0,.15);color:#222222;background:rgba(0,0,0,.02);`,
+  embed_wrapper:       `margin:1em 0;border:1px solid rgba(0,0,0,.1);padding:11px 15px;`,
+  embed_label:         `font-size:12px;color:#888888;margin-bottom:4px;`,
+  embed_link:          `font-size:13px;text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;`,
+  footnotes_wrapper:   `margin-top:30px;padding-top:15px;border-top:1px solid rgba(0,0,0,.15);`,
+  footnotes_title:     `font-size:12px;font-weight:bold;color:#888888;margin-bottom:.6em;text-transform:uppercase;letter-spacing:1px;`,
+  footnote_item:       `font-size:12px;color:#555555;line-height:1.7;margin:.3em 0;word-break:break-all;`,
+  footnote_num:        `color:#222222;font-weight:bold;margin-right:4px;`,
+  todo_check:          `word-break:break-all;font-weight:600;color:#407600;`,
+};
+
+function card(label, html) {
+  return `<div class="demo-block">
+    <span class="demo-label">${label}</span>
+    <hr class="divider-line"/>
+    <section style="${S.wrapper}">${html}</section>
+  </div>`;
+}
+
+const dot = c => `<section style="width:10px;height:10px;border-radius:50%;background-color:${c};font-size:0;line-height:0;overflow:hidden;">&nbsp;</section>`;
+const macBar = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;">${dot('#ed6c60')}${dot('#f7c151')}${dot('#64c856')}</section>`;
+
+const blocks = [
+
+  card('H1 · 一级标题',
+    `<section style="${S.h1}">这是一级标题 H1</section>`),
+
+  card('H2 · 二级标题',
+    `<section style="${S.h2}">这是二级标题 H2</section>`),
+
+  card('H3 · 三级标题',
+    `<section style="${S.h3}">这是三级标题 H3</section>`),
+
+  card('H4 · 四级标题',
+    `<section style="${S.h4}">这是四级标题 H4</section>`),
+
+  card('H5 · 五级标题',
+    `<section style="${S.h5}">这是五级标题 H5</section>`),
+
+  card('H6 · 六级标题',
+    `<section style="${S.h6}">这是六级标题 H6</section>`),
+
+  card('paragraph · 正文段落',
+    `<p style="${S.p}">这是一段正文内容，展示基础段落样式。字体使用 Optima / PingFang SC，字号 15px，行高 26px，字间距 0.1em。适合大段阅读文字。</p>`),
+
+  card('paragraph · 行内格式（加粗 / 斜体 / 删除线 / 行内代码）',
+    `<p style="${S.p}">这句话包含 <strong style="${S.strong}">加粗文字</strong>，也有 <em style="${S.em}">斜体文字</em>，还有 <s style="${S.s}">删除线文字</s>，以及 <code style="${S.code_inline}">行内代码</code>，混排效果如上。</p>`),
+
+  card('quote · 引用块',
+    `<section style="${S.blockquote_wrapper}"><p style="${S.blockquote_text}">这是一段引用内容，左侧有 8px 黑色粗边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>`),
+
+  card('callout · 高亮块',
+    `<section style="${S.callout_wrapper}">
+      <section><section style="${S.callout_header}">💡</section></section>
+      <section style="${S.callout_content}">这是一个 Callout 高亮块，带有左侧粗边框和顶部图标区域，适合强调注意事项或提示信息。</section>
+    </section>`),
+
+  card('code · 代码块',
+    `<section style="${S.code_wrapper}">
+      ${macBar}
+      <div style="${S.code_lang_bar}">javascript</div>
+      <pre style="${S.code_pre}"><code style="${S.code_text}">function hello(name) {
+  console.log('Hello, ' + name + '!');
+  return name.toUpperCase();
+}</code></pre>
+    </section>`),
+
+  card('divider · 分割线',
+    `<p style="${S.p}">分割线上方的正文内容。</p>
+     <section style="${S.hr}"></section>
+     <p style="${S.p}">分割线下方的正文内容。</p>`),
+
+  card('bulleted_list · 无序列表',
+    `<ul style="${S.ul}">
+      <li style="${S.li_ul}"><p style="${S.li_p}">第一个列表项，圆点样式</p></li>
+      <li style="${S.li_ul}"><p style="${S.li_p}">第二个列表项，正文字号</p></li>
+      <li style="${S.li_ul}"><p style="${S.li_p}">第三个列表项，支持 <strong style="${S.strong}">加粗</strong> 等行内格式</p></li>
+    </ul>`),
+
+  card('numbered_list · 有序列表',
+    `<ol style="${S.ol}">
+      <li style="${S.li_ol}"><p style="${S.li_p}">第一步：打开飞书文档</p></li>
+      <li style="${S.li_ol}"><p style="${S.li_p}">第二步：点击插件图标</p></li>
+      <li style="${S.li_ol}"><p style="${S.li_p}">第三步：一键转换并复制</p></li>
+    </ol>`),
+
+  card('todo · 待办事项',
+    `<p style="${S.p}">☐ 未完成的待办事项</p>
+     <p style="${S.p}">✅ 已完成的待办事项</p>`),
+
+  card('image · 图片',
+    `<section style="${S.img_wrapper}">
+      <img src="https://picsum.photos/seed/demo/600/300" style="${S.img}" alt="示例图片" />
+      <p style="${S.img_caption}">这是图片的说明文字（caption）</p>
+    </section>`),
+
+  card('video · 视频占位',
+    `<section style="${S.video_wrapper}">
+      <p style="${S.video_label}">📹 视频内容请前往原文查看</p>
+    </section>`),
+
+  card('toggle · 折叠块',
+    `<section style="${S.toggle_summary}">▶ 折叠块标题（点击展开）</section>
+     <section style="${S.toggle_content}">
+       <p style="${S.p}">这是折叠块内部的内容，在微信公众号中会展开显示，左侧有细灰线标示层级。</p>
+     </section>`),
+
+  card('table · 表格',
+    `<section style="${S.table_wrapper}">
+      <table style="${S.table}">
+        <tr>
+          <td style="${S.th}">平台</td>
+          <td style="${S.th}">支持格式</td>
+          <td style="${S.th}">图片处理</td>
+        </tr>
+        <tr>
+          <td style="${S.td_even}">飞书</td>
+          <td style="${S.td_even}">文档 / Wiki</td>
+          <td style="${S.td_even}">Base64 转换</td>
+        </tr>
+        <tr>
+          <td style="${S.td}">Notion</td>
+          <td style="${S.td}">Page</td>
+          <td style="${S.td}">CDN 直链</td>
+        </tr>
+      </table>
+    </section>`),
+
+  card('embed · 嵌入链接',
+    `<section style="${S.embed_wrapper}">
+      <p style="${S.embed_label}">📎 嵌入内容</p>
+      <p style="${S.embed_link}">https://github.com/Zeo0811/Layout-design</p>
+    </section>`),
+
+  card('footnotes · 脚注',
+    `<p style="${S.p}">这段文字引用了一个外部链接<sup style="font-size:.7em;color:#222222;font-weight:bold;line-height:0;vertical-align:super;">[1]</sup>，脚注会统一列在文末。</p>
+     <section style="${S.footnotes_wrapper}">
+       <p style="${S.footnotes_title}">参考资料</p>
+       <p style="${S.footnote_item}"><span style="${S.footnote_num}">[1]</span>十字路口排版插件：<span style="color:#888888">https://github.com/Zeo0811/Layout-design</span></p>
+     </section>`),
+
+];
+
+document.getElementById('preview-grid').innerHTML = blocks.join('');
+</script>
+
+</body>
+</html>

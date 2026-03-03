@@ -1,0 +1,30 @@
+name: Repack Chrome Extension
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'chrome-extension/**'
+
+jobs:
+  repack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Repack zip
+        run: |
+          rm -f chrome-extension.zip
+          zip -r chrome-extension.zip chrome-extension/
+
+      - name: Commit & push updated zip
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add chrome-extension.zip
+          git diff --cached --quiet || git commit -m "build: 自动更新 chrome-extension.zip [skip ci]"
+          git push

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Notion/飞书 转公众号排版",
+  "version": "1.0.0",
+  "description": "将Notion/飞书文档自动排版转换为微信公众号格式，支持一键复制粘贴",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://*.notion.so/*",
+    "https://*.notion.site/*",
+    "https://*.feishu.cn/*",
+    "https://*.larksuite.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.notion.so/*",
+        "https://*.notion.site/*",
+        "https://*.feishu.cn/*",
+        "https://*.larksuite.com/*"
+      ],
+      "js": [
+        "content/notion-parser.js",
+        "content/feishu-parser.js",
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,42 @@
+// Content Script 主入口
+// 注入到 Notion / 飞书 页面，监听来自 popup 的消息
+
+(function () {
+  'use strict';
+
+  function detectPageType() {
+    const url = window.location.href;
+    if (url.includes('notion.so') || url.includes('notion.site')) return 'notion';
+    if (url.includes('feishu.cn') || url.includes('larksuite.com')) return 'feishu';
+    return 'unknown';
+  }
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'ping') {
+      sendResponse({ status: 'ok', pageType: detectPageType(), url: window.location.href });
+      return true;
+    }
+
+    if (request.action === 'parse') {
+      try {
+        const pageType = detectPageType();
+        let result;
+
+        if (pageType === 'notion') {
+          result = parseNotion(); // 由 notion-parser.js 提供
+        } else if (pageType === 'feishu') {
+          result = parseFeishu(); // 由 feishu-parser.js 提供
+        } else {
+          throw new Error('当前页面不是 Notion 或飞书文档，请在文章页面使用本插件');
+        }
+
+        sendResponse({ success: true, data: result, pageType });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+      return true;
+    }
+
+    return true;
+  });
+})();

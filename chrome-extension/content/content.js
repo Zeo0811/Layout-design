@@ -1,5 +1,6 @@
 // Content Script 主入口
 // 注入到 Notion / 飞书 页面，监听来自 popup 的消息
+// 图片 Base64 转换已移至 popup.js（通过 executeScript MAIN world 完成，绕过 CORS）
 
 (function () {
   'use strict';
@@ -18,22 +19,21 @@
     }
 
     if (request.action === 'parse') {
-      try {
-        const pageType = detectPageType();
-        let result;
-
+      const pageType = detectPageType();
+      const run = async () => {
         if (pageType === 'notion') {
-          result = parseNotion(); // 由 notion-parser.js 提供
+          return parseNotion();
         } else if (pageType === 'feishu') {
-          result = parseFeishu(); // 由 feishu-parser.js 提供
+          const title = getFeishuTitle();
+          const { blocks, links } = await scrollAndCollect();
+          if (!blocks.length) throw new Error('无法找到飞书文档内容，请确保页面已完全加载后重试');
+          return { type: 'feishu', title, blocks, links };
         } else {
           throw new Error('当前页面不是 Notion 或飞书文档，请在文章页面使用本插件');
         }
-
-        sendResponse({ success: true, data: result, pageType });
-      } catch (err) {
-        sendResponse({ success: false, error: err.message });
-      }
+      };
+      run().then(result => sendResponse({ success: true, data: result, pageType }))
+           .catch(err  => sendResponse({ success: false, error: err.message }));
       return true;
     }
 

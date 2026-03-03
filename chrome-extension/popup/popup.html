@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>转公众号排版</title>
+  <title>十字路口排版专用</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
@@ -12,10 +12,12 @@
     <!-- 顶部 Header -->
     <header class="header">
       <div class="header-left">
-        <span class="logo">✦</span>
+        <span class="logo">
+          <img src="../icons/icon48.png" width="32" height="32" alt="logo" />
+        </span>
         <div>
-          <div class="app-name">转公众号排版</div>
-          <div class="app-sub">Notion / 飞书 → 微信公众号</div>
+          <div class="app-name">十字路口排版专用</div>
+          <div class="app-sub">v1.4.0 · Notion / 飞书 → 微信公众号</div>
         </div>
       </div>
       <span id="badge" class="badge badge--unknown">检测中...</span>
@@ -29,8 +31,14 @@
       </button>
       <button id="copyBtn" class="btn btn--secondary" disabled>
         <span class="btn-icon">📋</span>
-        复制内容
+        完整复制
       </button>
+    </div>
+
+    <!-- 分段复制行（转换后显示） -->
+    <div id="segmentRow" class="segment-row hidden">
+      <span class="segment-label">分段复制：</span>
+      <div id="segmentBtns" class="segment-btns"></div>
     </div>
 
     <!-- 状态提示 -->
@@ -53,14 +61,15 @@
       </div>
     </div>
 
-    <!-- 图片处理提示（转换后显示） -->
+    <!-- 图片提示 -->
     <div id="imageNote" class="image-note hidden">
       <span class="image-note-icon">🖼</span>
-      <span>图片需在微信编辑器中手动上传替换</span>
+      <span id="imageNoteText">图片已转 Base64，可离线显示</span>
     </div>
 
   </div>
 
+  <script src="highlight.min.js"></script>
   <script src="formatter.js"></script>
   <script src="popup.js"></script>
 </body>

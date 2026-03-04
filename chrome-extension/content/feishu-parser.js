@@ -357,7 +357,10 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'bulleted_list':
     case 'numbered_list': {
-      const listSelector = '[data-block-type="bulleted_list"], [data-block-type="numbered_list"]';
+      // 同时覆盖飞书原始 block type（bullet/ordered）和映射后的名称
+      const listSelector =
+        '[data-block-type="bulleted_list"], [data-block-type="numbered_list"], ' +
+        '[data-block-type="bullet"], [data-block-type="ordered"]';
 
       // 克隆并移除嵌套列表块，防止其文字混入当前项
       const clone = el.cloneNode(true);
@@ -485,8 +488,10 @@ function convertFeishuNodeToHtml(node, links) {
     }
 
     const isBold   = tag === 'strong' || tag === 'b' ||
-      cls.includes('bold') || style.includes('font-weight:700') ||
-      style.includes('font-weight: 700') || style.includes('font-weight:600');
+      cls.includes('bold') ||
+      style.includes('font-weight:700')  || style.includes('font-weight: 700') ||
+      style.includes('font-weight:600')  || style.includes('font-weight: 600') ||
+      style.includes('font-weight:bold') || style.includes('font-weight: bold');
     const isItalic = tag === 'em' || tag === 'i' ||
       cls.includes('italic') || style.includes('font-style:italic');
     const isStrike = tag === 's' || cls.includes('strike') || style.includes('line-through');

@@ -28,6 +28,11 @@
     `v${manifest.version} · Notion / 飞书 → 微信公众号`;
 
   async function init() {
+    // 每次切换 tab 都先重置按钮状态，避免上一次 disabled 状态残留
+    convertBtn.disabled = false;
+    setBadge('unknown', '检测中...');
+    statusBar.className = 'status-bar status-bar--hidden';
+
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       currentTab = tab;

@@ -379,18 +379,33 @@ function parseNotionVideo(el) {
 }
 
 function parseNotionToggle(el, links, depth) {
+  // aria-roledescription="toggle" 精准定位标题，避免匹配 contenteditable="false" 的箭头按钮
   const summaryEl =
-    el.querySelector('[contenteditable]') ||
+    el.querySelector('[aria-roledescription="toggle"]') ||
+    el.querySelector('[contenteditable="true"]') ||
     el.querySelector('[data-content-editable-leaf]');
   const summary = summaryEl ? convertNodeToHtml(summaryEl, links) : '';
 
-  const childrenContainer =
-    el.querySelector('[class*="toggle-content"]') ||
-    el.querySelector('[class*="children"]');
+  // 通过箭头按钮的 aria-controls 属性找到子内容容器（新版 Notion 使用动态 id）
+  let childrenContainer = null;
+  const btn = el.querySelector('[role="button"][aria-controls]');
+  if (btn) {
+    const childrenId = btn.getAttribute('aria-controls');
+    try { childrenContainer = childrenId ? el.querySelector(`#${CSS.escape(childrenId)}`) : null; } catch (_) {}
+  }
+  if (!childrenContainer) {
+    childrenContainer =
+      el.querySelector('[class*="toggle-content"]') ||
+      el.querySelector('[class*="children"]');
+  }
 
   let children = [];
   if (childrenContainer && depth < 5) {
-    children = parseNotionBlocks(Array.from(childrenContainer.children), links, depth + 1);
+    // 子容器内有一层 flex-direction:column 的 wrapper，取其子元素
+    const innerCol =
+      childrenContainer.querySelector('[style*="column"]') ||
+      childrenContainer;
+    children = parseNotionBlocks(Array.from(innerCol.children), links, depth + 1);
   }
 
   return { type: 'toggle', content: summary, children };
@@ -429,33 +444,26 @@ function parseNotionBookmark(el, links) {
 
 function parseNotionTable(el, links) {
   const rows = [];
-  // 新旧版都兼容
-  const rowEls = el.querySelectorAll(
-    '.notion-table_row-block, [data-block-type="table_row"], [class*="table-row"]'
-  );
+
+  // 优先从真实 <table><tr><td> 结构中取，避免 [class*="cell"] 匹配到多层嵌套元素
+  const tableEl = el.querySelector('table');
+  const rowEls = tableEl
+    ? Array.from(tableEl.querySelectorAll('tr'))
+    : Array.from(el.querySelectorAll('tr.notion-table-row, [data-block-type="table_row"]'));
 
   rowEls.forEach((rowEl, rowIndex) => {
-    const cellEls = rowEl.querySelectorAll(
-      '.notion-cell-block, [class*="cell"], td, [data-block-type="table_cell"]'
-    );
+    const cellEls = rowEl.querySelectorAll('td, th');
+    if (cellEls.length === 0) return;
     const cells = [];
-    cellEls.forEach(cellEl => cells.push(extractNotionRichText(cellEl, links)));
-
-    if (cells.length > 0) {
-      rows.push({ cells, isHeader: rowIndex === 0 });
-    }
-  });
-
-  // 如果没找到标准行元素，尝试直接遍历子元素
-  if (rows.length === 0) {
-    Array.from(el.children).forEach((rowEl, rowIndex) => {
-      const cellEls = rowEl.querySelectorAll('td, th, [class*="cell"]');
-      if (cellEls.length === 0) return;
-      const cells = [];
-      cellEls.forEach(cellEl => cells.push(extractNotionRichText(cellEl, links)));
-      rows.push({ cells, isHeader: rowIndex === 0 });
+    cellEls.forEach(cellEl => {
+      // 取单元格内的 contenteditable 文本节点
+      const textEl =
+        cellEl.querySelector('[contenteditable="true"]') ||
+        cellEl.querySelector('[class*="table-cell-text"]');
+      cells.push(textEl ? convertNodeToHtml(textEl, links) : cellEl.textContent.trim());
     });
-  }
+    rows.push({ cells, isHeader: rowIndex === 0 });
+  });
 
   return rows.length > 0 ? { type: 'table', rows } : null;
 }

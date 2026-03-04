@@ -172,12 +172,21 @@ function parseNotionBlock(el, blockType, links, depth) {
     case 'bookmark':
       return parseNotionBookmark(el, links);
 
-    case 'todo':
-      return {
-        type: 'todo',
-        content: extractNotionRichText(el, links),
-        checked: !!el.querySelector('[aria-checked="true"]'),
-      };
+    case 'todo': {
+      const isChecked =
+        // 新版 Notion：role=checkbox 上的 aria-checked
+        !!el.querySelector('[aria-checked="true"]') ||
+        // data 属性
+        !!el.querySelector('[data-checked="true"]') ||
+        el.getAttribute('data-checked') === 'true' ||
+        // class 含 checked / done / completed
+        !!el.querySelector('[class*="checked"]') ||
+        !!el.querySelector('[class*="todo-done"]') ||
+        !!el.querySelector('[class*="completed"]') ||
+        // native checkbox（极少数情况）
+        !!el.querySelector('input[type="checkbox"]:checked');
+      return { type: 'todo', content: extractNotionRichText(el, links), checked: isChecked };
+    }
 
     case 'table':
       return parseNotionTable(el, links);

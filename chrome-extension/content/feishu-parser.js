@@ -357,21 +357,53 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'bulleted_list':
     case 'numbered_list': {
-      // 直接提取整块富文本（保留 bold/italic），再去掉开头的 bullet/数字指示符
-      let raw = extractFeishuText(el, links);
+      const listSelector = '[data-block-type="bulleted_list"], [data-block-type="numbered_list"]';
+
+      // 克隆并移除嵌套列表块，防止其文字混入当前项
+      const clone = el.cloneNode(true);
+      Array.from(clone.querySelectorAll(listSelector)).forEach(n => n.remove());
+
+      let raw = extractFeishuText(clone, links);
       let content = blockType === 'numbered_list'
         ? raw.replace(/^\d+[.)．]\s*/, '')
         : raw.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '');
       content = content.trim();
-      // 降级：若富文本提取完全为空，退回 textContent
+
       if (!content) {
-        let fallback = el.textContent.replace(/\n+/g, ' ').trim();
+        let fallback = clone.textContent.replace(/\n+/g, ' ').trim();
         fallback = blockType === 'numbered_list'
           ? fallback.replace(/^\d+[.)]\s*/, '')
           : fallback.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '');
         content = escapeFeishuHtml(fallback.trim());
       }
-      return { type: blockType, items: [{ content, children: [] }] };
+
+      // 找直属于当前块的嵌套列表项
+      const nestedEls = Array.from(el.querySelectorAll(listSelector)).filter(n => {
+        const nearest = n.parentElement && n.parentElement.closest(listSelector);
+        return nearest === el;
+      });
+
+      let children = [];
+      if (nestedEls.length > 0) {
+        // 合并相邻同类嵌套项成列表块
+        const buf = [];
+        let cur = { type: null, items: [] };
+        for (const nestedEl of nestedEls) {
+          const { type: nType } = getFeishuBlockType(nestedEl);
+          if (!nType) continue;
+          const nBlock = parseFeishuBlock(nestedEl, nType, links);
+          if (!nBlock || !nBlock.items) continue;
+          if (cur.type !== nType) {
+            if (cur.items.length > 0) buf.push({ type: cur.type, items: cur.items });
+            cur = { type: nType, items: [] };
+          }
+          cur.items.push(...nBlock.items);
+        }
+        if (cur.items.length > 0) buf.push({ type: cur.type, items: cur.items });
+        children = buf;
+      }
+
+      return { type: blockType, items: [{ content, children }] };
     }
 
     case 'embed':

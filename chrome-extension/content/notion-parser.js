@@ -199,9 +199,15 @@ function parseNotionBlock(el, blockType, links, depth) {
 
 // 提取 Notion 块内的富文本（保留粗体、斜体、代码、链接）
 function extractNotionRichText(blockEl, links) {
+  // 必须用 [contenteditable="true"]，避免匹配 bullet 指示符的 contenteditable="false"
   const contentEl =
-    blockEl.querySelector('[contenteditable]') ||
-    blockEl.querySelector('[data-content-editable-leaf]') ||
+    blockEl.querySelector('[contenteditable="true"]') ||
+    blockEl.querySelector('[data-content-editable-root]') ||
+    (() => {
+      // 退回到第一个叶子节点的父元素，确保包含所有兄弟叶子（含加粗 span）
+      const leaf = blockEl.querySelector('[data-content-editable-leaf]');
+      return leaf ? leaf.parentElement : null;
+    })() ||
     blockEl;
 
   return convertNodeToHtml(contentEl, links);
@@ -472,12 +478,32 @@ function parseNotionSynced(el, links, depth) {
 }
 
 function parseNotionListItem(el, listType, links, depth) {
-  let content = extractNotionRichText(el, links);
+  const listSelector =
+    '.notion-bulleted_list-block, .notion-numbered_list-block, ' +
+    '[data-block-type="bulleted_list"], [data-block-type="numbered_list"]';
+
+  // 克隆元素并移除嵌套列表块，避免其文字污染当前项
+  const clone = el.cloneNode(true);
+  Array.from(clone.querySelectorAll(listSelector)).forEach(n => n.remove());
+
+  let content = extractNotionRichText(clone, links);
   if (!content || !content.trim()) {
-    // extractNotionRichText 未能提取到文字，退回 textContent
-    content = escapeHtml(el.textContent.replace(/\n+/g, ' ').trim());
+    content = escapeHtml(clone.textContent.replace(/\n+/g, ' ').trim());
   }
-  return { content, children: [] };
+
+  // 找"直属于当前项"的嵌套列表块（过滤掉更深层嵌套）
+  let children = [];
+  if (depth < 4) {
+    const nestedEls = Array.from(el.querySelectorAll(listSelector)).filter(n => {
+      const nearest = n.parentElement && n.parentElement.closest(listSelector);
+      return nearest === el;
+    });
+    if (nestedEls.length > 0) {
+      children = parseNotionBlocks(nestedEls, links, depth + 1);
+    }
+  }
+
+  return { content, children };
 }
 
 function escapeHtml(text) {

@@ -122,8 +122,8 @@ const S = {
   video_label:   `color: rgba(255,255,255,.45); font-size: 14px;`,
 
   // ── Toggle（参考未定义，合理实现）────────────────────────────────────
-  toggle_summary: `font-size: 15px; font-weight: bold; color: #222222; margin: 12px 0 5px; padding-left: 15px; border-left: 3px solid #222222; font-family: ${FONT};`,
-  toggle_content: `padding-left: 15px; border-left: 2px solid rgba(0,0,0,.15); margin-left: 4px;`,
+  toggle_summary: `display:block;font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${FONT};`,
+  toggle_content: `display:block;padding-left:15px;border-left:2px solid rgba(0,0,0,.15);margin-left:4px;`,
 
   // ── 表格 ─────────────────────────────────────────────────────────────
   table_wrapper: `overflow-x: auto; margin: 1em 0;`,

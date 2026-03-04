@@ -44,7 +44,7 @@
       if (!isNotion && !isFeishu) {
         setBadge('unsupported', '不支持');
         convertBtn.disabled = true;
-        showStatus('error', '⚠️ 请在 Notion 或飞书文章页面使用本插件');
+        showStatus('error', '请在 Notion 或飞书文章页面使用本插件');
         return;
       }
 
@@ -65,7 +65,7 @@
       if (!resp) {
         setBadge('unknown', '连接失败');
         convertBtn.disabled = true;
-        showStatus('error', '⚠️ 无法连接页面，请手动刷新后重试');
+        showStatus('error', '无法连接页面，请手动刷新后重试');
         return;
       }
 
@@ -88,7 +88,7 @@
     copyBtn.disabled = true;
     segmentRow.classList.add('hidden');
     imageNote.classList.add('hidden');
-    showStatus('loading', '⏳ 正在解析文档...');
+    showStatus('loading', '正在解析文档...');
     setPreviewLoading();
 
     try {
@@ -97,7 +97,7 @@
       if (!resp.success) throw new Error(resp.error || '解析失败');
 
       // 2. 图片转 Base64（默认开启）
-      showStatus('loading', '⏳ 正在转换图片...');
+      showStatus('loading', '正在转换图片...');
       await convertImages(currentTab.id, resp.data.blocks);
 
       // 3. 格式化 & 渲染
@@ -123,10 +123,10 @@
           : '图片 URL 已包含，需在微信编辑器中手动上传';
       }
 
-      showStatus('success', '✅ 转换成功 — 可完整复制或分段复制到微信编辑器');
+      showStatus('success', '转换成功 — 可完整复制或分段复制到微信编辑器');
     } catch (err) {
       convertBtn.disabled = false;
-      showStatus('error', '❌ ' + err.message);
+      showStatus('error', err.message);
       resetPreview();
     }
   });
@@ -153,7 +153,7 @@
             btn.textContent = label;
           }, 2500);
         } catch (err) {
-          showStatus('error', '❌ 复制失败：' + err.message);
+          showStatus('error', '复制失败：' + err.message);
         }
       });
       segmentBtns.appendChild(btn);
@@ -269,7 +269,7 @@
         copyBtn.querySelector('.btn-icon').nextSibling.textContent = ' 完整复制';
       }, 2000);
     } catch (err) {
-      showStatus('error', '❌ 复制失败：' + err.message);
+      showStatus('error', '复制失败：' + err.message);
     }
   });
 

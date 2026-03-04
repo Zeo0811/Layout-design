@@ -391,7 +391,9 @@ function parseNotionToggle(el, links, depth) {
   const btn = el.querySelector('[role="button"][aria-controls]');
   if (btn) {
     const childrenId = btn.getAttribute('aria-controls');
-    try { childrenContainer = childrenId ? el.querySelector(`#${CSS.escape(childrenId)}`) : null; } catch (_) {}
+    // document.getElementById 不需要 CSS 转义，比 querySelector('#:ro5:') 更稳定
+    const found = childrenId ? document.getElementById(childrenId) : null;
+    childrenContainer = (found && el.contains(found)) ? found : null;
   }
   if (!childrenContainer) {
     childrenContainer =

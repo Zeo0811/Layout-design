@@ -353,12 +353,21 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'bulleted_list':
     case 'numbered_list': {
-      // 飞书列表块的文字在嵌套的 text 子块里，优先从中提取；兜底用 textContent
-      const textEl = el.querySelector('[data-block-type="text"]') ||
-                     el.querySelector('[contenteditable]') ||
-                     el;
-      const content = extractFeishuText(textEl, links) ||
-                      escapeFeishuHtml(el.textContent.replace(/\n+/g, ' ').trim());
+      // 优先从嵌套 text 子块提取富文本；若只提取到 bullet 指示符则丢弃，退回 textContent
+      let content = '';
+      const textBlock = el.querySelector('[data-block-type="text"]');
+      if (textBlock) {
+        content = extractFeishuText(textBlock, links);
+        // 只提取到了 bullet 指示符字符，视为无效
+        if (/^[•·▪▸►‣⁃◦\u2022\u00b7\s]+$/.test(content)) content = '';
+      }
+      if (!content) {
+        let raw = el.textContent.replace(/\n+/g, ' ').trim();
+        raw = blockType === 'numbered_list'
+          ? raw.replace(/^\d+[.)]\s*/, '')
+          : raw.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '');
+        content = escapeFeishuHtml(raw.trim());
+      }
       return { type: blockType, items: [{ content, children: [] }] };
     }
 

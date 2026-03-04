@@ -1,30 +1,8 @@
 // Background Service Worker
 
-// ── 持久窗口：点击图标打开独立窗口，切换 Tab/App 不会自动关闭 ──────────────
-let popupWinId = null;
-
-chrome.action.onClicked.addListener(async (tab) => {
-  // 若窗口已存在，聚焦它
-  if (popupWinId !== null) {
-    try {
-      await chrome.windows.update(popupWinId, { focused: true });
-      return;
-    } catch (_) {
-      popupWinId = null;
-    }
-  }
-  // 将当前 tab ID 传给 popup，避免独立窗口中 currentWindow 查询失效
-  const win = await chrome.windows.create({
-    url:    chrome.runtime.getURL(`popup/popup.html?tabId=${tab.id}`),
-    type:   'popup',
-    width:  440,
-    height: 640,
-  });
-  popupWinId = win.id;
-});
-
-chrome.windows.onRemoved.addListener((winId) => {
-  if (winId === popupWinId) popupWinId = null;
+// ── 侧边栏：点击图标在当前窗口打开/关闭 Side Panel ───────────────────────
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ windowId: tab.windowId });
 });
 
 // ── 图片 Base64 转换 ────────────────────────────────────────────────────────

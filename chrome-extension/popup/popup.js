@@ -22,17 +22,14 @@
 
   // ── 初始化 ────────────────────────────────────────────────────
 
+  // 显示当前版本号
+  const manifest = chrome.runtime.getManifest();
+  document.getElementById('appSub').textContent =
+    `v${manifest.version} · Notion / 飞书 → 微信公众号`;
+
   async function init() {
     try {
-      // 独立窗口模式：从 URL 参数读取目标 tab ID；降级到 currentWindow 查询
-      const params = new URLSearchParams(window.location.search);
-      const tabIdParam = parseInt(params.get('tabId'));
-      let tab;
-      if (tabIdParam) {
-        tab = await chrome.tabs.get(tabIdParam);
-      } else {
-        [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      }
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       currentTab = tab;
 
       const url = tab.url || '';
@@ -369,4 +366,7 @@
   }
 
   init();
+
+  // 切换 Tab 时重新检测页面类型
+  chrome.tabs.onActivated.addListener(() => init());
 })();

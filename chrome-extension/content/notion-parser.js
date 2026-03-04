@@ -491,12 +491,12 @@ function parseNotionListItem(el, listType, links, depth) {
     content = escapeHtml(clone.textContent.replace(/\n+/g, ' ').trim());
   }
 
-  // 找"直属于当前项"的嵌套列表块（过滤掉更深层嵌套）
+  // 找"直属于当前项"的嵌套列表块（过滤掉更深层嵌套 + 无内容的 UI 占位元素）
   let children = [];
   if (depth < 4) {
     const nestedEls = Array.from(el.querySelectorAll(listSelector)).filter(n => {
       const nearest = n.parentElement && n.parentElement.closest(listSelector);
-      return nearest === el;
+      return nearest === el && n.textContent.trim().length > 0;
     });
     if (nestedEls.length > 0) {
       children = parseNotionBlocks(nestedEls, links, depth + 1);

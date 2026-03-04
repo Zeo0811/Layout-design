@@ -37,10 +37,8 @@ html, body {
 .logo {
   width: 34px; height: 34px;
   border-radius: 8px;
-  border: 2px solid #407600;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; overflow: hidden;
-  padding: 2px;
 }
 
 .app-name { font-size: 14px; font-weight: 700; color: #222; line-height: 1.2; letter-spacing: .01em; }

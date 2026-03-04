@@ -352,10 +352,15 @@ function parseFeishuBlock(el, blockType, links) {
       return parseFeishuTable(el, links);
 
     case 'bulleted_list':
-      return { type: 'bulleted_list', items: [{ content: extractFeishuText(el, links), children: [] }] };
-
-    case 'numbered_list':
-      return { type: 'numbered_list', items: [{ content: extractFeishuText(el, links), children: [] }] };
+    case 'numbered_list': {
+      // 飞书列表块的文字在嵌套的 text 子块里，优先从中提取；兜底用 textContent
+      const textEl = el.querySelector('[data-block-type="text"]') ||
+                     el.querySelector('[contenteditable]') ||
+                     el;
+      const content = extractFeishuText(textEl, links) ||
+                      escapeFeishuHtml(el.textContent.replace(/\n+/g, ' ').trim());
+      return { type: blockType, items: [{ content, children: [] }] };
+    }
 
     case 'embed':
     case 'bookmark': {

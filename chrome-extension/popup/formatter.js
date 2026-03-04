@@ -279,24 +279,24 @@ function renderCodeBlock(block) {
   return `<section style="${S.code_wrapper}">${topBar}${langBar}<pre style="${S.code_pre}"><code style="${S.code_text}">${codeHtml}</code></pre></section>`;
 }
 
-// ── 列表（对标 ul.nc-list / nc-list_li / nc-list_li_p）──────────────────
+// ── 列表（微信公众号不支持 ul/ol/li 及 list-style-type，改用 p + 手动标记）────
 
 function renderList(items, isOrdered, depth) {
   if (!items || items.length === 0) return '';
-  const tag      = isOrdered ? 'ol' : 'ul';
-  const ulStyle  = isOrdered ? S.ol : S.ul;
-  const liStyle  = isOrdered ? S.li_ol : S.li_ul;
+  const indent = depth > 0 ? `padding-left: ${depth * 1.5}em;` : '';
+  const baseStyle = `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 5px 0; letter-spacing: 0.1em; color: rgb(63,63,63); font-size: 15px; ${indent}`;
+  const markerStyle = `display: inline-block; min-width: 1.5em; margin-right: 0.3em;`;
 
   let html = '';
-  items.forEach(item => {
+  items.forEach((item, index) => {
+    const marker = isOrdered ? `${index + 1}.` : '•';
     let nested = '';
     if (item.children && item.children.length > 0) {
       for (const child of item.children) nested += renderBlock(child, [], depth + 1);
     }
-    // li_p 对应 ul.nc-list_li_p：包裹文字内容
-    html += `<li style="${liStyle}"><p style="${S.li_p}">${pi(item.content)}</p>${nested}</li>`;
+    html += `<p style="${baseStyle}"><span style="${markerStyle}">${marker}</span>${pi(item.content)}</p>${nested}`;
   });
-  return `<${tag} style="${ulStyle}">${html}</${tag}>`;
+  return html;
 }
 
 // ── 图片 ──────────────────────────────────────────────────────────────────

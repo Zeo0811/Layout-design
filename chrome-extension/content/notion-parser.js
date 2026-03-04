@@ -461,7 +461,11 @@ function parseNotionSynced(el, links, depth) {
 }
 
 function parseNotionListItem(el, listType, links, depth) {
-  const content = extractNotionRichText(el, links);
+  let content = extractNotionRichText(el, links);
+  if (!content || !content.trim()) {
+    // extractNotionRichText 未能提取到文字，退回 textContent
+    content = escapeHtml(el.textContent.replace(/\n+/g, ' ').trim());
+  }
   const nestedLists = el.querySelectorAll(
     ':scope .notion-bulleted_list-block, :scope .notion-numbered_list-block, ' +
     ':scope [data-block-type="bulleted_list"], :scope [data-block-type="numbered_list"]'

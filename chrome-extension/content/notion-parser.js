@@ -173,17 +173,15 @@ function parseNotionBlock(el, blockType, links, depth) {
       return parseNotionBookmark(el, links);
 
     case 'todo': {
+      // 已勾选：Notion 给内容区加 notion-strikethrough-container class，
+      // 同时 style 里有 text-decoration-line: line-through
       const isChecked =
-        // 新版 Notion：role=checkbox 上的 aria-checked
+        !!el.querySelector('.notion-strikethrough-container') ||
+        !!el.querySelector('[class*="strikethrough"]') ||
+        !!el.querySelector('[style*="line-through"]') ||
         !!el.querySelector('[aria-checked="true"]') ||
-        // data 属性
         !!el.querySelector('[data-checked="true"]') ||
         el.getAttribute('data-checked') === 'true' ||
-        // class 含 checked / done / completed
-        !!el.querySelector('[class*="checked"]') ||
-        !!el.querySelector('[class*="todo-done"]') ||
-        !!el.querySelector('[class*="completed"]') ||
-        // native checkbox（极少数情况）
         !!el.querySelector('input[type="checkbox"]:checked');
       return { type: 'todo', content: extractNotionRichText(el, links), checked: isChecked };
     }

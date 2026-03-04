@@ -323,7 +323,11 @@ function renderVideo(block) {
 // ── Toggle ────────────────────────────────────────────────────────────────
 
 function renderToggle(block, links, depth) {
-  let html = `<section style="${S.toggle_summary}">▶ ${pi(block.content)}</section>`;
+  // 嵌套 toggle（depth > 0）不再显示三角和黑色左边框，避免与外层 toggle_content 的灰线重叠
+  const summaryHtml = depth === 0
+    ? `<section style="${S.toggle_summary}">▶ ${pi(block.content)}</section>`
+    : `<p style="${S.p}">${pi(block.content)}</p>`;
+  let html = summaryHtml;
   if (block.children && block.children.length > 0) {
     html += `<section style="${S.toggle_content}">${block.children.map(b => renderBlock(b, links, depth + 1)).join('')}</section>`;
   }

@@ -324,21 +324,16 @@ function parseFeishuBlock(el, blockType, links) {
     }
 
     case 'todo': {
+      // 飞书已完成：外层块 class 含 task-done，文字 span class 含 todo-line-through
       const checked =
-        // aria 属性（飞书/Notion 通用）
+        el.className.includes('task-done') ||
+        !!el.querySelector('[class*="task-done"]') ||
+        !!el.querySelector('[class*="todo-line-through"]') ||
         !!el.querySelector('[aria-checked="true"]') ||
         el.getAttribute('aria-checked') === 'true' ||
-        // data 属性
         !!el.querySelector('[data-checked="true"]') ||
         !!el.querySelector('[data-done="true"]') ||
         el.getAttribute('data-done') === 'true' ||
-        el.getAttribute('data-checked') === 'true' ||
-        // class 含 checked / done / completed（覆盖 BEM、SMACSS 等命名）
-        !!el.querySelector('[class*="checked"]') ||
-        !!el.querySelector('[class*="--done"]') ||
-        !!el.querySelector('[class*="-done"]') ||
-        !!el.querySelector('[class*="completed"]') ||
-        // native checkbox
         !!el.querySelector('input[type="checkbox"]:checked');
       return { type: 'todo', checked, content: extractFeishuText(el, links) };
     }

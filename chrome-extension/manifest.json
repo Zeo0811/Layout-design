@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "十字路口排版专用",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "将Notion/飞书文档自动排版转换为微信公众号格式，支持图片Base64、表格、一键复制",
   "background": {
     "service_worker": "background.js"

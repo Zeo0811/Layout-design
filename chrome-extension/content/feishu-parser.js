@@ -55,7 +55,19 @@ function scrollAndCollect() {
         const sorted = [...blocksByPos.entries()]
           .sort((a, b) => a[0] - b[0])
           .map(([, block]) => block);
-        setTimeout(() => resolve({ blocks: sorted, links }), 500);
+        // 合并相邻同类型列表块
+        const merged = [];
+        for (const block of sorted) {
+          const prev = merged[merged.length - 1];
+          if (prev && prev.type === block.type &&
+              (block.type === 'bulleted_list' || block.type === 'numbered_list') &&
+              block.items) {
+            prev.items.push(...block.items);
+          } else {
+            merged.push(block);
+          }
+        }
+        setTimeout(() => resolve({ blocks: merged, links }), 500);
         return;
       }
       scroller.scrollTop = pos;
@@ -338,6 +350,12 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'table':
       return parseFeishuTable(el, links);
+
+    case 'bulleted_list':
+      return { type: 'bulleted_list', items: [{ content: extractFeishuText(el, links), children: [] }] };
+
+    case 'numbered_list':
+      return { type: 'numbered_list', items: [{ content: extractFeishuText(el, links), children: [] }] };
 
     case 'embed':
     case 'bookmark': {

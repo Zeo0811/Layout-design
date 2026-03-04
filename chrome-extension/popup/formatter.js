@@ -208,7 +208,10 @@ function renderBlock(block, links, depth) {
       return `<p style="${S.p}">🔗 <a href="${escAttr(block.url)}" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">${escHtml(block.text || block.url)}</a><sup style="color:#222222;font-size:.7em;font-weight:bold;line-height:0;">[${block.linkIndex}]</sup></p>`;
 
     case 'todo':
-      return `<p style="${S.p}">${block.checked ? '✅' : '☐'} ${pi(block.content)}</p>`;
+      if (block.checked) {
+        return `<p style="${S.p}">✅ <span style="text-decoration:line-through;color:#aaaaaa;">${pi(block.content)}</span></p>`;
+      }
+      return `<p style="${S.p}">☐ ${pi(block.content)}</p>`;
 
     case 'table':
       return renderTable(block);

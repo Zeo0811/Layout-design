@@ -223,6 +223,16 @@ function convertNodeToHtml(node, links) {
 
     if (tag === 'br') { html += '<br>'; continue; }
 
+    if (tag === 'b' || tag === 'strong') {
+      html += `<strong>${innerHtml}</strong>`;
+      continue;
+    }
+
+    if (tag === 'em' || tag === 'i') {
+      html += `<em>${innerHtml}</em>`;
+      continue;
+    }
+
     if (tag === 'code') {
       html += `<code>${escapeHtml(child.textContent)}</code>`;
       continue;
@@ -245,6 +255,7 @@ function convertNodeToHtml(node, links) {
       const isBold =
         style.includes('font-weight:600') || style.includes('font-weight: 600') ||
         style.includes('font-weight:700') || style.includes('font-weight: 700') ||
+        style.includes('font-weight:bold') || style.includes('font-weight: bold') ||
         child.classList.contains('notion-bold');
       const isItalic =
         style.includes('font-style:italic') || style.includes('font-style: italic') ||
@@ -466,17 +477,7 @@ function parseNotionListItem(el, listType, links, depth) {
     // extractNotionRichText 未能提取到文字，退回 textContent
     content = escapeHtml(el.textContent.replace(/\n+/g, ' ').trim());
   }
-  const nestedLists = el.querySelectorAll(
-    ':scope .notion-bulleted_list-block, :scope .notion-numbered_list-block, ' +
-    ':scope [data-block-type="bulleted_list"], :scope [data-block-type="numbered_list"]'
-  );
-
-  let children = [];
-  if (nestedLists.length > 0 && depth < 5) {
-    children = parseNotionBlocks(Array.from(nestedLists), links, depth + 1);
-  }
-
-  return { content, children };
+  return { content, children: [] };
 }
 
 function escapeHtml(text) {

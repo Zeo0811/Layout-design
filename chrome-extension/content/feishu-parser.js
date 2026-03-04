@@ -201,7 +201,11 @@ function parseFeishuBlocks(container, links) {
         }
         listBuffer.type = blockType;
       }
-      listBuffer.items.push({ content: extractFeishuText(el, links), children: [] });
+      const rawContent = extractFeishuText(el, links);
+      const strippedContent = blockType === 'numbered_list'
+        ? rawContent.replace(/^\d+[.)．]\s*/, '').trim()
+        : rawContent.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '').trim();
+      listBuffer.items.push({ content: strippedContent, children: [] });
     } else {
       if (listBuffer.items.length > 0) {
         blocks.push({ type: listBuffer.type, items: listBuffer.items });
@@ -353,20 +357,19 @@ function parseFeishuBlock(el, blockType, links) {
 
     case 'bulleted_list':
     case 'numbered_list': {
-      // 优先从嵌套 text 子块提取富文本；若只提取到 bullet 指示符则丢弃，退回 textContent
-      let content = '';
-      const textBlock = el.querySelector('[data-block-type="text"]');
-      if (textBlock) {
-        content = extractFeishuText(textBlock, links);
-        // 只提取到了 bullet 指示符字符，视为无效
-        if (/^[•·▪▸►‣⁃◦\u2022\u00b7\s]+$/.test(content)) content = '';
-      }
+      // 直接提取整块富文本（保留 bold/italic），再去掉开头的 bullet/数字指示符
+      let raw = extractFeishuText(el, links);
+      let content = blockType === 'numbered_list'
+        ? raw.replace(/^\d+[.)．]\s*/, '')
+        : raw.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '');
+      content = content.trim();
+      // 降级：若富文本提取完全为空，退回 textContent
       if (!content) {
-        let raw = el.textContent.replace(/\n+/g, ' ').trim();
-        raw = blockType === 'numbered_list'
-          ? raw.replace(/^\d+[.)]\s*/, '')
-          : raw.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '');
-        content = escapeFeishuHtml(raw.trim());
+        let fallback = el.textContent.replace(/\n+/g, ' ').trim();
+        fallback = blockType === 'numbered_list'
+          ? fallback.replace(/^\d+[.)]\s*/, '')
+          : fallback.replace(/^[•·▪▸►‣⁃◦\u2022\u00b7]+\s*/, '');
+        content = escapeFeishuHtml(fallback.trim());
       }
       return { type: blockType, items: [{ content, children: [] }] };
     }

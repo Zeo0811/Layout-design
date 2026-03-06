@@ -15,10 +15,15 @@
   const imageNoteTxt = document.getElementById('imageNoteText');
   const segmentRow   = document.getElementById('segmentRow');
   const segmentBtns  = document.getElementById('segmentBtns');
+  const styleSelect  = document.getElementById('styleSelect');
+  const styleRefresh = document.getElementById('styleRefresh');
 
   let formattedHtml     = '';
   let formattedSegments = [];
   let currentTab        = null;
+  let stylePresets      = [];
+  let currentStyleId    = (window.LayoutStyleStore && window.LayoutStyleStore.getDefaultPreset().id) || 'ld_default';
+  const SELECTED_STYLE_KEY = 'LD_SELECTED_STYLE_ID';
 
   // ── 初始化 ────────────────────────────────────────────────────
 
@@ -26,6 +31,106 @@
   const manifest = chrome.runtime.getManifest();
   document.getElementById('appSub').textContent =
     `v${manifest.version} · Notion / 飞书 → 微信公众号`;
+
+  initStyles();
+
+  function initStyles() {
+    if (!styleSelect || !window.LayoutStyleStore) {
+      const fallbackStyle = (window.LayoutFormatter && window.LayoutFormatter.getDefaultStyle)
+        ? window.LayoutFormatter.getDefaultStyle()
+        : (window.LayoutStyleSchema ? window.LayoutStyleSchema.getDefaultStyle() : {});
+      stylePresets = [{ id: 'ld_default', name: '默认样式', builtin: true, styles: fallbackStyle }];
+      if (styleSelect) {
+        styleSelect.innerHTML = `<option value="ld_default">默认样式</option>`;
+        styleSelect.value = 'ld_default';
+        styleSelect.disabled = true;
+      }
+      if (styleRefresh) styleRefresh.disabled = true;
+      return;
+    }
+
+    loadStoredStyleId().then(() => refreshStyleOptions());
+
+    styleSelect.addEventListener('change', () => {
+      currentStyleId = styleSelect.value;
+      persistStyleChoice();
+    });
+
+    if (styleRefresh) {
+      styleRefresh.addEventListener('click', async () => {
+        styleRefresh.disabled = true;
+        styleRefresh.classList.add('spinning');
+        await refreshStyleOptions(true);
+        styleRefresh.disabled = false;
+        styleRefresh.classList.remove('spinning');
+      });
+    }
+
+    window.LayoutStyleStore.onChange(() => refreshStyleOptions());
+  }
+
+  function loadStoredStyleId() {
+    return new Promise((resolve) => {
+      if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get([SELECTED_STYLE_KEY], (res) => {
+          if (res && res[SELECTED_STYLE_KEY]) {
+            currentStyleId = res[SELECTED_STYLE_KEY];
+          }
+          resolve();
+        });
+      } else {
+        try {
+          const stored = localStorage.getItem(SELECTED_STYLE_KEY);
+          if (stored) currentStyleId = stored;
+        } catch (_) {}
+        resolve();
+      }
+    });
+  }
+
+  function persistStyleChoice() {
+    if (chrome && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ [SELECTED_STYLE_KEY]: currentStyleId });
+    } else {
+      try { localStorage.setItem(SELECTED_STYLE_KEY, currentStyleId); } catch (_) {}
+    }
+  }
+
+  async function refreshStyleOptions(force = false) {
+    if (!styleSelect || !window.LayoutStyleStore) return;
+    try {
+      const presets = await window.LayoutStyleStore.listPresets();
+      if (force || JSON.stringify(presets) !== JSON.stringify(stylePresets)) {
+        stylePresets = presets;
+      }
+    } catch (err) {
+      console.warn('加载样式失败', err);
+      stylePresets = [window.LayoutStyleStore.getDefaultPreset()];
+    }
+    if (!stylePresets.length) {
+      stylePresets = [window.LayoutStyleStore.getDefaultPreset()];
+    }
+    if (!stylePresets.some(s => s.id === currentStyleId)) {
+      currentStyleId = stylePresets[0].id;
+      persistStyleChoice();
+    }
+    const options = stylePresets
+      .map(style => `<option value="${style.id}">${style.name}${style.builtin ? '（默认）' : ''}</option>`)
+      .join('');
+    styleSelect.innerHTML = options;
+    styleSelect.value = currentStyleId;
+  }
+
+  function getSelectedStylePreset() {
+    if (!stylePresets.length) {
+      if (window.LayoutStyleStore) {
+        stylePresets = [window.LayoutStyleStore.getDefaultPreset()];
+      } else {
+        stylePresets = [{ id: 'ld_default', name: '默认样式', styles: window.LayoutStyleSchema ? window.LayoutStyleSchema.getDefaultStyle() : {} }];
+      }
+    }
+    return stylePresets.find(s => s.id === currentStyleId) || stylePresets[0];
+  }
 
   async function init() {
     // 每次切换 tab 都先重置按钮状态，避免上一次 disabled 状态残留
@@ -101,15 +206,24 @@
       await convertImages(currentTab.id, resp.data.blocks);
 
       // 3. 格式化 & 渲染
-      formattedHtml = formatToWechat(resp.data);
-      renderPreview(formattedHtml, resp.data);
+      const stylePreset = getSelectedStylePreset();
+      if (window.LayoutFormatter) {
+        formattedHtml = window.LayoutFormatter.format(resp.data, stylePreset?.styles);
+      } else {
+        formattedHtml = formatToWechat(resp.data);
+      }
+      renderPreview(formattedHtml, resp.data, stylePreset);
       copyBtn.disabled = false;
       convertBtn.disabled = false;
 
       // 4. 分段切割（自动按块数决定段数）
       const blockCount = (resp.data.blocks || []).length;
       const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
-      formattedSegments = splitFormatToWechat(resp.data, nSeg);
+      if (window.LayoutFormatter) {
+        formattedSegments = window.LayoutFormatter.split(resp.data, nSeg, stylePreset?.styles);
+      } else {
+        formattedSegments = splitFormatToWechat(resp.data, nSeg);
+      }
       renderSegmentButtons(formattedSegments);
 
       // 5. 图片提示
@@ -353,7 +467,7 @@
     segmentRow.classList.add('hidden');
   }
 
-  function renderPreview(html, data) {
+  function renderPreview(html, data, preset) {
     preview.innerHTML = html;
     preview.querySelectorAll('img').forEach(img => {
       if (!img.src.startsWith('data:')) {
@@ -367,7 +481,8 @@
     });
     const charCount  = stripTags(html).length;
     const blockCount = (data.blocks || []).length;
-    stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;
+    const styleLabel = preset ? preset.name : '默认样式';
+    stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字 · ${styleLabel}`;
   }
 
   init();

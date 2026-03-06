@@ -35,6 +35,14 @@
       </button>
     </div>
 
+    <div class="style-row">
+      <label for="styleSelect" class="style-row-label">样式</label>
+      <div class="style-row-body">
+        <select id="styleSelect" class="style-select"></select>
+        <button id="styleRefresh" class="btn btn--ghost" title="刷新样式列表">⟳</button>
+      </div>
+    </div>
+
     <!-- 分段复制行（转换后显示） -->
     <div id="segmentRow" class="segment-row hidden">
       <span class="segment-label">分段复制：</span>
@@ -69,6 +77,8 @@
 
   </div>
 
+  <script src="../shared/styles-shared.js"></script>
+  <script src="../shared/style-store.js"></script>
   <script src="highlight.min.js"></script>
   <script src="formatter.js"></script>
   <script src="popup.js"></script>

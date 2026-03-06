@@ -336,6 +336,85 @@
       transition: background .2s;
     }
     .dl-btn:hover { background: #336000; }
+
+    /* ── 自定义样式区域 ── */
+    #panel-designer { padding: 30px 20px 60px; background: #f9fafb; }
+    .designer-hero {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 20px; flex-wrap: wrap; margin-bottom: 30px;
+    }
+    .designer-label {
+      font-size: 12px; text-transform: uppercase; letter-spacing: .2em;
+      color: #888; margin-bottom: 6px;
+    }
+    .designer-hero h2 { font-size: 26px; margin: 4px 0 10px; color: #1f1f1f; }
+    .designer-desc { color: #626262; font-size: 14px; }
+    .designer-actions { display: flex; gap: 12px; align-items: center; }
+    .designer-btn {
+      border: 1px solid #dcdcdc; background: #fff; border-radius: 10px;
+      padding: 10px 18px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .designer-btn:hover { border-color: #b5b5b5; }
+    .designer-btn--primary { background: #407600; color: #fff; border-color: #407600; }
+    .designer-btn--primary:hover { background: #336000; }
+
+    .designer-layout { display: flex; flex-wrap: wrap; gap: 20px; }
+    .designer-column { flex: 1 1 340px; }
+    .designer-card {
+      background: #fff; border-radius: 16px; padding: 18px 20px; margin-bottom: 18px;
+      box-shadow: 0 4px 18px rgba(15,23,42,.08);
+    }
+    .designer-card--tight { padding-bottom: 10px; }
+    .designer-card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #222; }
+    .designer-field-label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+    .designer-input {
+      width: 100%; border: 1px solid #dcdcdc; border-radius: 10px;
+      padding: 10px 14px; font-size: 14px; outline: none;
+    }
+    .designer-input:focus { border-color: #407600; box-shadow: 0 0 0 2px rgba(64,118,0,.15); }
+    .designer-tip { font-size: 12px; color: #999; margin-top: 6px; }
+
+    .designer-source {
+      background: #f7f8fa; border-radius: 12px; padding: 18px; color: #333;
+      font-size: 13px; line-height: 1.7; border: 1px solid #e5e7eb;
+    }
+    .designer-source h3 { margin-top: 0; }
+    .designer-source pre { background: #111; color: #f5f5f5; padding: 10px; border-radius: 10px; overflow-x: auto; }
+
+    .designer-editors { max-height: 360px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 12px; padding: 10px; background: #fcfcfc; }
+    .designer-editors::-webkit-scrollbar { width: 6px; }
+    .designer-editors::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 6px; }
+    .editor-field { margin-bottom: 12px; }
+    .editor-field label { font-size: 12px; font-weight: 600; color: #444; display: block; margin-bottom: 4px; }
+    .editor-field textarea {
+      width: 100%; min-height: 60px; border: 1px solid #dedede; border-radius: 8px;
+      font-family: 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 12px;
+      padding: 8px; resize: vertical; background: #fff;
+    }
+    .editor-field textarea:focus { outline: none; border-color: #407600; box-shadow: 0 0 0 2px rgba(64,118,0,.1); }
+
+    .designer-preview { border: 1px solid #f0f0f0; border-radius: 12px; padding: 14px; background: #fff; max-height: 420px; overflow-y: auto; }
+    .designer-preview::-webkit-scrollbar { width: 4px; }
+    .designer-preview::-webkit-scrollbar-thumb { background: #ccc; }
+
+    .designer-saved { margin-top: 30px; }
+    .designer-saved-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+    .designer-styles-list { display: flex; flex-direction: column; gap: 10px; }
+    .designer-style-item {
+      background: #fff; border-radius: 12px; padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid #ebebeb;
+    }
+    .designer-style-item-title { font-weight: 600; color: #222; }
+    .designer-style-item small { color: #888; font-size: 12px; }
+    .designer-style-actions { display: flex; gap: 8px; }
+    .designer-style-actions button {
+      border: 1px solid #dcdcdc; background: #fff; border-radius: 8px;
+      padding: 4px 10px; font-size: 12px; cursor: pointer;
+    }
+    .designer-sync-status { font-size: 12px; color: #888; }
+    .designer-sync-status--ok { color: #407600; }
   </style>
 </head>
 <body>
@@ -344,8 +423,9 @@
 <nav class="tab-nav">
   <img src="chrome-extension/icons/icon48.png" alt="logo" style="width:28px;height:28px;margin-right:10px;border-radius:6px;vertical-align:middle;flex-shrink:0;" />
   <span class="brand">十字路口排版</span>
-  <button class="tab-btn active" onclick="switchTab('preview')">样式预览</button>
-  <button class="tab-btn" onclick="switchTab('guide')">插件安装教程</button>
+  <button class="tab-btn active" data-tab="preview" onclick="switchTab('preview')">样式预览</button>
+  <button class="tab-btn" data-tab="guide" onclick="switchTab('guide')">插件安装教程</button>
+  <button class="tab-btn" data-tab="designer" onclick="switchTab('designer')">自定义样式</button>
 </nav>
 
 <!-- ══════════════════════════════════
@@ -603,11 +683,77 @@
 
 </div><!-- /panel-guide -->
 
+<!-- ══════════════════════════════════
+     Tab 3 自定义样式
+══════════════════════════════════ -->
+<div class="tab-panel" id="panel-designer">
+  <div class="designer-hero">
+    <div>
+      <p class="designer-label">Style Builder</p>
+      <h2>自定义你的公众号排版风格</h2>
+      <p class="designer-desc">左侧是原始 Notion / 飞书 内容，右侧可逐项编辑 CSS，实时预览转换效果，并一键同步到插件。</p>
+    </div>
+    <div class="designer-actions">
+      <button id="designerNew" class="designer-btn">新建空白样式</button>
+      <button id="designerSave" class="designer-btn designer-btn--primary">保存并同步到插件</button>
+    </div>
+  </div>
+
+  <div class="designer-layout">
+    <section class="designer-column designer-column--source">
+      <div class="designer-card">
+        <div class="designer-card-title">原始内容（示例）</div>
+        <div class="designer-source" id="designerSource">
+          <h3>远行前的 Checklist</h3>
+          <ul>
+            <li>① 明确这篇内容的目标读者是谁</li>
+            <li>② 梳理核心段落与引用素材</li>
+            <li>③ 预留 1-2 张图像以方便排版</li>
+          </ul>
+          <blockquote>这是 Notion / 飞书 中尚未排版的原始文档结构，右侧编辑器会把同一份内容转换为公众号友好的 HTML。</blockquote>
+          <pre><code>function greet(name) {
+  console.log('Hello ' + name);
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="designer-column designer-column--editor">
+      <div class="designer-card designer-card--tight">
+        <label class="designer-field-label">样式名称</label>
+        <input id="designerName" class="designer-input" placeholder="例如：品牌橙 · 大标题" />
+        <p class="designer-tip">保存后将在插件的样式下拉中出现，命名越清晰越方便选择。</p>
+      </div>
+
+      <div class="designer-card">
+        <div class="designer-card-title">样式编辑器</div>
+        <div id="designerEditors" class="designer-editors"></div>
+      </div>
+
+      <div class="designer-card">
+        <div class="designer-card-title">转换预览</div>
+        <div id="designerPreview" class="designer-preview"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="designer-saved">
+    <div class="designer-saved-header">
+      <h3>我已经保存的样式</h3>
+      <span id="designerSyncStatus" class="designer-sync-status">尚未与插件同步</span>
+    </div>
+    <div id="designerStylesList" class="designer-styles-list"></div>
+  </div>
+</div>
+
 <!-- ── Tab 切换逻辑 ── -->
+<script src="chrome-extension/shared/styles-shared.js"></script>
+<script src="chrome-extension/popup/formatter.js"></script>
+<script src="designer.js"></script>
 <script>
 function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', (name === 'preview' && i === 0) || (name === 'guide' && i === 1));
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.tab === name);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
@@ -617,58 +763,10 @@ function switchTab(name) {
 
 <!-- ── 样式预览数据（Tab 1） ── -->
 <script>
-const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
-const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
-
-const S = {
-  wrapper:             `font-family:${FONT};font-size:15px;color:rgb(63,63,63);line-height:1.75;letter-spacing:0.1em;word-wrap:break-word;`,
-  h1:                  `display:block;line-height:1.5;font-size:24px;font-family:${FONT};font-weight:bold;margin:80px auto 40px auto;width:fit-content;color:#407600;text-align:center;padding:0 1em;border-bottom:8px solid #407600;`,
-  h2:                  `display:block;line-height:1.5;font-family:${FONT};font-size:20px;font-weight:bold;margin:40px auto;width:fit-content;color:#222222;text-align:center;padding:0 0.2em;`,
-  h3:                  `display:block;line-height:1.5;font-family:${FONT};font-size:17px;font-weight:bold;margin:40px 0;width:fit-content;color:#222222;text-align:left;`,
-  h4:                  `display:block;line-height:1.5;font-family:${FONT};font-size:16px;font-weight:bold;margin:1em 0 .5em;color:#222222;`,
-  h5:                  `display:block;line-height:1.5;font-family:${FONT};font-size:15px;font-weight:bold;margin:.8em 0 .4em;color:#222222;`,
-  h6:                  `display:block;line-height:1.5;font-family:${FONT};font-size:14px;font-weight:bold;margin:.7em 0 .35em;color:#555555;`,
-  p:                   `text-align:left;line-height:26px;font-family:${FONT};margin:10px 0;letter-spacing:0.1em;white-space:pre-line;color:rgb(63,63,63);font-size:15px;`,
-  strong:              `word-break:break-all;font-weight:600;color:#407600;`,
-  em:                  `font-style:italic;`,
-  code_inline:         `background:rgba(135,131,120,.15);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:#222222;font-family:${MONO};`,
-  s:                   `text-decoration:line-through;color:#888888;`,
-  blockquote_wrapper:  `line-height:26px;word-spacing:normal;hyphens:auto;text-align:left;outline:0;max-width:100%;border-top:none;border-right:none;border-bottom:none;display:block;overflow:auto;padding:10px;margin:20px 0;border-left:8px solid #222222;background-color:#f5f5f5;font-family:${FONT};`,
-  blockquote_text:     `text-align:left;line-height:26px;font-family:${FONT};margin:0;letter-spacing:0.1em;color:rgb(63,63,63);font-size:15px;`,
-  callout_wrapper:     `font-size:15px;white-space:normal;margin:20px 0;color:rgba(0,0,0,.9);font-family:${FONT};line-height:26px;background-color:#fff;border-bottom:1px dashed #222222;border-right:1px dashed #222222;`,
-  callout_header:      `width:90%;padding-right:10px;padding-left:10px;border-style:solid;border-width:1px 0 0 10px;border-color:#222222;`,
-  callout_content:     `padding:0 12px 15px;color:#3f3f3f;letter-spacing:0.1em;`,
-  code_wrapper:        `margin:20px 10px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:${MONO};`,
-  code_lang_bar:       `font-size:11px;color:#999;font-family:${MONO};padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
-  code_pre:            `margin:0;padding:0;overflow-x:auto;background:transparent;`,
-  code_text:           `font-family:${MONO};font-size:14px;line-height:1.65;white-space:pre;word-break:normal;display:block;color:#333;`,
-  hr:                  `border-style:solid;border-width:1px 0 0;border-color:#797979;margin:15px 0;`,
-  ul:                  `padding-left:1.5em;font-size:15px;line-height:1.75;font-family:${FONT};vertical-align:baseline;white-space:normal;color:rgb(63,63,63);margin-bottom:8px;margin-top:0;`,
-  ol:                  `padding-left:1.5em;font-size:15px;line-height:26px;font-family:${FONT};vertical-align:baseline;white-space:normal;color:rgb(63,63,63);margin-bottom:8px;margin-top:0;`,
-  li_ul:               `font-size:15px;line-height:26px;font-family:${FONT};list-style-position:outside;list-style-type:disc;`,
-  li_ol:               `font-size:15px;line-height:1.75;font-family:${FONT};list-style-position:outside;list-style-type:decimal;`,
-  li_p:                `font-family:inherit;vertical-align:baseline;margin:10px 0;`,
-  img_wrapper:         `margin:15px 0;text-align:center;`,
-  img:                 `max-width:100%;height:auto;border-radius:10px;display:inline-block;`,
-  img_caption:         `font-size:12px;color:#888888;margin-top:5px;text-align:center;`,
-  video_wrapper:       `margin:1em 0;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
-  video_label:         `color:rgba(255,255,255,.45);font-size:14px;`,
-  toggle_summary:      `font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${FONT};`,
-  toggle_content:      `padding-left:15px;border-left:2px solid rgba(0,0,0,.15);margin-left:4px;`,
-  table_wrapper:       `overflow-x:auto;margin:1em 0;`,
-  table:               `border-collapse:collapse;width:100%;font-size:15px;line-height:1.6;font-family:${FONT};`,
-  th:                  `background:rgba(0,0,0,.05);padding:7px 13px;border:1px solid rgba(0,0,0,.15);font-weight:bold;text-align:left;color:#222222;`,
-  td:                  `padding:7px 13px;border:1px solid rgba(0,0,0,.15);color:#222222;`,
-  td_even:             `padding:7px 13px;border:1px solid rgba(0,0,0,.15);color:#222222;background:rgba(0,0,0,.02);`,
-  embed_wrapper:       `margin:1em 0;border:1px solid rgba(0,0,0,.1);padding:11px 15px;`,
-  embed_label:         `font-size:12px;color:#888888;margin-bottom:4px;`,
-  embed_link:          `font-size:13px;text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;`,
-  footnotes_wrapper:   `margin-top:30px;padding-top:15px;border-top:1px solid rgba(0,0,0,.15);`,
-  footnotes_title:     `font-size:12px;font-weight:bold;color:#888888;margin-bottom:.6em;text-transform:uppercase;letter-spacing:1px;`,
-  footnote_item:       `font-size:12px;color:#555555;line-height:1.7;margin:.3em 0;word-break:break-all;`,
-  footnote_num:        `color:#222222;font-weight:bold;margin-right:4px;`,
-  todo_check:          `word-break:break-all;font-weight:600;color:#407600;`,
-};
+const fonts = window.LayoutStyleSchema ? window.LayoutStyleSchema.fonts : { FONT: 'serif', MONO: 'monospace' };
+const FONT = fonts.FONT;
+const MONO = fonts.MONO;
+const S = window.LayoutStyleSchema ? window.LayoutStyleSchema.getDefaultStyle() : {};
 
 function card(label, html) {
   return `<div class="demo-block">

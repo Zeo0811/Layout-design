@@ -689,6 +689,64 @@
       .dsn-main { flex-direction: column; }
       .dsn-pane--source { flex: none; max-width: none; }
     }
+
+    /* ── 操作栏 ── */
+    .dsn-topbar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 20px;
+      box-shadow: 0 2px 8px rgba(27,39,27,.06);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ── 左侧模块卡片网格 ── */
+    .dsn-blocks-col {
+      flex: 0 0 420px;
+      max-width: 420px;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+      scrollbar-width: thin;
+      scrollbar-color: #c8d4c0 transparent;
+    }
+    .dsn-blocks-col::-webkit-scrollbar { width: 4px; }
+    .dsn-blocks-col::-webkit-scrollbar-thumb { background: #c8d4c0; border-radius: 4px; }
+    .dsn-block-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dsn-block-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.07);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .18s, box-shadow .18s;
+      overflow: hidden;
+    }
+    .dsn-block-card:hover { border-color: #adbfa0; box-shadow: 0 3px 12px rgba(0,0,0,.1); }
+    .dsn-block-card.active { border-color: #407600; box-shadow: 0 0 0 3px rgba(64,118,0,.12); }
+    .dsn-block-card-label {
+      display: inline-block;
+      background: #f4f4f4;
+      border: 1px solid #e0e0e0;
+      color: #666;
+      font-size: 10px;
+      font-family: monospace;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .dsn-block-card-preview { pointer-events: none; overflow: hidden; max-height: 76px; }
+    .dsn-block-card-preview * { margin-top: 0 !important; margin-bottom: 2px !important; }
+
+    @media (max-width: 960px) {
+      .dsn-blocks-col { flex: none; max-width: none; max-height: none; }
+      .dsn-block-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .dsn-main { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
@@ -962,12 +1020,11 @@
 ══════════════════════════════════ -->
 <div class="tab-panel" id="panel-designer">
 
-  <!-- 顶部标题 & 操作 -->
-  <div class="designer-hero">
-    <div>
-      <p class="designer-label">Style Builder</p>
-      <h2>自定义你的公众号排版风格</h2>
-      <p class="designer-desc">点击下方模块标签，左侧展示原始内容，右侧对该模块进行可视化编辑，实时预览排版效果。</p>
+  <!-- 操作栏（命名 + 保存） -->
+  <div class="dsn-topbar">
+    <div class="dsn-tg" style="flex:1;min-width:180px;max-width:380px;gap:10px;">
+      <label class="designer-field-label" style="white-space:nowrap;margin:0;">样式名称</label>
+      <input id="designerName" class="designer-input" style="flex:1;" placeholder="例如：品牌旗舰 · 大标题" />
     </div>
     <div class="designer-actions">
       <button id="designerNew" class="designer-btn">新建样式</button>
@@ -975,40 +1032,23 @@
     </div>
   </div>
 
-  <!-- 样式命名 -->
-  <div class="dsn-name-row">
-    <label class="designer-field-label" style="white-space:nowrap;margin-bottom:0;">样式名称</label>
-    <input id="designerName" class="designer-input dsn-name-input" placeholder="例如：品牌旗舰 · 大标题" />
-    <p class="designer-tip" style="margin:0;white-space:nowrap;">命名清晰，插件中切换更方便</p>
-  </div>
-
-  <!-- 模块选择（横向标签） -->
-  <div class="dsn-tabs-wrap">
-    <div id="designerBlockTabs" class="dsn-tabs"></div>
-  </div>
-
-  <!-- 主编辑区：左=原内容，右=富编辑器 -->
+  <!-- 主区域 -->
   <div class="dsn-main">
 
-    <!-- 左：原内容 -->
-    <div class="dsn-pane dsn-pane--source">
-      <div class="dsn-pane-head">
-        <span class="dsn-pane-title">原内容</span>
-        <span class="dsn-pane-hint">默认样式</span>
-      </div>
-      <div id="designerSourceSample" class="dsn-pane-body dsn-source-body"></div>
+    <!-- 左：模块预览卡片（点击选中，实时反映当前样式） -->
+    <div class="dsn-blocks-col">
+      <div id="designerBlockGrid" class="dsn-block-grid"></div>
     </div>
 
-    <!-- 右：富编辑器 -->
+    <!-- 右：编辑器 -->
     <div class="dsn-pane dsn-pane--editor">
       <div class="dsn-pane-head">
         <span class="dsn-pane-title" id="designerEditorTitle">排版编辑</span>
-        <span class="dsn-pane-hint">可视化编辑 · 实时预览</span>
+        <span class="dsn-pane-hint">修改后左侧卡片实时更新</span>
       </div>
 
       <!-- 工具栏 -->
       <div class="dsn-toolbar">
-
         <!-- 行1：字体 & 尺寸 -->
         <div class="dsn-toolbar-row">
           <div class="dsn-tg">
@@ -1037,7 +1077,6 @@
             <span id="designerLetterSpacingValue" class="dsn-tvalue">0em</span>
           </div>
         </div>
-
         <!-- 行2：字重 & 对齐 & 颜色 -->
         <div class="dsn-toolbar-row">
           <div class="dsn-tg">
@@ -1067,10 +1106,8 @@
             <input type="color" id="designerBgColor" value="#ffffff" class="dsn-tcolor" />
           </div>
         </div>
-
-        <!-- 行3：高级（间距 / 边框），由 JS 填充 -->
+        <!-- 行3：高级，由 JS 填充 -->
         <div class="dsn-toolbar-row dsn-toolbar-row--adv" id="designerAdvancedControls"></div>
-
       </div><!-- /dsn-toolbar -->
 
       <!-- 可编辑内容区 -->
@@ -1078,12 +1115,6 @@
     </div><!-- /dsn-pane--editor -->
 
   </div><!-- /dsn-main -->
-
-  <!-- 整体预览 -->
-  <div class="dsn-preview-section">
-    <div class="dsn-preview-title">整体预览</div>
-    <div id="designerPreview" class="designer-preview"></div>
-  </div>
 
   <!-- 保存的样式 -->
   <div class="designer-saved">

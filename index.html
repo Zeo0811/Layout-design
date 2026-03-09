@@ -336,6 +336,304 @@
       transition: background .2s;
     }
     .dl-btn:hover { background: #336000; }
+
+    /* ────────────────────────────────
+       Tab 3  自定义模板
+    ──────────────────────────────── */
+    #panel-template {
+      height: calc(100vh - 53px);
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #panel-template.active { display: flex; }
+
+    /* ── 密码锁定遮罩 ─────────────────────────────────────── */
+    #tpl-gate {
+      position: absolute; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #f5f7f2;
+    }
+    #tpl-gate.hidden { display: none; }
+    .gate-box {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.12);
+      padding: 40px 36px 32px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      width: 320px;
+    }
+    .gate-icon { font-size: 40px; line-height: 1; }
+    .gate-title { font-size: 16px; font-weight: 700; color: #222; }
+    .gate-sub { font-size: 12px; color: #aaa; margin-top: -8px; }
+    .gate-input {
+      width: 100%; height: 40px; border: 1.5px solid #d9d9d9; border-radius: 8px;
+      padding: 0 14px; font-size: 15px; color: #333; outline: none;
+      letter-spacing: 2px; text-align: center;
+      transition: border-color .15s;
+    }
+    .gate-input:focus { border-color: #407600; box-shadow: 0 0 0 3px rgba(64,118,0,.1); }
+    .gate-input.shake {
+      animation: gate-shake .3s ease;
+      border-color: #ff4d4f; box-shadow: 0 0 0 3px rgba(255,77,79,.1);
+    }
+    .gate-btn {
+      width: 100%; height: 40px; background: #407600; color: #fff;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .gate-btn:hover { background: #336000; }
+    .gate-err { font-size: 12px; color: #ff4d4f; min-height: 16px; }
+    @keyframes gate-shake {
+      0%,100%{ transform:translateX(0); }
+      20%{ transform:translateX(-6px); }
+      60%{ transform:translateX(6px); }
+    }
+
+    .tpl-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .tpl-topbar label { font-size: 13px; color: #666; white-space: nowrap; }
+    .tpl-sel, .tpl-input {
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 13px;
+      outline: none;
+      height: 32px;
+      background: #fff;
+    }
+    .tpl-sel { min-width: 130px; cursor: pointer; }
+    .tpl-input { min-width: 160px; }
+    .tpl-sel:focus, .tpl-input:focus {
+      border-color: #407600;
+      box-shadow: 0 0 0 2px rgba(64,118,0,.15);
+    }
+    .tpl-btn {
+      height: 32px;
+      padding: 0 14px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    .tpl-btn:hover { background: #f5f5f5; }
+    .tpl-btn.primary { background: #407600; color: #fff; border-color: #407600; }
+    .tpl-btn.primary:hover { background: #336000; border-color: #336000; }
+    .tpl-btn.danger { color: #cf1322; border-color: #ffa39e; }
+    .tpl-btn.danger:hover { background: #fff1f0; }
+    .tpl-topbar-sep { width: 1px; height: 20px; background: #e0e0e0; flex-shrink: 0; }
+
+    .tpl-main { flex: 1; display: flex; overflow: hidden; }
+
+    .tpl-sidebar {
+      width: 210px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      background: #fafafa;
+      border-right: 1px solid #e8e8e8;
+      padding: 10px 8px;
+    }
+    .tpl-sidebar-item {
+      padding: 7px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #555;
+      font-family: monospace;
+      margin-bottom: 2px;
+      transition: background .12s, color .12s;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+    .tpl-sidebar-item:hover { background: #e8f0d8; color: #407600; }
+    .tpl-sidebar-item.active {
+      background: #f0f6e8;
+      color: #407600;
+      font-weight: 600;
+      border-color: #c8e09b;
+    }
+
+    .tpl-preview-pane {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+    }
+    .tpl-preview-label {
+      font-size: 11px;
+      color: #999;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: monospace;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .tpl-preview-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      min-height: 80px;
+      flex-shrink: 0;
+    }
+    .tpl-preview-hint {
+      color: #bbb;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 80px;
+    }
+
+    .tpl-editor-pane {
+      width: 380px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      background: #fff;
+      border-left: 1px solid #e8e8e8;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tpl-editor-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #222;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+    .tpl-field { display: flex; flex-direction: column; gap: 5px; }
+    .tpl-field-lbl { font-size: 11px; color: #888; font-family: monospace; }
+    .tpl-field-lbl strong { color: #407600; }
+    .tpl-field textarea {
+      width: 100%;
+      min-height: 96px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: 'Operator Mono', Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.65;
+      color: #333;
+      resize: vertical;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      box-sizing: border-box;
+    }
+    .tpl-field textarea:focus {
+      border-color: #407600;
+      box-shadow: 0 0 0 2px rgba(64,118,0,.12);
+    }
+    .tpl-editor-hint { font-size: 13px; color: #bbb; text-align: center; padding-top: 40px; }
+
+    /* ── CSS Property Editor ── */
+    .prop-editor-section { margin-bottom: 12px; }
+    .prop-section-hdr {
+      font-size: 11px; font-family: monospace; font-weight: 700;
+      color: #407600; padding: 4px 0 6px; margin-bottom: 4px;
+      border-bottom: 1px solid #f0f6e8; letter-spacing: 0.3px;
+    }
+    .prop-row {
+      display: flex; align-items: center; gap: 4px;
+      padding: 2px 2px; border-radius: 5px; min-height: 28px;
+    }
+    .prop-row:hover { background: #fafafa; }
+    .prop-name {
+      width: 148px; flex-shrink: 0;
+      border: 1px solid transparent; border-radius: 4px;
+      padding: 2px 5px; font-size: 11px; font-family: monospace;
+      color: #666; background: transparent; outline: none;
+    }
+    .prop-name:hover, .prop-name:focus { border-color: #d9d9d9; background: #fff; color: #333; }
+    .prop-sep { color: #ccc; font-size: 12px; flex-shrink: 0; }
+    .prop-val-wrap { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .prop-color {
+      width: 26px; height: 26px; padding: 2px; border: 1px solid rgba(0,0,0,.15);
+      border-radius: 4px; cursor: pointer; flex-shrink: 0; background: none;
+    }
+    .prop-text {
+      flex: 1; min-width: 0; border: 1px solid transparent;
+      border-radius: 4px; padding: 2px 5px; font-size: 11px;
+      font-family: monospace; color: #333; background: transparent; outline: none;
+    }
+    .prop-text:hover, .prop-text:focus { border-color: #d9d9d9; background: #fff; }
+    .prop-num {
+      width: 52px; border: 1px solid #e0e0e0; border-radius: 4px;
+      padding: 2px 5px; font-size: 11px; font-family: monospace;
+      color: #333; outline: none; -moz-appearance: textfield;
+    }
+    .prop-num::-webkit-inner-spin-button { opacity: 0.5; }
+    .prop-num:focus { border-color: #407600; }
+    .prop-unit, .prop-sel {
+      border: 1px solid #e0e0e0; border-radius: 4px; padding: 2px 4px;
+      font-size: 11px; color: #333; background: #fff; outline: none; cursor: pointer;
+    }
+    .prop-unit:focus, .prop-sel:focus { border-color: #407600; }
+    .prop-del {
+      width: 18px; height: 18px; border: none; background: none;
+      color: #ddd; font-size: 11px; cursor: pointer; border-radius: 3px;
+      padding: 0; line-height: 1; flex-shrink: 0; transition: all .1s;
+    }
+    .prop-del:hover { color: #ff4d4f; background: #fff1f0; }
+    .prop-add {
+      display: block; width: 100%; text-align: left;
+      font-size: 11px; color: #aaa; border: 1px dashed #e8e8e8;
+      border-radius: 5px; background: none; padding: 4px 8px;
+      cursor: pointer; margin-top: 6px; transition: all .12s;
+    }
+    .prop-add:hover { color: #407600; border-color: #c8e09b; background: #f9fdf5; }
+    /* ── 内容字段（emoji / 标签文字编辑）─────────────────── */
+    .content-fields-section {
+      background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px;
+      padding: 10px 12px; margin-bottom: 10px;
+    }
+    .content-fields-title {
+      font-size: 11px; font-weight: 700; color: #7c5600;
+      margin-bottom: 8px; letter-spacing: .3px;
+    }
+    .content-field-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .content-field-row:last-child { margin-bottom: 0; }
+    .content-field-label {
+      font-size: 11px; color: #888; white-space: nowrap; flex-shrink: 0; min-width: 90px;
+    }
+    .content-field-input {
+      flex: 1; height: 26px; border: 1px solid #e8d48b; border-radius: 5px;
+      padding: 0 8px; font-size: 13px; color: #333; background: #fff; outline: none;
+    }
+    .content-field-input:focus { border-color: #d4b008; box-shadow: 0 0 0 2px rgba(212,176,8,.15); }
+    .content-field-color {
+      width: 34px; height: 26px; border: 1px solid #e8d48b; border-radius: 5px;
+      padding: 1px 2px; cursor: pointer; flex-shrink: 0;
+    }
+    /* ── seed 属性行（灰色，提示可选）────────────────────── */
+    .prop-row.is-seed .prop-name { color: #bbb; }
+    .prop-row.is-seed::after {
+      content: '可选'; font-size: 9px; color: #ccc; white-space: nowrap;
+      align-self: center; margin-left: 2px;
+    }
+    .tpl-sync-bar {
+      padding: 8px 16px; border-top: 1px solid #f0f0f0;
+      font-size: 11px; color: #aaa; text-align: center;
+      flex-shrink: 0; /* must not be squeezed by .tpl-main */
+    }
+    .tpl-sync-bar.ok  { color: #407600; background: #f9fdf5; }
+    .tpl-sync-bar.err { color: #ff4d4f; background: #fff2f0; }
   </style>
 </head>
 <body>
@@ -344,8 +642,9 @@
 <nav class="tab-nav">
   <img src="chrome-extension/icons/icon48.png" alt="logo" style="width:28px;height:28px;margin-right:10px;border-radius:6px;vertical-align:middle;flex-shrink:0;" />
   <span class="brand">十字路口排版</span>
-  <button class="tab-btn active" onclick="switchTab('preview')">样式预览</button>
-  <button class="tab-btn" onclick="switchTab('guide')">插件安装教程</button>
+  <button class="tab-btn active" data-tab="preview" onclick="switchTab('preview')">样式预览</button>
+  <button class="tab-btn" data-tab="guide" onclick="switchTab('guide')">插件安装教程</button>
+  <button class="tab-btn" data-tab="template" onclick="switchTab('template')">自定义模板</button>
 </nav>
 
 <!-- ══════════════════════════════════
@@ -605,13 +904,45 @@
 
 <!-- ── Tab 切换逻辑 ── -->
 <script>
+var _templateUnlocked = false;
+
 function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', (name === 'preview' && i === 0) || (name === 'guide' && i === 1));
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === name);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (name === 'template') {
+    // 若未解锁则显示密码门，否则直接初始化
+    var gate = document.getElementById('tpl-gate');
+    if (!_templateUnlocked) {
+      gate.classList.remove('hidden');
+      var inp = document.getElementById('gate-input');
+      inp.value = '';
+      document.getElementById('gate-err').textContent = '';
+      setTimeout(function(){ inp.focus(); }, 80);
+    } else {
+      gate.classList.add('hidden');
+      if (window._initTemplateEditorOnce) window._initTemplateEditorOnce();
+    }
+  }
+}
+
+function unlockTemplate() {
+  var inp = document.getElementById('gate-input');
+  var err = document.getElementById('gate-err');
+  if (inp.value === 'crossing') {
+    _templateUnlocked = true;
+    document.getElementById('tpl-gate').classList.add('hidden');
+    if (window._initTemplateEditorOnce) window._initTemplateEditorOnce();
+  } else {
+    err.textContent = '密码错误，请重试';
+    inp.classList.add('shake');
+    inp.value = '';
+    setTimeout(function(){ inp.classList.remove('shake'); inp.focus(); }, 350);
+  }
 }
 </script>
 
@@ -622,12 +953,12 @@ const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
 
 const S = {
   wrapper:             `font-family:${FONT};font-size:15px;color:rgb(63,63,63);line-height:1.75;letter-spacing:0.1em;word-wrap:break-word;`,
-  h1:                  `display:block;line-height:1.5;font-size:24px;font-family:${FONT};font-weight:bold;margin:80px auto 40px auto;width:fit-content;color:#407600;text-align:center;padding:0 1em;border-bottom:8px solid #407600;`,
-  h2:                  `display:block;line-height:1.5;font-family:${FONT};font-size:20px;font-weight:bold;margin:40px auto;width:fit-content;color:#222222;text-align:center;padding:0 0.2em;`,
-  h3:                  `display:block;line-height:1.5;font-family:${FONT};font-size:17px;font-weight:bold;margin:40px 0;width:fit-content;color:#222222;text-align:left;`,
-  h4:                  `display:block;line-height:1.5;font-family:${FONT};font-size:16px;font-weight:bold;margin:1em 0 .5em;color:#222222;`,
-  h5:                  `display:block;line-height:1.5;font-family:${FONT};font-size:15px;font-weight:bold;margin:.8em 0 .4em;color:#222222;`,
-  h6:                  `display:block;line-height:1.5;font-family:${FONT};font-size:14px;font-weight:bold;margin:.7em 0 .35em;color:#555555;`,
+  h1:                  `display:block;line-height:1.5;font-size:24px;font-family:${FONT};font-weight:bold;margin:80px 0 40px 0;color:#407600;text-align:center;padding:0 1em;border-bottom:8px solid #407600;`,
+  h2:                  `display:block;line-height:1.5;font-family:${FONT};font-size:20px;font-weight:bold;margin:40px 0;color:#222222;text-align:center;padding:0 0.2em;`,
+  h3:                  `display:block;line-height:1.5;font-family:${FONT};font-size:17px;font-weight:bold;margin:40px 0;color:#222222;text-align:left;`,
+  h4:                  `display:block;line-height:1.5;font-family:${FONT};font-size:16px;font-weight:bold;margin:1em 0 .5em;color:#222222;text-align:left;`,
+  h5:                  `display:block;line-height:1.5;font-family:${FONT};font-size:15px;font-weight:bold;margin:.8em 0 .4em;color:#222222;text-align:left;`,
+  h6:                  `display:block;line-height:1.5;font-family:${FONT};font-size:14px;font-weight:bold;margin:.7em 0 .35em;color:#555555;text-align:left;`,
   p:                   `text-align:left;line-height:26px;font-family:${FONT};margin:10px 0;letter-spacing:0.1em;white-space:pre-line;color:rgb(63,63,63);font-size:15px;`,
   strong:              `word-break:break-all;font-weight:600;color:#407600;`,
   em:                  `font-style:italic;`,
@@ -668,6 +999,18 @@ const S = {
   footnote_item:       `font-size:12px;color:#555555;line-height:1.7;margin:.3em 0;word-break:break-all;`,
   footnote_num:        `color:#222222;font-weight:bold;margin-right:4px;`,
   todo_check:          `word-break:break-all;font-weight:600;color:#407600;`,
+  // ── 内容文字（plain text，非 CSS）──────────────────────────────────
+  callout_default_icon: '💡',
+  video_label_text:     '📹 视频内容请前往原文查看',
+  embed_icon_char:      '📎',
+  todo_done_icon:       '✅',
+  todo_pending_icon:    '☐',
+  toggle_arrow_char:    '▶',
+  bookmark_icon_char:   '🔗',
+  // ── 代码块三点颜色 ──────────────────────────────────────────────────
+  code_dot1:            '#ed6c60',
+  code_dot2:            '#f7c151',
+  code_dot3:            '#64c856',
 };
 
 function card(label, html) {
@@ -803,6 +1146,642 @@ const blocks = [
 ];
 
 document.getElementById('preview-grid').innerHTML = blocks.join('');
+</script>
+
+<!-- ══════════════════════════════════
+     Tab 3  自定义模板
+══════════════════════════════════ -->
+<div class="tab-panel" id="panel-template">
+
+  <!-- 密码锁定遮罩（默认可见，验证通过后隐藏） -->
+  <div id="tpl-gate">
+    <div class="gate-box">
+      <div class="gate-icon">🔒</div>
+      <div class="gate-title">自定义模板</div>
+      <div class="gate-sub">请输入访问密码</div>
+      <input id="gate-input" class="gate-input" type="password"
+             placeholder="••••••••" autocomplete="off"
+             onkeydown="if(event.key==='Enter')unlockTemplate()">
+      <div id="gate-err" class="gate-err"></div>
+      <button class="gate-btn" onclick="unlockTemplate()">进入</button>
+    </div>
+  </div>
+
+  <!-- 模板管理栏 -->
+  <div class="tpl-topbar">
+    <label>当前模板：</label>
+    <select class="tpl-sel" id="tpl-selector" onchange="tplLoad()">
+      <option value="">— 十字路口专用 —</option>
+    </select>
+    <div class="tpl-topbar-sep"></div>
+    <label>另存为：</label>
+    <input class="tpl-input" id="tpl-name-input" type="text" placeholder="输入模板名称..." />
+    <button class="tpl-btn primary" onclick="tplSave()">💾 保存模板</button>
+    <button class="tpl-btn danger" onclick="tplDelete()">🗑 删除</button>
+    <div class="tpl-topbar-sep"></div>
+    <button class="tpl-btn" onclick="tplReset()">↩ 恢复默认</button>
+    <button class="tpl-btn" onclick="tplExport()">⬇ 导出 JSON</button>
+  </div>
+  <!-- 三栏主体 -->
+  <div class="tpl-main">
+    <div class="tpl-sidebar" id="tpl-sidebar"></div>
+    <div class="tpl-preview-pane" id="tpl-preview">
+      <div class="tpl-preview-hint">← 请从左侧选择一个块类型开始编辑</div>
+    </div>
+    <div class="tpl-editor-pane" id="tpl-editor">
+      <div class="tpl-editor-hint">请选择一个块类型进行编辑</div>
+    </div>
+  </div>
+  <div class="tpl-sync-bar" id="tpl-sync-bar">插件已安装时，保存模板会自动同步到插件</div>
+</div>
+
+<!-- ── 自定义模板编辑器逻辑 ── -->
+<script>
+(function () {
+  // ══════════════════════════════════════════════════════════════════════════
+  // CSS Property Editor helpers
+  // ══════════════════════════════════════════════════════════════════════════
+
+  const PROP_ENUMS = {
+    'font-weight':       ['normal','400','500','600','700','bold','800'],
+    'text-align':        ['left','center','right','justify'],
+    'display':           ['block','inline','inline-block','flex','none'],
+    'text-decoration':   ['none','underline','line-through','overline'],
+    'font-style':        ['normal','italic','oblique'],
+    'white-space':       ['normal','nowrap','pre','pre-line','pre-wrap'],
+    'overflow':          ['visible','hidden','auto','scroll'],
+    'overflow-x':        ['visible','hidden','auto','scroll'],
+    'text-transform':    ['none','uppercase','lowercase','capitalize'],
+    'word-break':        ['normal','break-all','keep-all'],
+    'list-style-type':   ['disc','circle','square','decimal','none'],
+    'list-style-position':['outside','inside'],
+    'position':          ['static','relative','absolute','fixed','sticky'],
+    'hyphens':           ['none','auto','manual'],
+    'border-style':      ['none','solid','dashed','dotted','double'],
+    'border-top-style':  ['none','solid','dashed','dotted'],
+    'border-bottom-style':['none','solid','dashed','dotted'],
+    'border-left-style': ['none','solid','dashed','dotted'],
+    'vertical-align':    ['baseline','top','middle','bottom','sub','super'],
+    'width':             ['auto','fit-content','100%','max-content','min-content'],
+    'box-sizing':        ['content-box','border-box'],
+  };
+  const SIZE_UNITS = ['px','em','rem','%','vh','vw'];
+  const SIZE_PROPS = new Set([
+    'font-size','line-height','letter-spacing','word-spacing',
+    'max-width','min-width','max-height','min-height','height',
+    'margin-top','margin-right','margin-bottom','margin-left',
+    'padding-top','padding-right','padding-bottom','padding-left',
+    'border-radius','border-width',
+    'border-top-width','border-right-width','border-bottom-width','border-left-width',
+    'top','right','bottom','left','column-gap','row-gap','gap',
+    'border-top-left-radius','border-top-right-radius',
+    'border-bottom-left-radius','border-bottom-right-radius',
+  ]);
+  const COLOR_PROPS = new Set([
+    'color','background-color','border-color',
+    'border-top-color','border-right-color','border-bottom-color','border-left-color',
+    'outline-color','text-decoration-color',
+  ]);
+
+  // 每个 S key 的预置属性（若 CSS 中未出现则以占位行展示，val 为建议默认值）
+  // _seed 标记：用户未修改时不写入最终 CSS；一旦修改自动转为正式属性
+  const SEED_PROPS = {
+    // h1~h3 现在用 text-align 控制对齐，width 作为可选恢复 fit-content 的入口
+    h1: [{prop:'width', val:'100%'},{prop:'background-color', val:'transparent'},{prop:'border-bottom-color', val:'#407600'},{prop:'border-bottom-width', val:'8px'},{prop:'border-bottom-style', val:'solid'}],
+    h2: [{prop:'width', val:'100%'},{prop:'background-color', val:'transparent'}],
+    h3: [{prop:'width', val:'100%'},{prop:'background-color', val:'transparent'}],
+    h4: [{prop:'background-color', val:'transparent'}],
+    h5: [{prop:'background-color', val:'transparent'}],
+    h6: [{prop:'background-color', val:'transparent'}],
+    p:  [{prop:'text-indent', val:'0'},{prop:'background-color', val:'transparent'}],
+    strong: [{prop:'background-color', val:'transparent'}],
+    blockquote_wrapper: [{prop:'border-left-color', val:'#222222'},{prop:'border-left-width', val:'8px'},{prop:'border-left-style', val:'solid'}],
+    callout_wrapper:    [{prop:'background-color', val:'#ffffff'},{prop:'border-color', val:'#222222'}],
+    callout_header:     [{prop:'background-color', val:'transparent'},{prop:'border-left-color', val:'#222222'}],
+    hr: [{prop:'border-top-color', val:'#797979'},{prop:'border-top-width', val:'1px'},{prop:'border-top-style', val:'solid'}],
+    img: [{prop:'border-radius', val:'10px'}],
+    toggle_summary: [{prop:'background-color', val:'transparent'},{prop:'border-left-color', val:'#222222'}],
+  };
+
+  function isColorProp(prop) { return COLOR_PROPS.has(prop); }
+  function isColorVal(val) {
+    const v = (val || '').trim();
+    return /^#[0-9a-fA-F]{3,8}$/.test(v) || /^rgb[a]?\(/.test(v) || /^hsl[a]?\(/.test(v);
+  }
+
+  // Parse CSS string → [{prop, val}]
+  function parseCssStr(css) {
+    const res = []; let depth = 0, buf = '', inStr = false, sc = '';
+    for (const ch of (css || '')) {
+      if (!inStr && (ch==='"'||ch==="'")) { inStr=true; sc=ch; buf+=ch; continue; }
+      if (inStr) { buf+=ch; if (ch===sc) inStr=false; continue; }
+      if (ch==='(') { depth++; buf+=ch; continue; }
+      if (ch===')') { depth--; buf+=ch; continue; }
+      if (depth===0 && ch===';') {
+        const t=buf.trim();
+        if (t) { const ci=t.indexOf(':'); if (ci>0) res.push({prop:t.slice(0,ci).trim(),val:t.slice(ci+1).trim()}); }
+        buf='';
+      } else buf+=ch;
+    }
+    if (buf.trim()) { const ci=buf.indexOf(':'); if (ci>0) res.push({prop:buf.slice(0,ci).trim(),val:buf.slice(ci+1).trim()}); }
+    return res;
+  }
+
+  function serializeProps(arr) {
+    return arr.filter(p=>p.prop&&(p.val||p.val==='0')&&!p._seed).map(p=>`${p.prop}:${p.val}`).join(';');
+  }
+
+  function colorToHex(val) {
+    const v=(val||'').trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) return v;
+    if (/^#[0-9a-fA-F]{3}$/.test(v)) { const[,a,b,c]=v; return '#'+a+a+b+b+c+c; }
+    const m=v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) return '#'+[m[1],m[2],m[3]].map(n=>parseInt(n).toString(16).padStart(2,'0')).join('');
+    return '#222222';
+  }
+
+  function parseSizeVal(val) {
+    const m=(val||'').trim().match(/^(-?[\d.]+)(px|em|rem|%|vh|vw)$/);
+    return m ? {num:m[1],unit:m[2]} : null;
+  }
+
+  function escAttrVal(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+  // ── prop state: sectionKey → [{prop, val}]
+  let propState = {};
+  // ── 插件同步状态
+  let syncTimer      = null; // 等待 ACK 的超时句柄
+  let bridgeAvailable = null; // null=未知 true=可用 false=不可用
+
+  function loadPropState(blockId) {
+    const def = BLOCK_DEFS.find(d=>d.id===blockId);
+    if (!def) return;
+    propState = {};
+    def.keys.forEach(k => {
+      propState[k] = parseCssStr(customS[k]||'');
+      // inject seed props not already present
+      (SEED_PROPS[k]||[]).forEach(s => {
+        if (!propState[k].some(p=>p.prop===s.prop))
+          propState[k].push({prop:s.prop, val:s.val, _seed:true});
+      });
+    });
+  }
+
+  function flushPropState() {
+    if (!selectedId) return;
+    const def = BLOCK_DEFS.find(d=>d.id===selectedId);
+    if (!def) return;
+    def.keys.forEach(k => { if (propState[k]) customS[k] = serializeProps(propState[k]); });
+  }
+
+  function renderPropRow(key, idx) {
+    const {prop, val} = propState[key][idx];
+    const useColor = isColorProp(prop) || isColorVal(val);
+    const enumOpts  = PROP_ENUMS[prop];
+    const sizeInfo  = SIZE_PROPS.has(prop) ? parseSizeVal(val) : null;
+
+    let valHtml;
+    if (useColor) {
+      const hex = colorToHex(val);
+      valHtml =
+        `<input type="color" class="prop-color" value="${escAttrVal(hex)}"
+           onchange="P.colorChange('${key}',${idx},this)">` +
+        `<input type="text" class="prop-text" value="${escAttrVal(val)}"
+           oninput="P.textChange('${key}',${idx},this)">`;
+    } else if (enumOpts) {
+      const optHtml = enumOpts.map(o=>`<option${o===val?' selected':''}>${o}</option>`).join('');
+      valHtml = `<select class="prop-sel" onchange="P.enumChange('${key}',${idx},this)">${optHtml}</select>`;
+      if (!enumOpts.includes(val))
+        valHtml += `<input type="text" class="prop-text" value="${escAttrVal(val)}" style="max-width:90px"
+                      oninput="P.textChange('${key}',${idx},this)">`;
+    } else if (sizeInfo) {
+      const unitOpts = SIZE_UNITS.map(u=>`<option${u===sizeInfo.unit?' selected':''}>${u}</option>`).join('');
+      valHtml =
+        `<input type="number" class="prop-num" value="${sizeInfo.num}" step="0.5"
+           oninput="P.numChange('${key}',${idx},this)">` +
+        `<select class="prop-unit" onchange="P.unitChange('${key}',${idx},this)">${unitOpts}</select>`;
+    } else {
+      valHtml = `<input type="text" class="prop-text" value="${escAttrVal(val)}"
+                   oninput="P.textChange('${key}',${idx},this)">`;
+    }
+
+    const isSeed = !!(propState[key][idx]._seed);
+    return `<div class="prop-row${isSeed?' is-seed':''}" data-key="${key}" data-idx="${idx}">
+      <input type="text" class="prop-name" value="${escAttrVal(prop)}"
+             onchange="P.nameChange('${key}',${idx},this)">
+      <span class="prop-sep">:</span>
+      <div class="prop-val-wrap">${valHtml}</div>
+      <button class="prop-del" onclick="P.del('${key}',${idx})" title="删除">✕</button>
+    </div>`;
+  }
+
+  function renderSection(key) {
+    const rows = (propState[key]||[]).map((_,i)=>renderPropRow(key,i)).join('');
+    return `<div class="prop-editor-section" data-section="${key}">
+      <div class="prop-section-hdr">${key}${KEY_LABELS[key]?' · '+KEY_LABELS[key]:''}</div>
+      ${rows}
+      <button class="prop-add" onclick="P.add('${key}')">+ 添加属性</button>
+    </div>`;
+  }
+
+  function rerenderSection(key) {
+    const el = document.querySelector(`[data-section="${key}"]`);
+    if (!el) return;
+    el.innerHTML =
+      `<div class="prop-section-hdr">${key}${KEY_LABELS[key]?' · '+KEY_LABELS[key]:''}</div>` +
+      (propState[key]||[]).map((_,i)=>renderPropRow(key,i)).join('') +
+      `<button class="prop-add" onclick="P.add('${key}')">+ 添加属性</button>`;
+  }
+
+  // ── Prop change handlers (namespaced under window.P)
+  window.P = {
+    textChange(key, idx, el) {
+      propState[key][idx].val = el.value;
+      delete propState[key][idx]._seed;
+      flushPropState(); renderPreview();
+    },
+    colorChange(key, idx, el) {
+      propState[key][idx].val = el.value;
+      delete propState[key][idx]._seed;
+      const txt = el.parentElement.querySelector('.prop-text');
+      if (txt) txt.value = el.value;
+      flushPropState(); renderPreview();
+    },
+    enumChange(key, idx, el) {
+      propState[key][idx].val = el.value;
+      delete propState[key][idx]._seed;
+      const txt = el.parentElement.querySelector('.prop-text');
+      if (txt) txt.value = el.value;
+      flushPropState(); renderPreview();
+    },
+    numChange(key, idx, el) {
+      const unit = el.parentElement.querySelector('.prop-unit');
+      propState[key][idx].val = el.value + (unit ? unit.value : 'px');
+      delete propState[key][idx]._seed;
+      flushPropState(); renderPreview();
+    },
+    unitChange(key, idx, el) {
+      const num = el.parentElement.querySelector('.prop-num');
+      propState[key][idx].val = (num ? num.value : '0') + el.value;
+      delete propState[key][idx]._seed;
+      flushPropState(); renderPreview();
+    },
+    nameChange(key, idx, el) {
+      propState[key][idx].prop = el.value;
+      delete propState[key][idx]._seed;
+      flushPropState(); renderPreview();
+      rerenderSection(key);
+    },
+    del(key, idx) {
+      propState[key].splice(idx, 1);
+      flushPropState(); renderPreview(); rerenderSection(key);
+    },
+    add(key) {
+      if (!propState[key]) propState[key] = [];
+      propState[key].push({prop:'color', val:'#222222'});
+      flushPropState(); renderPreview(); rerenderSection(key);
+    },
+    contentChange(key, el) {
+      customS[key] = el.value;
+      renderPreview();
+    },
+    contentColorChange(key, el) {
+      customS[key] = el.value;
+      const txt = el.parentElement.querySelector('.content-field-input');
+      if (txt) txt.value = el.value;
+      renderPreview();
+    },
+    contentTextSyncChange(key, el) {
+      customS[key] = el.value;
+      const picker = el.parentElement.querySelector('.content-field-color');
+      if (picker) { try { picker.value = colorToHex(el.value); } catch(_) {} }
+      renderPreview();
+    },
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Block definitions — each maps to one or more S keys and provides a render fn
+  // ══════════════════════════════════════════════════════════════════════════
+  const BLOCK_DEFS = [
+    { id: 'h1', label: 'H1 · 一级标题', keys: ['h1'],
+      render: cs => `<section style="${cs.h1}">这是一级标题 H1</section>` },
+    { id: 'h2', label: 'H2 · 二级标题', keys: ['h2'],
+      render: cs => `<section style="${cs.h2}">这是二级标题 H2</section>` },
+    { id: 'h3', label: 'H3 · 三级标题', keys: ['h3'],
+      render: cs => `<section style="${cs.h3}">这是三级标题 H3</section>` },
+    { id: 'h4', label: 'H4 · 四级标题', keys: ['h4'],
+      render: cs => `<section style="${cs.h4}">这是四级标题 H4</section>` },
+    { id: 'h5', label: 'H5 · 五级标题', keys: ['h5'],
+      render: cs => `<section style="${cs.h5}">这是五级标题 H5</section>` },
+    { id: 'h6', label: 'H6 · 六级标题', keys: ['h6'],
+      render: cs => `<section style="${cs.h6}">这是六级标题 H6</section>` },
+    { id: 'p', label: 'paragraph · 正文段落', keys: ['p'],
+      render: cs => `<p style="${cs.p}">这是一段正文内容，展示基础段落样式。字体使用 Optima / PingFang SC，字号 15px，行高 26px，字间距 0.1em。适合大段阅读文字。</p>` },
+    { id: 'inline', label: 'inline · 行内格式', keys: ['strong', 'em', 'code_inline', 's'],
+      render: cs => `<p style="${cs.p}">包含 <strong style="${cs.strong}">加粗文字</strong>、<em style="${cs.em}">斜体文字</em>、<s style="${cs.s}">删除线</s>、<code style="${cs.code_inline}">行内代码</code> 的混排效果。</p>` },
+    { id: 'quote', label: 'quote · 引用块', keys: ['blockquote_wrapper', 'blockquote_text'],
+      render: cs => `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">这是一段引用内容，左侧有 8px 粗边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>` },
+    { id: 'callout', label: 'callout · 高亮块', keys: ['callout_wrapper', 'callout_header', 'callout_content'],
+      content_fields: [{key:'callout_default_icon', label:'统一图标（非💡时覆盖文档图标）', placeholder:'💡'}],
+      render: cs => `<section style="${cs.callout_wrapper}"><section><section style="${cs.callout_header}">${cs.callout_default_icon||'💡'}</section></section><section style="${cs.callout_content}">这是一个 Callout 高亮块，带有左侧粗边框和顶部图标区域，适合强调注意事项。</section></section>` },
+    { id: 'code', label: 'code · 代码块', keys: ['code_wrapper', 'code_lang_bar', 'code_pre', 'code_text'],
+      content_fields: [
+        {key:'code_dot1', label:'● 左点颜色', placeholder:'#ed6c60', type:'color'},
+        {key:'code_dot2', label:'● 中点颜色', placeholder:'#f7c151', type:'color'},
+        {key:'code_dot3', label:'● 右点颜色', placeholder:'#64c856', type:'color'},
+      ],
+      render: cs => {
+        const dot = c => `<section style="width:10px;height:10px;border-radius:50%;background-color:${c};font-size:0;line-height:0;overflow:hidden;">&nbsp;</section>`;
+        const dots = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;">${dot(cs.code_dot1||'#ed6c60')}${dot(cs.code_dot2||'#f7c151')}${dot(cs.code_dot3||'#64c856')}</section>`;
+        return `<section style="${cs.code_wrapper}">${dots}<div style="${cs.code_lang_bar}">javascript</div><pre style="${cs.code_pre}"><code style="${cs.code_text}">function hello(name) {\n  console.log('Hello, ' + name);\n  return name.toUpperCase();\n}</code></pre></section>`;
+      } },
+    { id: 'hr', label: 'divider · 分割线', keys: ['hr'],
+      render: cs => `<p style="${cs.p}">分割线上方的正文内容。</p><section style="${cs.hr}"></section><p style="${cs.p}">分割线下方的正文内容。</p>` },
+    { id: 'bulleted_list', label: 'bulleted_list · 无序列表', keys: ['ul', 'li_ul', 'li_p'],
+      render: cs => `<ul style="${cs.ul}"><li style="${cs.li_ul}"><p style="${cs.li_p}">第一个列表项，圆点样式</p></li><li style="${cs.li_ul}"><p style="${cs.li_p}">第二个列表项，正文字号</p></li><li style="${cs.li_ul}"><p style="${cs.li_p}">第三个列表项</p></li></ul>` },
+    { id: 'numbered_list', label: 'numbered_list · 有序列表', keys: ['ol', 'li_ol', 'li_p'],
+      render: cs => `<ol style="${cs.ol}"><li style="${cs.li_ol}"><p style="${cs.li_p}">第一步：打开飞书文档</p></li><li style="${cs.li_ol}"><p style="${cs.li_p}">第二步：点击插件图标</p></li><li style="${cs.li_ol}"><p style="${cs.li_p}">第三步：一键转换并复制</p></li></ol>` },
+    { id: 'image', label: 'image · 图片', keys: ['img_wrapper', 'img', 'img_caption'],
+      render: cs => `<section style="${cs.img_wrapper}"><img src="https://picsum.photos/seed/demo/480/220" style="${cs.img}" alt="示例图片" /><p style="${cs.img_caption}">这是图片的说明文字（caption）</p></section>` },
+    { id: 'video', label: 'video · 视频占位', keys: ['video_wrapper', 'video_label'],
+      content_fields: [{key:'video_label_text', label:'占位文字', placeholder:'📹 视频内容请前往原文查看'}],
+      render: cs => `<section style="${cs.video_wrapper}"><p style="${cs.video_label}">${cs.video_label_text||'📹 视频内容请前往原文查看'}</p></section>` },
+    { id: 'toggle', label: 'toggle · 折叠块', keys: ['toggle_summary', 'toggle_content'],
+      content_fields: [{key:'toggle_arrow_char', label:'折叠箭头', placeholder:'▶'}],
+      render: cs => `<section style="${cs.toggle_summary}">${cs.toggle_arrow_char||'▶'} 折叠块标题（点击展开）</section><section style="${cs.toggle_content}"><p style="${cs.p}">这是折叠块内部的内容，左侧有细灰线标示层级。</p></section>` },
+    { id: 'table', label: 'table · 表格', keys: ['table_wrapper', 'table', 'th', 'td', 'td_even'],
+      render: cs => `<section style="${cs.table_wrapper}"><table style="${cs.table}"><tr><td style="${cs.th}">平台</td><td style="${cs.th}">支持格式</td><td style="${cs.th}">图片处理</td></tr><tr><td style="${cs.td_even}">飞书</td><td style="${cs.td_even}">文档 / Wiki</td><td style="${cs.td_even}">Base64 转换</td></tr><tr><td style="${cs.td}">Notion</td><td style="${cs.td}">Page</td><td style="${cs.td}">CDN 直链</td></tr></table></section>` },
+    { id: 'embed', label: 'embed · 嵌入链接', keys: ['embed_wrapper', 'embed_label', 'embed_link'],
+      content_fields: [{key:'embed_icon_char', label:'前缀图标', placeholder:'📎'}],
+      render: cs => `<section style="${cs.embed_wrapper}"><p style="${cs.embed_label}">${cs.embed_icon_char||'📎'} 嵌入内容</p><p style="${cs.embed_link}">https://github.com/Zeo0811/Layout-design</p></section>` },
+    { id: 'footnotes', label: 'footnotes · 脚注', keys: ['footnotes_wrapper', 'footnotes_title', 'footnote_item', 'footnote_num'],
+      render: cs => `<section style="${cs.footnotes_wrapper}"><p style="${cs.footnotes_title}">参考资料</p><p style="${cs.footnote_item}"><span style="${cs.footnote_num}">[1]</span>十字路口排版插件示例链接</p></section>` },
+    { id: 'todo', label: 'todo · 待办事项', keys: ['p'],
+      content_fields: [
+        {key:'todo_done_icon',    label:'已完成图标', placeholder:'✅'},
+        {key:'todo_pending_icon', label:'未完成图标', placeholder:'☐'},
+      ],
+      render: cs => `<p style="${cs.p}">${cs.todo_done_icon||'✅'} <span style="text-decoration:line-through;color:#aaaaaa;">已完成的待办事项</span></p><p style="${cs.p}">${cs.todo_pending_icon||'☐'} 未完成的待办事项</p>` },
+    { id: 'bookmark', label: 'bookmark · 书签链接', keys: ['p'],
+      content_fields: [{key:'bookmark_icon_char', label:'书签图标', placeholder:'🔗'}],
+      render: cs => `<p style="${cs.p}">${cs.bookmark_icon_char||'🔗'} <a href="#" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">书签标题示例文字</a><sup style="color:#222222;font-size:.7em;font-weight:bold;line-height:0;">[1]</sup></p>` },
+  ];
+
+  const KEY_LABELS = {
+    h1: '一级标题', h2: '二级标题', h3: '三级标题',
+    h4: '四级标题', h5: '五级标题', h6: '六级标题',
+    p: '正文段落',
+    strong: '加粗', em: '斜体', code_inline: '行内代码', s: '删除线',
+    blockquote_wrapper: '引用块外层', blockquote_text: '引用块文字',
+    callout_wrapper: '高亮块外层', callout_header: '高亮块头部', callout_content: '高亮块内容',
+    code_wrapper: '代码块外层', code_lang_bar: '语言栏', code_pre: 'pre 元素', code_text: '代码文字',
+    hr: '分割线',
+    ul: '无序列表', ol: '有序列表', li_ul: '无序列表项', li_ol: '有序列表项', li_p: '列表段落',
+    img_wrapper: '图片容器', img: '图片样式', img_caption: '图片说明',
+    video_wrapper: '视频容器', video_label: '视频标签',
+    toggle_summary: '折叠标题', toggle_content: '折叠内容',
+    table_wrapper: '表格容器', table: '表格', th: '表头单元格', td: '普通单元格', td_even: '隔行单元格',
+    embed_wrapper: '嵌入容器', embed_label: '嵌入标签', embed_link: '嵌入链接',
+    footnotes_wrapper: '脚注容器', footnotes_title: '脚注标题', footnote_item: '脚注条目', footnote_num: '脚注编号',
+    // 内容文字键
+    callout_default_icon: '默认图标', video_label_text: '占位文字',
+    embed_icon_char: '嵌入图标', todo_done_icon: '完成图标', todo_pending_icon: '待办图标',
+    toggle_arrow_char: '折叠箭头', bookmark_icon_char: '书签图标',
+    // 代码块三点
+    code_dot1: '左点色', code_dot2: '中点色', code_dot3: '右点色',
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Template state
+  // ══════════════════════════════════════════════════════════════════════════
+  let customS = Object.assign({}, S);
+  let selectedId = null;
+  let savedTemplates = [];
+
+  function renderSidebar() {
+    const el = document.getElementById('tpl-sidebar');
+    if (!el) return;
+    el.innerHTML = BLOCK_DEFS.map(def =>
+      `<div class="tpl-sidebar-item${def.id===selectedId?' active':''}" onclick="tplSelectBlock('${def.id}')">${def.label}</div>`
+    ).join('');
+  }
+
+  function renderPreview() {
+    const el = document.getElementById('tpl-preview');
+    if (!el) return;
+    if (!selectedId) { el.innerHTML = '<div class="tpl-preview-hint">← 请从左侧选择一个块类型开始编辑</div>'; return; }
+    const def = BLOCK_DEFS.find(d=>d.id===selectedId);
+    el.innerHTML =
+      `<div class="tpl-preview-label">${def.label} — 实时预览</div>` +
+      `<div class="tpl-preview-card">${def.render(customS)}</div>`;
+  }
+
+  function renderEditor() {
+    const el = document.getElementById('tpl-editor');
+    if (!el) return;
+    if (!selectedId) { el.innerHTML = '<div class="tpl-editor-hint">请选择一个块类型进行编辑</div>'; return; }
+    const def = BLOCK_DEFS.find(d=>d.id===selectedId);
+    let contentFieldsHtml = '';
+    if (def.content_fields && def.content_fields.length > 0) {
+      const rows = def.content_fields.map(f => {
+        const rawVal = customS[f.key] !== undefined ? customS[f.key] : (f.placeholder || '');
+        const val = escAttrVal(rawVal);
+        let inputHtml;
+        if (f.type === 'color') {
+          const hexVal = escAttrVal(colorToHex(rawVal || f.placeholder || '#000000'));
+          inputHtml =
+            `<input type="color" class="content-field-color" value="${hexVal}"
+               oninput="P.contentColorChange('${f.key}',this)">` +
+            `<input class="content-field-input" type="text" style="max-width:100px"
+               value="${val}" placeholder="${escAttrVal(f.placeholder||'')}"
+               oninput="P.contentTextSyncChange('${f.key}',this)">`;
+        } else {
+          inputHtml =
+            `<input class="content-field-input" type="text"
+               value="${val}" placeholder="${escAttrVal(f.placeholder||'')}"
+               oninput="P.contentChange('${f.key}', this)">`;
+        }
+        return `<div class="content-field-row">
+          <span class="content-field-label">${f.label}</span>
+          ${inputHtml}
+        </div>`;
+      }).join('');
+      contentFieldsHtml =
+        `<div class="content-fields-section">
+          <div class="content-fields-title">🎨 内容文字 / Emoji</div>
+          ${rows}
+        </div>`;
+    }
+    el.innerHTML = `<div class="tpl-editor-title">✏️ ${def.label}</div>` +
+      contentFieldsHtml +
+      def.keys.map(renderSection).join('');
+  }
+
+  function syncSelector() {
+    const sel = document.getElementById('tpl-selector');
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— 十字路口专用 —</option>' +
+      savedTemplates.map((t,i)=>`<option value="${i}">${t.name}</option>`).join('');
+    sel.value = prev;
+  }
+
+  function setSyncBar(cls, msg) {
+    const bar = document.getElementById('tpl-sync-bar');
+    if (!bar) return;
+    bar.className = 'tpl-sync-bar' + (cls ? ' '+cls : '');
+    bar.textContent = msg;
+  }
+
+  // ── Extension sync ────────────────────────────────────────────────────────
+  function syncToExtension() {
+    // Send the full templates array so the extension can show a selector
+    window.postMessage({ type: 'LAYOUT_SYNC_TEMPLATES', templates: savedTemplates }, '*');
+  }
+
+  window.addEventListener('message', function(e) {
+    if (e.source!==window || !e.data) return;
+
+    if (e.data.type === 'LAYOUT_SYNC_ACK') {
+      if (syncTimer) { clearTimeout(syncTimer); syncTimer = null; }
+      bridgeAvailable = true;
+      setSyncBar('ok', '✅ 已同步到插件，插件下拉框已更新');
+      setTimeout(() => setSyncBar('', ''), 3000);
+    }
+
+    if (e.data.type === 'LAYOUT_TEMPLATES_LOADED') {
+      // bridge 确认可用
+      bridgeAvailable = true;
+      setSyncBar('', '');
+      // Merge: extension templates → local
+      const extTemplates = e.data.templates || [];
+      if (extTemplates.length === 0) return;
+      extTemplates.forEach(et => {
+        if (!savedTemplates.find(t => t.name === et.name)) savedTemplates.push(et);
+      });
+      try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(_) {}
+      syncSelector();
+    }
+  });
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  window.tplSelectBlock = function(id) {
+    selectedId = id;
+    loadPropState(id);
+    renderSidebar();
+    renderPreview();
+    renderEditor();
+  };
+
+  window.tplSave = function() {
+    try {
+      const name = (document.getElementById('tpl-name-input').value||'').trim();
+      if (!name) { alert('请输入模板名称'); return; }
+      const idx = savedTemplates.findIndex(t=>t.name===name);
+      const entry = { name, s: Object.assign({}, customS) };
+      if (idx>=0) savedTemplates[idx]=entry; else savedTemplates.push(entry);
+      try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
+      syncSelector();
+      document.getElementById('tpl-selector').value = savedTemplates.findIndex(t=>t.name===name);
+      // Button feedback
+      const saveBtn = document.querySelector('#panel-template .tpl-topbar .tpl-btn.primary');
+      if (saveBtn) {
+        const orig = saveBtn.textContent;
+        saveBtn.textContent = '✅ 已保存';
+        saveBtn.disabled = true;
+        setTimeout(() => { saveBtn.textContent = orig; saveBtn.disabled = false; }, 2000);
+      }
+      // Sync to extension — wait for LAYOUT_SYNC_ACK, show error on timeout
+      syncToExtension();
+      setSyncBar('', '⏳ 正在同步到插件...');
+      if (syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(() => {
+        syncTimer = null;
+        if (bridgeAvailable === false) {
+          setSyncBar('err',
+            '⚠️ 插件未连接 — 请在 chrome://extensions 中为「十字路口排版」开启「允许访问文件网址」，刷新此页后重试');
+        } else {
+          setSyncBar('err', '⚠️ 同步超时，模板已保存到本地，请检查插件是否正常运行');
+        }
+      }, 3000);
+    } catch(err) {
+      alert('保存失败：' + err.message);
+    }
+  };
+
+  window.tplLoad = function() {
+    const sel = document.getElementById('tpl-selector');
+    const idx = parseInt(sel.value);
+    if (isNaN(idx)||idx<0) {
+      customS = Object.assign({}, S);
+    } else {
+      const tpl = savedTemplates[idx];
+      if (!tpl) return;
+      customS = Object.assign({}, S, tpl.s);
+      document.getElementById('tpl-name-input').value = tpl.name;
+    }
+    if (selectedId) { loadPropState(selectedId); }
+    renderPreview();
+    renderEditor();
+  };
+
+  window.tplDelete = function() {
+    const sel = document.getElementById('tpl-selector');
+    const idx = parseInt(sel.value);
+    if (isNaN(idx)||idx<0||!savedTemplates[idx]) { alert('请先选择一个已保存的模板'); return; }
+    if (!confirm(`确认删除模板「${savedTemplates[idx].name}」？`)) return;
+    savedTemplates.splice(idx,1);
+    try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
+    syncSelector();
+    sel.value = '';
+  };
+
+  window.tplReset = function() {
+    if (!confirm('恢复默认样式？当前未保存的修改会丢失。')) return;
+    customS = Object.assign({}, S);
+    document.getElementById('tpl-selector').value = '';
+    document.getElementById('tpl-name-input').value = '';
+    if (selectedId) { loadPropState(selectedId); }
+    renderPreview();
+    renderEditor();
+  };
+
+  window.tplExport = function() {
+    const name = (document.getElementById('tpl-name-input').value||'').trim()||'custom-template';
+    const blob = new Blob([JSON.stringify(customS,null,2)],{type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download=name+'.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Lazy init — called first time the template tab is opened
+  window._initTemplateEditorOnce = (function() {
+    let done = false;
+    return function() {
+      if (done) return;
+      done = true;
+      try {
+        const raw = localStorage.getItem('layout-templates');
+        savedTemplates = raw ? JSON.parse(raw) : [];
+      } catch(e) { savedTemplates = []; }
+      syncSelector();
+      renderSidebar();
+      // Request stored templates from extension (to merge/restore)
+      // 同时检测 bridge 是否可用：2.5s 无响应视为不可用
+      window.postMessage({ type: 'LAYOUT_REQUEST_TEMPLATES' }, '*');
+      setTimeout(() => {
+        if (bridgeAvailable === null) {
+          bridgeAvailable = false;
+          setSyncBar('err',
+            '⚠️ 未检测到插件连接 — 请确认插件已安装，' +
+            '并在 chrome://extensions 中为「十字路口排版」开启「允许访问文件网址」，刷新此页后重试');
+        }
+      }, 2500);
+    };
+  })();
+})();
 </script>
 
 </body>

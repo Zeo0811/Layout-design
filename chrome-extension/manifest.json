@@ -27,7 +27,9 @@
     "https://*.byteimg.com/*",
     "https://*.larksuitecdn.com/*",
     "https://*.cloudfront.net/*",
-    "https://*.bytescm.com/*"
+    "https://*.bytescm.com/*",
+    "https://*.up.railway.app/*",
+    "https://*.github.io/*"
   ],
   "action": {
     "default_icon": {
@@ -48,6 +50,19 @@
         "content/notion-parser.js",
         "content/feishu-parser.js",
         "content/content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "file://*/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "https://*.up.railway.app/*",
+        "https://*.github.io/*"
+      ],
+      "js": [
+        "content/template-bridge.js"
       ],
       "run_at": "document_idle"
     }

@@ -191,7 +191,7 @@
           target: { tabId },
           world: 'MAIN',
           func: async (imageUrls) => {
-            const toBase64 = (url) => fetch(url, { credentials: 'include' })
+            const toBase64 = (url) => fetch(url, { credentials: 'same-origin' })
               .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
               .then(blob => new Promise((res, rej) => {
                 const reader = new FileReader();

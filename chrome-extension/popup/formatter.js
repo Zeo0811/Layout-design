@@ -96,7 +96,7 @@ const S = {
   callout_content: `padding: 0 12px 15px; color: #3f3f3f; letter-spacing: 0.1em;`,
 
   // ── 代码块（commonStyles.pre，tech_black 未覆盖）─────────────────────
-  code_wrapper:  `margin: 20px 10px; display: block; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow: auto; font-family: ${MONO};`,
+  code_wrapper:  `margin: 20px 10px; display: inline-block; max-width: 100%; vertical-align: top; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
   code_lang_bar: `font-size: 11px; color: #999; font-family: ${MONO}; padding-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;`,
   code_pre:      `margin: 0; padding: 0; overflow-x: auto; background: transparent;`,
   code_text:     `font-family: ${MONO}; font-size: 14px; line-height: 1.65; white-space: pre; word-break: normal; display: block; color: #333;`,

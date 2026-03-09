@@ -52,19 +52,18 @@ const S = {
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
-  // 注：去掉 width:fit-content，改用 text-align 控制对齐（fit-content 会使 text-align 失效）
-  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${FONT}; font-weight: bold; margin: 80px 0 40px 0; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
+  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
 
   // commonStyles.h2 + tech_black.h2
-  h2: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 20px; font-weight: bold; margin: 40px 0; color: #222222; text-align: center; padding: 0 0.2em;`,
+  h2: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
 
   // commonStyles.h3 + tech_black.h3
-  h3: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; color: #222222; text-align: left;`,
+  h3: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; width: fit-content; color: #222222; text-align: left;`,
 
   // h4~h6：参考未定义，合理延伸
-  h4: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 16px; font-weight: bold; margin: 1em 0 .5em; color: #222222; text-align: left;`,
-  h5: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 15px; font-weight: bold; margin: .8em 0 .4em; color: #222222; text-align: left;`,
-  h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555; text-align: left;`,
+  h4: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 16px; font-weight: bold; margin: 1em 0 .5em; color: #222222;`,
+  h5: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 15px; font-weight: bold; margin: .8em 0 .4em; color: #222222;`,
+  h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
   p: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 10px 0; letter-spacing: 0.1em; white-space: pre-line; color: rgb(63,63,63); font-size: 15px;`,
@@ -97,7 +96,7 @@ const S = {
   callout_content: `padding: 0 12px 15px; color: #3f3f3f; letter-spacing: 0.1em;`,
 
   // ── 代码块（commonStyles.pre，tech_black 未覆盖）─────────────────────
-  code_wrapper:  `margin: 20px 10px; display: inline-block; max-width: 100%; vertical-align: top; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
+  code_wrapper:  `margin: 20px 10px; display: block; width: calc(100% - 20px); box-sizing: border-box; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
   code_lang_bar: `font-size: 11px; color: #999; font-family: ${MONO}; padding-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;`,
   code_pre:      `margin: 0; padding: 0; overflow-x: auto; background: transparent;`,
   code_text:     `font-family: ${MONO}; font-size: 14px; line-height: 1.65; white-space: pre; word-break: normal; display: block; color: #333;`,
@@ -144,20 +143,6 @@ const S = {
   footnotes_title:   `font-size: 12px; font-weight: bold; color: #888888; margin-bottom: .6em; text-transform: uppercase; letter-spacing: 1px;`,
   footnote_item:     `font-size: 12px; color: #555555; line-height: 1.7; margin: .3em 0; word-break: break-all;`,
   footnote_num:      `color: #222222; font-weight: bold; margin-right: 4px;`,
-
-  // ── 代码块三点颜色 ────────────────────────────────────────────────
-  code_dot1: '#ed6c60',
-  code_dot2: '#f7c151',
-  code_dot3: '#64c856',
-
-  // ── 内容文字（非 CSS，plain text，用于自定义 emoji / 标签文字）──────
-  callout_default_icon:  '💡',
-  video_label_text:      '📹 视频内容请前往原文查看',
-  embed_icon_char:       '📎',
-  todo_done_icon:        '✅',
-  todo_pending_icon:     '☐',
-  toggle_arrow_char:     '▶',
-  bookmark_icon_char:    '🔗',
 };
 
 // ── 主入口 ───────────────────────────────────────────────────────────────
@@ -220,19 +205,19 @@ function renderBlock(block, links, depth) {
 
     case 'bookmark':
       // a（tech_black）：color:#222222; border-bottom:1px solid #222222
-      return `<p style="${S.p}">${S.bookmark_icon_char||'🔗'} <a href="${escAttr(block.url)}" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">${escHtml(block.text || block.url)}</a><sup style="color:#222222;font-size:.7em;font-weight:bold;line-height:0;">[${block.linkIndex}]</sup></p>`;
+      return `<p style="${S.p}">🔗 <a href="${escAttr(block.url)}" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">${escHtml(block.text || block.url)}</a><sup style="color:#222222;font-size:.7em;font-weight:bold;line-height:0;">[${block.linkIndex}]</sup></p>`;
 
     case 'todo':
       if (block.checked) {
-        return `<p style="${S.p}">${S.todo_done_icon||'✅'} <span style="text-decoration:line-through;color:#aaaaaa;">${pi(block.content)}</span></p>`;
+        return `<p style="${S.p}">✅ <span style="text-decoration:line-through;color:#aaaaaa;">${pi(block.content)}</span></p>`;
       }
-      return `<p style="${S.p}">${S.todo_pending_icon||'☐'} ${pi(block.content)}</p>`;
+      return `<p style="${S.p}">☐ ${pi(block.content)}</p>`;
 
     case 'table':
       return renderTable(block);
 
     case 'embed':
-      return `<section style="${S.embed_wrapper}"><p style="${S.embed_label}">${S.embed_icon_char||'📎'} ${escHtml(block.title || '嵌入内容')}</p>${block.url ? `<p style="${S.embed_link}">${escHtml(block.url)}</p>` : ''}</section>`;
+      return `<section style="${S.embed_wrapper}"><p style="${S.embed_label}">📎 ${escHtml(block.title || '嵌入内容')}</p>${block.url ? `<p style="${S.embed_link}">${escHtml(block.url)}</p>` : ''}</section>`;
 
     case 'column_list':
       if (!block.columns) return '';
@@ -249,10 +234,7 @@ function renderBlock(block, links, depth) {
 // 内层内容：section.wechat-callout-block
 
 function renderCallout(block) {
-  // 模板图标优先；若模板未自定义（仍为默认 '💡'），则尊重文档自身图标
-  const icon = (S.callout_default_icon && S.callout_default_icon !== '💡')
-    ? S.callout_default_icon
-    : (block.icon || S.callout_default_icon || '💡');
+  const icon = block.icon || '💡';
   return (
     `<section style="${S.callout_wrapper}">` +
       `<section>` +
@@ -295,7 +277,7 @@ function renderCodeBlock(block) {
   }
 
   const dot = (color) => `<section style="width:10px;height:10px;border-radius:50%;background-color:${color};font-size:0;line-height:0;overflow:hidden;">&nbsp;</section>`;
-  const topBar = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;">${dot(S.code_dot1||'#ed6c60')}${dot(S.code_dot2||'#f7c151')}${dot(S.code_dot3||'#64c856')}</section>`;
+  const topBar = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;">${dot('#ed6c60')}${dot('#f7c151')}${dot('#64c856')}</section>`;
   const langBar = lang ? `<div style="${S.code_lang_bar}">${escHtml(lang)}</div>` : '';
   return `<section style="${S.code_wrapper}">${topBar}${langBar}<pre style="${S.code_pre}"><code style="${S.code_text}">${codeHtml}</code></pre></section>`;
 }
@@ -332,11 +314,10 @@ function renderImage(block) {
 // ── 视频 ─────────────────────────────────────────────────────────────────
 
 function renderVideo(block) {
-  const labelText = S.video_label_text || '📹 视频内容请前往原文查看';
   if (block.thumbnailUrl) {
-    return `<section style="${S.img_wrapper}"><img src="${escAttr(block.thumbnailUrl)}" style="${S.img}" alt="视频封面" /><p style="${S.img_caption}">${labelText}</p></section>`;
+    return `<section style="${S.img_wrapper}"><img src="${escAttr(block.thumbnailUrl)}" style="${S.img}" alt="视频封面" /><p style="${S.img_caption}">📹 视频内容请前往原文查看</p></section>`;
   }
-  return `<section style="${S.video_wrapper}"><p style="${S.video_label}">${labelText}</p></section>`;
+  return `<section style="${S.video_wrapper}"><p style="${S.video_label}">📹 视频内容请前往原文查看</p></section>`;
 }
 
 // ── Toggle ────────────────────────────────────────────────────────────────
@@ -344,7 +325,7 @@ function renderVideo(block) {
 function renderToggle(block, links, depth) {
   // 嵌套 toggle（depth > 0）不再显示三角和黑色左边框，避免与外层 toggle_content 的灰线重叠
   const summaryHtml = depth === 0
-    ? `<section style="${S.toggle_summary}">${S.toggle_arrow_char||'▶'} ${pi(block.content)}</section>`
+    ? `<section style="${S.toggle_summary}">▶ ${pi(block.content)}</section>`
     : `<p style="${S.p}">${pi(block.content)}</p>`;
   let html = summaryHtml;
   if (block.children && block.children.length > 0) {

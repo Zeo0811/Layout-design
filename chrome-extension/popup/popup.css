@@ -55,6 +55,38 @@ html, body {
 .badge--unknown     { background: #f5f5f5; color: #888;    border: 1px solid #e0e0e0; }
 .badge--unsupported { background: #f5f5f5; color: #888;    border: 1px solid #e0e0e0; }
 
+/* ── 排版模板选择行 ──────────────────────────────────────────── */
+.template-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: #f9fdf5;
+  border-bottom: 1px solid #e0eecc;
+  flex-shrink: 0;
+}
+.template-label {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.template-select {
+  flex: 1;
+  height: 28px;
+  border: 1px solid #c8e09b;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: #333;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.template-select:focus { border-color: #407600; box-shadow: 0 0 0 2px rgba(64,118,0,.12); }
+.template-select.applied { border-color: #407600; background: #f0f6e8; }
+
 /* ── 操作按钮区 ──────────────────────────────────────────────── */
 .toolbar {
   display: flex; gap: 8px;

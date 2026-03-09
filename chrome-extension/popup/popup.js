@@ -19,6 +19,12 @@
   let formattedHtml     = '';
   let formattedSegments = [];
   let currentTab        = null;
+  let lastParsedData    = null; // 保存最近一次解析结果，供模板切换时重新渲染
+
+  // 快照默认样式（formatter.js 已在此之前执行，S 已定义）
+  const DEFAULT_S = Object.assign({}, S);
+
+  let loadedTemplates   = []; // 从 chrome.storage 同步来的模板列表
 
   // ── 初始化 ────────────────────────────────────────────────────
 
@@ -26,6 +32,63 @@
   const manifest = chrome.runtime.getManifest();
   document.getElementById('appSub').textContent =
     `v${manifest.version} · Notion / 飞书 → 微信公众号`;
+
+  // ── 模板选择器 ───────────────────────────────────────────────
+  const templateSelect = document.getElementById('templateSelect');
+
+  function renderTemplateSelector(templates, activeName) {
+    loadedTemplates = templates || [];
+    templateSelect.innerHTML =
+      '<option value="">十字路口专用</option>' +
+      loadedTemplates.map(t =>
+        `<option value="${t.name}"${t.name === activeName ? ' selected' : ''}>${t.name}</option>`
+      ).join('');
+  }
+
+  function applyTemplate(name) {
+    // 先还原默认样式，再叠加模板（防止多次切换样式叠加污染）
+    Object.assign(S, DEFAULT_S);
+    if (name) {
+      const tpl = loadedTemplates.find(t => t.name === name);
+      if (tpl && tpl.s) Object.assign(S, tpl.s);
+    }
+    // 保存当前激活模板
+    chrome.runtime.sendMessage({ action: 'setActiveTemplate', name });
+  }
+
+  templateSelect.addEventListener('change', function () {
+    const name = this.value;
+    applyTemplate(name);
+    templateSelect.classList.add('applied');
+    setTimeout(() => templateSelect.classList.remove('applied'), 1200);
+
+    // 若已有转换结果，立即用新样式重新渲染预览
+    if (lastParsedData) {
+      formattedHtml = formatToWechat(lastParsedData);
+      renderPreview(formattedHtml, lastParsedData);
+      const blockCount = (lastParsedData.blocks || []).length;
+      const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
+      formattedSegments = splitFormatToWechat(lastParsedData, nSeg);
+      renderSegmentButtons(formattedSegments);
+    }
+  });
+
+  // 实时监听 storage 变化（配置页保存新模板时自动刷新下拉框）
+  chrome.storage.onChanged.addListener(function (changes) {
+    if (changes.layoutTemplates) {
+      const templates = changes.layoutTemplates.newValue || [];
+      const current   = templateSelect.value;
+      renderTemplateSelector(templates, current);
+    }
+  });
+
+  // 启动时加载模板列表并应用上次激活的模板
+  chrome.storage.local.get(['layoutTemplates', 'activeTemplate'], function (result) {
+    const templates    = result.layoutTemplates || [];
+    const activeName   = result.activeTemplate  || '';
+    renderTemplateSelector(templates, activeName);
+    if (activeName) applyTemplate(activeName);
+  });
 
   async function init() {
     // 每次切换 tab 都先重置按钮状态，避免上一次 disabled 状态残留
@@ -101,6 +164,7 @@
       await convertImages(currentTab.id, resp.data.blocks);
 
       // 3. 格式化 & 渲染
+      lastParsedData = resp.data;
       formattedHtml = formatToWechat(resp.data);
       renderPreview(formattedHtml, resp.data);
       copyBtn.disabled = false;

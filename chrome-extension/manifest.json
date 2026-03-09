@@ -27,9 +27,7 @@
     "https://*.byteimg.com/*",
     "https://*.larksuitecdn.com/*",
     "https://*.cloudfront.net/*",
-    "https://*.bytescm.com/*",
-    "https://zeo0811.github.io/*",
-    "http://localhost/*"
+    "https://*.bytescm.com/*"
   ],
   "action": {
     "default_icon": {
@@ -50,18 +48,6 @@
         "content/notion-parser.js",
         "content/feishu-parser.js",
         "content/content.js"
-      ],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://zeo0811.github.io/Layout-design/*",
-        "http://localhost/*"
-      ],
-      "js": [
-        "shared/styles-shared.js",
-        "shared/style-store.js",
-        "content/style-sync.js"
       ],
       "run_at": "document_idle"
     }

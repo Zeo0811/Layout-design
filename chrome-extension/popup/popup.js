@@ -170,30 +170,24 @@
     const urls = [...urlSet];
     if (urls.length === 0) return;
 
-    // blob: URL 只在 tab 上下文有效，跳过 background script 直接用 executeScript
-    const regularUrls = urls.filter(u => !u.startsWith('blob:'));
-    const blobUrls    = urls.filter(u =>  u.startsWith('blob:'));
-
     let base64Map = {};
 
-    // 普通 URL 走 background script，5s 超时
+    // 非 blob URL → background script（无跨域限制，无超时限制）
+    const regularUrls = urls.filter(u => !u.startsWith('blob:'));
     if (regularUrls.length > 0) {
       try {
-        const resp = await Promise.race([
-          new Promise(resolve => {
-            chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls: regularUrls }, resolve);
-          }),
-          new Promise(resolve => setTimeout(() => resolve(null), 5000)),
-        ]);
+        const resp = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls: regularUrls }, resolve);
+        });
         if (resp && resp.success) base64Map = resp.data || {};
       } catch (_) {}
     }
 
-    // blob URL + 未成功的普通 URL → executeScript MAIN world，10s 超时
-    const remaining = [...blobUrls, ...regularUrls.filter(u => !base64Map[u])];
+    // blob URL + background 未成功的 URL → MAIN world（有页面 auth cookie）
+    const remaining = urls.filter(u => !base64Map[u]);
     if (remaining.length > 0) {
       try {
-        const execPromise = chrome.scripting.executeScript({
+        const results = await chrome.scripting.executeScript({
           target: { tabId },
           world: 'MAIN',
           func: async (imageUrls) => {
@@ -213,11 +207,7 @@
           },
           args: [remaining],
         });
-        const results = await Promise.race([
-          execPromise,
-          new Promise(resolve => setTimeout(() => resolve(null), 10000)),
-        ]);
-        Object.assign(base64Map, (results && results[0] && results[0].result) || {});
+        Object.assign(base64Map, (results[0] && results[0].result) || {});
       } catch (_) {}
     }
 

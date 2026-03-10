@@ -563,11 +563,23 @@
     function extractCSS(el, blockType) {
       const TPROPS = ['font-size','font-family','color','line-height',
                       'letter-spacing','text-align','font-weight'];
-      // 容器型属性：向上遍历祖先 inline-style 收集
       const CPROPS = ['border-left','border-right','border-top','border-bottom','border',
                       'background-color','border-radius','box-shadow',
                       'padding','margin','overflow','white-space'];
-      const cs = window.getComputedStyle(el);
+
+      // 微信标题经常把大 font-size / 主色放在深层 section 里，而非最外层。
+      // 对 heading 类型：在整个块根下找 font-size 最大的元素作为文字样式来源。
+      let textEl = el;
+      if (['h1','h2','h3'].includes(blockType)) {
+        const root = findBlockRoot(el);
+        let maxFs = parseFloat(window.getComputedStyle(el).fontSize || '0');
+        root.querySelectorAll('*').forEach(node => {
+          const fs = parseFloat(window.getComputedStyle(node).fontSize || '0');
+          if (fs > maxFs) { maxFs = fs; textEl = node; }
+        });
+      }
+
+      const cs = window.getComputedStyle(textEl);
       const parts = {};
       for (const p of TPROPS) {
         const v = cs.getPropertyValue(p).trim();
@@ -577,23 +589,25 @@
         if (p === 'letter-spacing' && v === 'normal') continue;
         parts[p] = v;
       }
-      // 容器型 key 才向上收集装饰属性（标题的 border-bottom、引用块的 border-left 等）
+
+      // 容器型 key：扫描整个块根内所有带 style 的元素（包括根自身）
+      // 这样可以捕获跨兄弟节点的装饰样式，例如标题旁边的黄色装饰条 background-color
       if (!TEXT_KEYS.has(blockType)) {
-        let cur = el;
-        while (cur && cur !== content.parentElement) {
-          const inlineStyle = cur.getAttribute('style') || '';
-          if (inlineStyle) {
-            for (const prop of CPROPS) {
-              if (parts[prop]) continue;
-              const val = getInlineProp(inlineStyle, prop);
-              // 过滤掉空值、纯零值（保留 "0 auto" 这类有意义的值）
-              if (val && val.trim() !== '0' && val.trim() !== 'none')
-                parts[prop] = val;
-            }
+        const root = findBlockRoot(el);
+        const scanNode = (node) => {
+          const inlineStyle = node.getAttribute('style') || '';
+          if (!inlineStyle) return;
+          for (const prop of CPROPS) {
+            if (parts[prop]) continue;
+            const val = getInlineProp(inlineStyle, prop);
+            if (val && val.trim() !== '0' && val.trim() !== 'none')
+              parts[prop] = val;
           }
-          cur = cur.parentElement;
-        }
+        };
+        scanNode(root);                          // 块根自身的 inline style
+        root.querySelectorAll('[style]').forEach(scanNode); // 所有后代的 inline style
       }
+
       return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
     }
 

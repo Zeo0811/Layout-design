@@ -75,20 +75,21 @@
     <!-- ── 微信公众号排版提取模式 ── -->
     <div id="wechat-panel" class="wechat-panel hidden">
 
-      <!-- Step 1：初始，单按钮 -->
+      <!-- Step 1：手动选择元素 -->
       <div id="wechat-step1" class="wechat-step">
         <div class="wechat-hero">
           <div class="wechat-hero-icon">🎨</div>
-          <div class="wechat-hero-title">复制该公众号排版风格</div>
-          <div class="wechat-hero-desc">分析文章内各类元素的排版属性，<br>保存为可复用模板，可在网页端精细编辑</div>
+          <div class="wechat-hero-title">手动选取排版风格</div>
+          <div class="wechat-hero-desc">进入选择模式，点击文章中的元素，<br>通过下拉菜单指定其样式类型</div>
         </div>
-        <div class="token-row">
-          <input id="apiTokenInput" class="token-input" type="password"
-                 placeholder="Anthropic API Token (sk-ant-...)" autocomplete="off" />
-        </div>
-        <button id="extractBtn" class="btn btn--extract">
-          <span class="btn-icon">✨</span>
-          提取风格并保存为模板
+        <button id="selectModeBtn" class="btn btn--extract">
+          <span class="btn-icon">🖱</span>
+          进入选择模式
+        </button>
+        <div id="mini-selected-list" class="mini-selected-list"></div>
+        <button id="toSaveBtn" class="btn btn--primary hidden">
+          <span class="btn-icon">→</span>
+          下一步：命名保存
         </button>
       </div>
 
@@ -96,7 +97,7 @@
       <div id="wechat-step2" class="wechat-step hidden">
         <div class="results-header">
           <span class="results-title">提取结果</span>
-          <button id="reExtractBtn" class="btn-reextract">↺ 重新提取</button>
+          <button id="reExtractBtn" class="btn-reextract">↺ 重新选择</button>
         </div>
         <div id="results-list" class="results-list"></div>
         <div class="wechat-save-form">

@@ -396,20 +396,36 @@ html, body {
 .wechat-name-input:focus { border-color: #07a11d; box-shadow: 0 0 0 2px rgba(7,161,29,.1); }
 .wechat-name-input::placeholder { color: #bbb; }
 
-.token-row { flex-shrink: 0; }
-.token-input {
-  width: 100%;
-  height: 32px;
-  padding: 0 10px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 7px;
-  font-size: 11px;
-  font-family: monospace;
-  color: #555;
-  outline: none;
-  transition: border-color .15s;
-  box-sizing: border-box;
-  background: #fafafa;
+/* ── 手动选择模式：已选块列表 ─────────────────────────────── */
+.mini-selected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
-.token-input:focus { border-color: #07a11d; box-shadow: 0 0 0 2px rgba(7,161,29,.08); background: #fff; }
-.token-input::placeholder { color: #bbb; font-family: sans-serif; font-size: 11px; }
+.mini-block-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f0f9f0;
+  border: 1px solid #b8e0b8;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.mini-block-type {
+  font-family: monospace;
+  font-weight: 700;
+  color: #1a7a1a;
+  min-width: 52px;
+}
+.mini-block-label { flex: 1; color: #555; }
+.mini-block-remove {
+  background: none; border: none; cursor: pointer;
+  color: #bbb; font-size: 12px; padding: 0 2px; line-height: 1;
+  transition: color .1s;
+}
+.mini-block-remove:hover { color: #e55; }
+
+/* 选择模式激活状态 */
+.btn--extract.btn--active { background: #b84800; }
+.btn--extract.btn--active:hover:not(:disabled) { background: #9e3d00; }

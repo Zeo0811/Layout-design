@@ -20,25 +20,13 @@
   const wechatPanel     = document.getElementById('wechat-panel');
   const wechatStep1     = document.getElementById('wechat-step1');
   const wechatStep2     = document.getElementById('wechat-step2');
-  const extractBtn      = document.getElementById('extractBtn');
   const reExtractBtn    = document.getElementById('reExtractBtn');
   const saveExtractBtn  = document.getElementById('saveExtractBtn');
   const wechatNameInput = document.getElementById('wechat-tpl-name');
   const resultsList     = document.getElementById('results-list');
-  const apiTokenInput   = document.getElementById('apiTokenInput');
 
   // 提取结果暂存（step1→step2 传递）
   let lastExtracted = null;
-
-  // ── API Token 存取 ──────────────────────────────────────────
-  async function loadApiToken() {
-    const { anthropicToken } = await chrome.storage.local.get('anthropicToken');
-    if (anthropicToken && apiTokenInput) apiTokenInput.value = anthropicToken;
-    return anthropicToken || '';
-  }
-  function saveApiToken(token) {
-    chrome.storage.local.set({ anthropicToken: token });
-  }
 
   // 与样式预览对齐的颗粒度分类
   const EXTRACT_CATEGORIES = [
@@ -184,7 +172,6 @@
   })();
 
   async function init() {
-    loadApiToken(); // 恢复上次保存的 token
     // 每次切换 tab 都先重置按钮状态，避免上一次 disabled 状态残留
     convertBtn.disabled = false;
     setBadge('unknown', '检测中...');
@@ -205,6 +192,14 @@
         convertPanel.classList.add('hidden');
         wechatPanel.classList.remove('hidden');
         showWechatStep(1);
+        // 切换 tab 时重置选择模式 UI
+        if (selectionModeActive) {
+          selectionModeActive = false;
+          selectModeBtn.innerHTML = '<span class="btn-icon">🖱</span>进入选择模式';
+          selectModeBtn.classList.remove('btn--active');
+          statusBar.className = 'status-bar status-bar--hidden';
+        }
+        chrome.storage.local.get(['wechat_selections'], d => updateMiniList(d.wechat_selections));
         return;
       }
 
@@ -536,190 +531,254 @@
     stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;
   }
 
-  // ── 微信公众号排版提取 ────────────────────────────────────────
+  // ── 微信公众号手动选择排版 ────────────────────────────────────
 
-  // ── Phase 1：生成精简 HTML（在页面 MAIN world 中执行）────────────────────
-  function wechatExtractFn() {
+  const selectModeBtn    = document.getElementById('selectModeBtn');
+  const miniSelectedList = document.getElementById('mini-selected-list');
+  const toSaveBtn        = document.getElementById('toSaveBtn');
+  let selectionModeActive = false;
+
+  // 注入到页面的选择器（ISOLATED world，有 chrome API 访问权）
+  function injectWechatSelectorFn() {
+    if (window.__wzxActive) return 'already_active';
     const content = document.querySelector('#js_content') ||
                     document.querySelector('.rich_media_content');
-    if (!content) return null;
+    if (!content) return 'no_content';
 
-    function gs(el) { return (el.getAttribute('style') || '').trim(); }
+    let hoveredEl = null;
 
-    // 精简 HTML：只保留 tag + inline style + 前 35 字文字，剥掉所有其他属性
-    const SKIP = new Set(['script','style','meta','link','noscript','head','svg','path']);
-    function simplify(el, depth) {
-      if (depth > 20) return '';
-      const tag = el.tagName.toLowerCase();
-      if (SKIP.has(tag)) return '';
-      const s    = gs(el);
-      const attr = s ? ` style="${s}"` : '';
-      if (tag === 'img') return `<img${attr}/>`;
-      if (tag === 'br')  return '<br/>';
-      if (tag === 'hr')  return `<hr${attr}/>`;
-      let inner = '';
-      for (const node of el.childNodes) {
-        if (node.nodeType === 3) {
-          const t = node.textContent.replace(/\s+/g, ' ').trim();
-          if (t) inner += t.length > 35 ? t.slice(0, 35) + '…' : t;
-        } else if (node.nodeType === 1) {
-          inner += simplify(node, depth + 1);
-        }
+    function getInlineProp(styleStr, prop) {
+      for (const part of styleStr.split(';')) {
+        const idx = part.indexOf(':');
+        if (idx < 0) continue;
+        if (part.slice(0, idx).trim().toLowerCase() === prop)
+          return part.slice(idx + 1).trim();
       }
-      if (!s && !inner.trim()) return '';
-      return inner ? `<${tag}${attr}>${inner}</${tag}>` : `<${tag}${attr}/>`;
+      return null;
     }
 
-    let html = simplify(content, 0);
-    if (html.length > 40000) html = html.slice(0, 40000) + '\n<!-- truncated -->';
-
-    // 正文基准字号
-    let bodyFs = 15;
-    const pEls = [...content.querySelectorAll('p')].filter(e => e.textContent.trim().length >= 20);
-    if (pEls.length) {
-      const fss = pEls.slice(0, 5).map(e => parseFloat(window.getComputedStyle(e).fontSize) || 0).filter(Boolean);
-      if (fss.length) bodyFs = Math.round(fss.reduce((a, b) => a + b) / fss.length);
+    function extractCSS(el) {
+      const TPROPS = ['font-size','font-family','color','line-height',
+                      'letter-spacing','text-align','font-weight'];
+      const CPROPS = ['border-left','border-right','border-top','border-bottom',
+                      'border','background-color','border-radius','padding','margin'];
+      const cs = window.getComputedStyle(el);
+      const parts = {};
+      for (const p of TPROPS) {
+        const v = cs.getPropertyValue(p).trim();
+        if (!v) continue;
+        if (p === 'font-weight' && (v === '400' || v === 'normal')) continue;
+        if (p === 'text-align' && (v === 'start' || v === '-webkit-auto')) continue;
+        if (p === 'letter-spacing' && v === 'normal') continue;
+        parts[p] = v;
+      }
+      // 向上收集容器装饰属性（border-left / background 等在外层 section 上）
+      let cur = el;
+      while (cur && cur !== content.parentElement) {
+        const inlineStyle = cur.getAttribute('style') || '';
+        if (inlineStyle) {
+          for (const prop of CPROPS) {
+            if (parts[prop]) continue;
+            const val = getInlineProp(inlineStyle, prop);
+            if (val && val !== '0' && val !== 'none' && !/^0px/.test(val))
+              parts[prop] = val;
+          }
+        }
+        cur = cur.parentElement;
+      }
+      return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
     }
 
-    return { html, bodyFs };
+    function removeOverlay() {
+      const ov = document.getElementById('__wzx_overlay__');
+      if (ov) ov.remove();
+    }
+
+    function showOverlay(clientX, clientY, el) {
+      removeOverlay();
+      const BLOCK_TYPES = [
+        ['p',                 '正文段落'],
+        ['h1',                '一级标题'],
+        ['h2',                '二级标题'],
+        ['h3',                '三级标题'],
+        ['strong',            '加粗文字'],
+        ['blockquote_wrapper','引用块容器'],
+        ['blockquote_text',   '引用块文字'],
+        ['code_wrapper',      '代码块容器'],
+        ['code_text',         '代码块文字'],
+        ['hr',                '分隔线'],
+        ['ul',                '无序列表'],
+        ['ol',                '有序列表'],
+        ['li_ul',             '无序列表项'],
+        ['li_ol',             '有序列表项'],
+        ['img_wrapper',       '图片容器'],
+        ['img',               '图片'],
+      ];
+      const opts = BLOCK_TYPES.map(([v, l]) =>
+        `<option value="${v}">${v} — ${l}</option>`).join('');
+      const preview = (el.textContent || '').trim().slice(0, 40) || '[无文字内容]';
+
+      const ov = document.createElement('div');
+      ov.id = '__wzx_overlay__';
+      ov.innerHTML = `
+        <div style="font-size:11px;color:#888;margin-bottom:4px;">选择样式类型</div>
+        <div style="font-size:11px;background:#f5f5f5;padding:3px 6px;border-radius:3px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333;">${preview}</div>
+        <select id="__wzx_type__" style="width:100%;margin-bottom:8px;padding:5px 4px;border:1px solid #ddd;border-radius:4px;font-size:12px;color:#333;">
+          <option value="">— 选择类型 —</option>
+          ${opts}
+        </select>
+        <div style="display:flex;gap:6px;">
+          <button id="__wzx_confirm__" style="flex:1;padding:5px;background:#07a11d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;">确认</button>
+          <button id="__wzx_cancel__"  style="flex:1;padding:5px;background:#f0f0f0;color:#555;border:none;border-radius:4px;cursor:pointer;font-size:12px;">取消</button>
+        </div>`;
+      ov.style.cssText = 'position:fixed;z-index:2147483647;background:white;border:1px solid #ccc;border-radius:8px;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.18);width:240px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;';
+      const left = Math.min(clientX + 12, window.innerWidth - 256);
+      const top  = Math.min(clientY + 12, window.innerHeight - 190);
+      ov.style.left = left + 'px';
+      ov.style.top  = top  + 'px';
+
+      ov.querySelector('#__wzx_confirm__').addEventListener('click', () => {
+        const sel = ov.querySelector('#__wzx_type__');
+        const blockType = sel.value;
+        if (!blockType) { sel.style.border = '1px solid red'; return; }
+        const css = extractCSS(el);
+        removeOverlay();
+        if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
+        chrome.storage.local.get(['wechat_selections'], (data) => {
+          const selections = data.wechat_selections || {};
+          selections[blockType] = css;
+          chrome.storage.local.set({ wechat_selections: selections });
+        });
+      });
+      ov.querySelector('#__wzx_cancel__').addEventListener('click', removeOverlay);
+      document.body.appendChild(ov);
+    }
+
+    function onMouseover(e) {
+      if (document.getElementById('__wzx_overlay__')) return;
+      if (hoveredEl) hoveredEl.style.outline = '';
+      hoveredEl = e.target;
+      hoveredEl.style.outline = '2px dashed rgba(7,161,29,.6)';
+    }
+    function onMouseout() {
+      if (document.getElementById('__wzx_overlay__')) return;
+      if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
+    }
+    function onClick(e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      showOverlay(e.clientX, e.clientY, e.target);
+    }
+
+    content.addEventListener('mouseover', onMouseover, true);
+    content.addEventListener('mouseout',  onMouseout,  true);
+    content.addEventListener('click',     onClick,     true);
+    window.__wzxActive   = true;
+    window.__wzxHandlers = { onMouseover, onMouseout, onClick, content };
+    return 'ok';
   }
 
-  // ── Phase 2：把完整结构 HTML 发给 Claude，AI 合成各块完整 CSS ──────────────
-  async function classifyWithAI(rawData, apiToken) {
-    const { html, bodyFs } = rawData;
+  function stopWechatSelectorFn() {
+    const ov = document.getElementById('__wzx_overlay__');
+    if (ov) ov.remove();
+    if (window.__wzxHandlers) {
+      const { onMouseover, onMouseout, onClick, content } = window.__wzxHandlers;
+      content.removeEventListener('mouseover', onMouseover, true);
+      content.removeEventListener('mouseout',  onMouseout,  true);
+      content.removeEventListener('click',     onClick,     true);
+      window.__wzxHandlers = null;
+    }
+    document.querySelectorAll('[style*="outline"]').forEach(el => { el.style.outline = ''; });
+    window.__wzxActive = false;
+  }
 
-    const prompt =
-`You are analyzing a WeChat (微信公众号) article to extract reusable CSS styles for each content block type.
-
-WeChat articles distribute visual styles across MULTIPLE levels of nested <section> elements.
-For example, a heading may have font-size on an inner <section> and border-left on an outer <section>.
-You MUST combine styles from ALL relevant nesting levels into a single synthesized CSS string.
-
-Body text font-size baseline: ${bodyFs}px
-
-Block types to identify:
-- p              : body paragraph (font-size ≈ ${bodyFs}px, main reading text)
-- h1             : largest heading (font-size > ${bodyFs}px) — synthesize font+color from inner element AND decorations (border-left/background/padding/margin) from outer containers
-- h2             : second heading level (same synthesis rule)
-- h3             : third heading level (same synthesis rule)
-- strong         : inline bold (<strong>/<b>, or font-weight:bold/700)
-- blockquote_wrapper : blockquote container — synthesize border-left, background-color, padding from all surrounding sections
-- blockquote_text    : text style INSIDE the blockquote container
-- code_wrapper   : code block outer container (monospace font or code-like background)
-- code_text      : text style inside code block
-- hr             : horizontal divider
-- ul             : unordered list container
-- ol             : ordered list container
-- li_ul          : <li> inside <ul>
-- li_ol          : <li> inside <ol>
-- img_wrapper    : parent element wrapping an <img>
-- img            : image element
-
-RULES:
-1. For each block type, produce a SYNTHESIZED CSS string combining properties from the element AND its ancestor containers.
-2. If two levels both set the same property, prefer the more specific (inner) value.
-3. Include all visually significant properties: font-size, font-weight, color, line-height, letter-spacing, text-align, border-left, border-right, border-top, border-bottom, background-color, border-radius, padding, margin.
-4. Omit zero/default-only values (e.g. margin:0, letter-spacing:normal).
-5. Omit block types not present in the article.
-
-HTML:
-${html}
-
-Output ONLY a JSON object with synthesized CSS strings:
-{"p":"font-size:15px;color:rgb(63,63,63);line-height:1.75","h1":"font-size:20px;font-weight:bold;color:#222;border-left:4px solid #d32f2f;padding-left:12px;margin:30px 0 15px",...}`;
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiToken,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+  async function startSelectionMode() {
+    const result = await chrome.scripting.executeScript({
+      target: { tabId: currentTab.id },
+      func:   injectWechatSelectorFn,
     });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Claude API 错误 (${resp.status})`);
-    }
-
-    const data  = await resp.json();
-    const text  = data.content?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('AI 未返回有效 JSON');
-    return JSON.parse(match[0]);
-  }
-
-  // ── Phase 3：AI 直接返回合成 CSS 字符串，无需 styleIndex 查表 ──────────────
-  function buildResultFromClassification(classification) {
-    const result = {};
-    for (const [key, css] of Object.entries(classification)) {
-      if (typeof css !== 'string') continue;
-      let style = css.trim();
-      if (!style) continue;
-      if (key === 'p') style += ';margin:0;padding-bottom:1em;white-space:pre-line';
-      result[key] = style;
-    }
-    return result;
-  }
-
-  // Step 1：点击提取 → Phase1 收集 → Phase2 AI分类 → 渲染结果 → Step 2
-  extractBtn.addEventListener('click', async () => {
-    const apiToken = apiTokenInput.value.trim() || await loadApiToken();
-    if (!apiToken) {
-      apiTokenInput.style.borderColor = '#e85555';
-      apiTokenInput.focus();
+    const status = result[0]?.result;
+    if (status === 'no_content') {
+      showStatus('error', '未找到微信文章内容，请确认已打开公众号文章页面');
       return;
     }
-    apiTokenInput.style.borderColor = '';
-    saveApiToken(apiToken);
+    selectionModeActive = true;
+    selectModeBtn.innerHTML = '<span class="btn-icon">⬛</span>退出选择模式';
+    selectModeBtn.classList.add('btn--active');
+    showStatus('loading', '请在文章中点击要分析的元素...');
+  }
 
-    extractBtn.disabled = true;
+  async function stopSelectionMode() {
+    await chrome.scripting.executeScript({
+      target: { tabId: currentTab.id },
+      func:   stopWechatSelectorFn,
+    }).catch(() => {});
+    selectionModeActive = false;
+    selectModeBtn.innerHTML = '<span class="btn-icon">🖱</span>进入选择模式';
+    selectModeBtn.classList.remove('btn--active');
+    statusBar.className = 'status-bar status-bar--hidden';
+  }
 
-    try {
-      // Phase 1
-      extractBtn.innerHTML = '<span class="btn-icon">🔍</span>读取页面样式...';
-      showStatus('loading', '正在读取页面样式...');
-      const scriptResult = await chrome.scripting.executeScript({
-        target: { tabId: currentTab.id },
-        world:  'MAIN',
-        func:   wechatExtractFn,
-      });
-      const rawData = scriptResult[0]?.result;
-      if (!rawData) throw new Error('未能读取页面内容，请确认文章已完全加载');
+  const BLOCK_LABELS = {
+    p: '正文段落', h1: '一级标题', h2: '二级标题', h3: '三级标题',
+    strong: '加粗文字', blockquote_wrapper: '引用块容器', blockquote_text: '引用块文字',
+    code_wrapper: '代码块容器', code_text: '代码块文字', hr: '分隔线',
+    ul: '无序列表', ol: '有序列表', li_ul: '无序列表项', li_ol: '有序列表项',
+    img_wrapper: '图片容器', img: '图片',
+  };
 
-      // Phase 2
-      extractBtn.innerHTML = '<span class="btn-icon">🤖</span>AI 分析中...';
-      const htmlKb = Math.round(rawData.html.length / 1024);
-      showStatus('loading', `AI 正在分析文章结构（${htmlKb}KB）...`);
-      const classification = await classifyWithAI(rawData, apiToken);
-
-      // Phase 3
-      const extracted = buildResultFromClassification(classification);
-      if (Object.keys(extracted).length === 0) throw new Error('AI 未能识别任何样式块');
-
-      lastExtracted = extracted;
-      renderExtractResults(extracted);
-      wechatNameInput.value = '';
-      statusBar.className = 'status-bar status-bar--hidden';
-      showWechatStep(2);
-    } catch (err) {
-      lastExtracted = null;
-      showStatus('error', '提取失败：' + err.message);
+  function updateMiniList(sel) {
+    const keys = Object.keys(sel || {});
+    if (!keys.length) {
+      miniSelectedList.innerHTML = '';
+      toSaveBtn.classList.add('hidden');
+      return;
     }
+    miniSelectedList.innerHTML = keys.map(k => `
+      <div class="mini-block-item">
+        <span class="mini-block-type">${k}</span>
+        <span class="mini-block-label">${BLOCK_LABELS[k] || ''}</span>
+        <button class="mini-block-remove" data-key="${k}">✕</button>
+      </div>`).join('');
+    miniSelectedList.querySelectorAll('.mini-block-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        chrome.storage.local.get(['wechat_selections'], (data) => {
+          const s = data.wechat_selections || {};
+          delete s[btn.dataset.key];
+          chrome.storage.local.set({ wechat_selections: s });
+        });
+      });
+    });
+    toSaveBtn.classList.remove('hidden');
+  }
 
-    extractBtn.disabled = false;
-    extractBtn.innerHTML = '<span class="btn-icon">✨</span>提取风格并保存为模板';
+  // 监听 storage 变化，实时更新列表
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.wechat_selections)
+      updateMiniList(changes.wechat_selections.newValue);
   });
 
-  // 重新提取：回到 Step 1
-  reExtractBtn.addEventListener('click', () => {
+  selectModeBtn.addEventListener('click', async () => {
+    if (selectionModeActive) await stopSelectionMode();
+    else                     await startSelectionMode();
+  });
+
+  toSaveBtn.addEventListener('click', async () => {
+    if (selectionModeActive) await stopSelectionMode();
+    const data = await chrome.storage.local.get(['wechat_selections']);
+    const sel = data.wechat_selections || {};
+    if (!Object.keys(sel).length) return;
+    lastExtracted = sel;
+    renderExtractResults(sel);
+    wechatNameInput.value = '';
+    statusBar.className = 'status-bar status-bar--hidden';
+    showWechatStep(2);
+  });
+
+  // 重新选择：清空已选块，回到 Step 1
+  reExtractBtn.addEventListener('click', async () => {
     lastExtracted = null;
+    await chrome.storage.local.set({ wechat_selections: {} });
     showWechatStep(1);
     statusBar.className = 'status-bar status-bar--hidden';
   });

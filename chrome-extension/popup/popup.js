@@ -91,7 +91,7 @@
       const res = await fetch(`${SERVER_URL}/api/templates`);
       if (!res.ok) return false;
       const { templates } = await res.json();
-      if (!templates || !templates.length) return false;
+      if (!Array.isArray(templates)) return false;
       await new Promise(r => chrome.storage.local.set({ layoutTemplates: templates }, r));
       renderTemplateSelector(templates, templateSelect.value);
       return true;

@@ -526,67 +526,106 @@
 
   // ── 微信公众号排版提取 ────────────────────────────────────────
 
-  // 在公众号页面 MAIN world 中执行，提取各类元素的 inline style
+  // 在公众号页面 MAIN world 中执行，提取各类元素的样式
   function wechatExtractFn() {
     const content = document.querySelector('#js_content') ||
                     document.querySelector('.rich_media_content');
     if (!content) return null;
 
     const result = {};
-    const all    = [...content.querySelectorAll('[style]')];
 
     function gs(el) { return el ? (el.getAttribute('style') || '').trim() : ''; }
 
-    // ── 段落：有文本内容、无块级子元素、非大号加粗
-    const paraEls = all.filter(el => {
-      const tag = el.tagName.toLowerCase();
-      if (!['p', 'section'].includes(tag)) return false;
-      if (!el.getAttribute('style')) return false;
-      if (el.textContent.trim().length < 25) return false;
-      const hasBlock = [...el.children].some(c =>
-        ['section','div','p','ul','ol','blockquote','pre','table'].includes(c.tagName.toLowerCase())
-      );
-      if (hasBlock) return false;
-      const isBoldLarge = (parseInt(el.style.fontWeight) >= 600 || el.style.fontWeight === 'bold')
-                       && parseFloat(el.style.fontSize) > 17;
-      return !isBoldLarge;
-    });
-    if (paraEls[0]) result.p = gs(paraEls[0]);
+    // 从 getComputedStyle 提取指定属性，过滤无意义的浏览器默认值
+    function computedStr(el, props) {
+      const cs = window.getComputedStyle(el);
+      return props.map(p => {
+        let v = (cs.getPropertyValue(p) || '').trim();
+        if (!v) return null;
+        if (p === 'font-weight' && (v === '400' || v === 'normal')) return null;
+        if (p === 'text-align' && (v === 'start' || v === '-webkit-auto')) return null;
+        if (p === 'background-color' && v === 'rgba(0, 0, 0, 0)') return null;
+        if (p === 'letter-spacing' && v === 'normal') return null;
+        if (p === 'text-decoration-line' && v === 'none') return null;
+        if (p === 'text-align' && v === 'start') v = 'left';
+        return `${p}:${v}`;
+      }).filter(Boolean).join(';');
+    }
 
-    // ── 标题：加粗 + 较大字号，按字号降序，取最多 3 级
-    const hCands = all.filter(el => {
-      if (!el.getAttribute('style')) return false;
-      const txt = el.textContent.trim();
-      if (txt.length < 2 || txt.length > 80) return false;
-      const bold = parseInt(el.style.fontWeight) >= 600 || el.style.fontWeight === 'bold';
-      return bold && parseFloat(el.style.fontSize) >= 17;
-    }).sort((a, b) => parseFloat(b.style.fontSize) - parseFloat(a.style.fontSize));
+    const TEXT_PROPS = ['font-size','font-family','color','line-height','letter-spacing','text-align','font-weight'];
+
+    // ── 段落：找有实质文字的 <p>，用 getComputedStyle 获取真实渲染样式
+    const paraEls = [...content.querySelectorAll('p')].filter(el => {
+      const text = el.textContent.trim();
+      if (text.length < 30) return false;
+      // 排除标题行（computed 大字号 + 含 strong 或自身 bold）
+      const cs = window.getComputedStyle(el);
+      const fs = parseFloat(cs.fontSize);
+      const fw = parseInt(cs.fontWeight);
+      if (fs > 17 && (fw >= 600 || el.querySelector('strong,b'))) return false;
+      return true;
+    });
+    if (paraEls[0]) {
+      // 用 computed 拿文字属性，再加上 padding-bottom 保证换行间距
+      result.p = computedStr(paraEls[0], TEXT_PROPS) + ';margin:0;padding-bottom:1em;white-space:pre-line';
+    }
+
+    // ── 标题：两种策略并用
+    // 策略 A：自身 inline style 显式写了 font-size >= 16px（WeChat 最常见嵌套写法）
+    const hByOwn = [...content.querySelectorAll('[style]')].filter(el => {
+      const fs = parseFloat(el.style.fontSize);
+      if (fs < 16) return false;
+      const text = el.textContent.trim();
+      return text.length >= 2 && text.length <= 150;
+    });
+    // 策略 B：computed font-size >= 17 + 包含 <strong>/<b>（语义加粗写法）
+    const hByComputed = [...content.querySelectorAll('p,section,div,h1,h2,h3')].filter(el => {
+      const fs = parseFloat(window.getComputedStyle(el).fontSize);
+      if (fs < 17) return false;
+      const text = el.textContent.trim();
+      if (text.length < 2 || text.length > 150) return false;
+      return !!el.querySelector('strong,b');
+    });
+
+    const hCands = [...new Set([...hByOwn, ...hByComputed])];
+    hCands.sort((a, b) =>
+      parseFloat(window.getComputedStyle(b).fontSize) - parseFloat(window.getComputedStyle(a).fontSize)
+    );
     const seenFS = new Set(), hs = [];
     for (const el of hCands) {
-      const fs = el.style.fontSize;
-      if (!seenFS.has(fs)) { seenFS.add(fs); hs.push(el); }
+      const fsKey = Math.round(parseFloat(window.getComputedStyle(el).fontSize));
+      if (!seenFS.has(fsKey)) { seenFS.add(fsKey); hs.push(el); }
       if (hs.length >= 3) break;
     }
-    // 也尝试语义标签 h1/h2/h3
+    // 语义标签兜底
     ['h1','h2','h3'].forEach((tag, i) => {
       if (!hs[i]) { const el = content.querySelector(`${tag}[style]`); if (el) hs[i] = el; }
     });
-    if (hs[0]) result.h1 = gs(hs[0]);
-    if (hs[1]) result.h2 = gs(hs[1]);
-    if (hs[2]) result.h3 = gs(hs[2]);
+    // 标题样式：优先用 inline style（已包含作者意图），再补 computed color/font-family
+    function headingStyle(el) {
+      const inline = gs(el);
+      if (el.style.fontSize) {
+        const extra = computedStr(el, ['color','font-family']);
+        return inline + (extra ? ';' + extra : '');
+      }
+      return computedStr(el, TEXT_PROPS);
+    }
+    if (hs[0]) result.h1 = headingStyle(hs[0]);
+    if (hs[1]) result.h2 = headingStyle(hs[1]);
+    if (hs[2]) result.h3 = headingStyle(hs[2]);
 
-    // ── 加粗行内
+    // ── 加粗行内：优先有 inline style 的 strong，否则用 computed
     const strongEl = content.querySelector('strong[style]') ||
-      all.find(el => el.tagName === 'SPAN' &&
-        (parseInt(el.style.fontWeight) >= 600 || el.style.fontWeight === 'bold'));
-    if (strongEl) result.strong = gs(strongEl);
+      content.querySelector('strong') ||
+      content.querySelector('b');
+    if (strongEl) {
+      result.strong = gs(strongEl) || computedStr(strongEl, ['font-weight','color','background-color']);
+    }
 
-    // ── 引用块（含 border-left 或 blockquote 标签）
+    // ── 引用块
+    const all = [...content.querySelectorAll('[style]')];
     const bqEl = content.querySelector('blockquote[style]') ||
-      all.find(el => {
-        const s = el.getAttribute('style') || '';
-        return s.includes('border-left') && el.textContent.trim().length > 5;
-      });
+      all.find(el => (el.getAttribute('style') || '').includes('border-left') && el.textContent.trim().length > 5);
     if (bqEl) {
       result.blockquote_wrapper = gs(bqEl);
       const inner = bqEl.querySelector('[style]');
@@ -594,17 +633,17 @@
     }
 
     // ── 分割线
-    const hrEl = content.querySelector('hr[style]');
-    if (hrEl) result.hr = gs(hrEl);
+    const hrEl = content.querySelector('hr[style]') || content.querySelector('hr');
+    if (hrEl) result.hr = gs(hrEl) || computedStr(hrEl, ['border','border-top','margin']);
 
     // ── 列表
-    const ulEl = content.querySelector('ul[style]');
-    const olEl = content.querySelector('ol[style]');
-    if (ulEl) { result.ul = gs(ulEl); const li = ulEl.querySelector('li[style]'); if (li) result.li_ul = gs(li); }
-    if (olEl) { result.ol = gs(olEl); const li = olEl.querySelector('li[style]'); if (li) result.li_ol = gs(li); }
+    const ulEl = content.querySelector('ul[style]') || content.querySelector('ul');
+    const olEl = content.querySelector('ol[style]') || content.querySelector('ol');
+    if (ulEl) { result.ul = gs(ulEl) || computedStr(ulEl, TEXT_PROPS); const li = ulEl.querySelector('li'); if (li) result.li_ul = gs(li) || computedStr(li, TEXT_PROPS); }
+    if (olEl) { result.ol = gs(olEl) || computedStr(olEl, TEXT_PROPS); const li = olEl.querySelector('li'); if (li) result.li_ol = gs(li) || computedStr(li, TEXT_PROPS); }
 
     // ── 图片
-    const imgEl = content.querySelector('img[style]');
+    const imgEl = content.querySelector('img[style]') || content.querySelector('img');
     if (imgEl) {
       result.img = gs(imgEl);
       const par = imgEl.parentElement;
@@ -612,7 +651,7 @@
     }
 
     // ── 代码块
-    const preEl = content.querySelector('pre[style]');
+    const preEl = content.querySelector('pre[style]') || content.querySelector('pre');
     if (preEl) result.code_wrapper = gs(preEl);
     else {
       const monoEl = all.find(el => {
@@ -621,8 +660,8 @@
       });
       if (monoEl) result.code_wrapper = gs(monoEl);
     }
-    const codeEl = content.querySelector('code[style]');
-    if (codeEl) result.code_text = gs(codeEl);
+    const codeEl = content.querySelector('code[style]') || content.querySelector('code');
+    if (codeEl) result.code_text = gs(codeEl) || computedStr(codeEl, [...TEXT_PROPS,'background-color']);
 
     return Object.keys(result).length > 0 ? result : null;
   }

@@ -1700,7 +1700,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         syncTimer = null;
         if (bridgeAvailable === false) {
           setSyncBar('err',
-            '⚠️ 插件未连接 — 请在 chrome://extensions 中为「十字路口排版」开启「允许访问文件网址」，刷新此页后重试');
+            '⚠️ 插件未连接 — 请重新下载最新 chrome-extension.zip，解压后在 chrome://extensions 点击「重新加载」，再刷新此页');
         } else {
           setSyncBar('err', '⚠️ 同步超时，模板已保存到本地，请检查插件是否正常运行');
         }
@@ -1775,8 +1775,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         if (bridgeAvailable === null) {
           bridgeAvailable = false;
           setSyncBar('err',
-            '⚠️ 未检测到插件连接 — 请确认插件已安装，' +
-            '并在 chrome://extensions 中为「十字路口排版」开启「允许访问文件网址」，刷新此页后重试');
+            '⚠️ 未检测到插件连接 — 请确认已安装最新版插件（v1.5.6+），并在 chrome://extensions 点「重新加载」后刷新此页');
         }
       }, 2500);
     };

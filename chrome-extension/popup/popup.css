@@ -377,7 +377,6 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 4px;
   flex-shrink: 0;
   border-top: 1px solid #f0f0f0;
   padding-top: 12px;

@@ -1195,6 +1195,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       <div id="tpl-dialog-icon" class="tpl-dialog-icon"></div>
       <div id="tpl-dialog-title" class="tpl-dialog-title"></div>
       <div id="tpl-dialog-msg" class="tpl-dialog-msg"></div>
+      <input id="tpl-dialog-input" class="gate-input" type="text" style="display:none;width:100%;" />
       <div class="tpl-dialog-btns">
         <button id="tpl-dialog-cancel" class="tpl-btn">取消</button>
         <button id="tpl-dialog-confirm" class="tpl-btn danger">确认</button>
@@ -1209,10 +1210,9 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       <option value="">— 十字路口专用 —</option>
     </select>
     <div class="tpl-topbar-sep"></div>
-    <label>另存为：</label>
-    <input class="tpl-input" id="tpl-name-input" type="text" placeholder="输入模板名称..." />
-    <button id="tplSaveBtn" class="tpl-btn primary" onclick="tplSave()">💾 保存模板</button>
-    <button id="tplDeleteBtn" class="tpl-btn danger" onclick="tplDelete()">🗑 删除</button>
+    <button id="tplNewBtn"    class="tpl-btn primary" onclick="tplNew()">➕ 新建模板</button>
+    <button id="tplSaveBtn"   class="tpl-btn primary" onclick="tplSave()">💾 保存修改</button>
+    <button id="tplDeleteBtn" class="tpl-btn danger"  onclick="tplDelete()">🗑 删除</button>
     <div class="tpl-topbar-sep"></div>
     <button class="tpl-btn" onclick="tplReset()">↩ 恢复默认</button>
     <button class="tpl-btn" onclick="tplExport()">⬇ 导出 JSON</button>
@@ -1696,25 +1696,39 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     renderEditor();
   };
 
-  window.tplSave = async function() {
-    try {
-      const name = (document.getElementById('tpl-name-input').value||'').trim();
-      if (!name) { showDialog({ icon: 'ℹ️', title: '提示', msg: '请先输入模板名称', confirmText: '知道了', confirmClass: '', cancelText: null }); return; }
-      const idx = savedTemplates.findIndex(t=>t.name===name);
-      const entry = { name, s: Object.assign({}, customS) };
-      if (idx>=0) savedTemplates[idx]=entry; else savedTemplates.push(entry);
-      try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
-      syncSelector();
-      document.getElementById('tpl-selector').value = savedTemplates.findIndex(t=>t.name===name);
-      // Button feedback
-      const saveBtn = document.querySelector('#panel-template .tpl-topbar .tpl-btn.primary');
-      if (saveBtn) {
-        const orig = saveBtn.textContent;
-        saveBtn.textContent = '✅ 已保存';
-        saveBtn.disabled = true;
-        setTimeout(() => { saveBtn.textContent = orig; saveBtn.disabled = false; }, 2000);
+  // 新建模板：弹出输入框 → 以当前样式创建
+  window.tplNew = function() {
+    showDialog({
+      icon: '➕', title: '新建模板', msg: '基于当前样式创建，输入模板名称：',
+      inputPlaceholder: '例如：极简黑白', confirmText: '创建', confirmClass: 'primary',
+      onConfirm: async (name) => {
+        if (!name) { showDialog({ icon: 'ℹ️', title: '提示', msg: '模板名称不能为空', confirmText: '知道了', confirmClass: '', cancelText: null }); return; }
+        if (savedTemplates.find(t => t.name === name)) {
+          showDialog({ icon: 'ℹ️', title: '提示', msg: `已存在同名模板「${name}」，请换一个名称`, confirmText: '知道了', confirmClass: '', cancelText: null }); return;
+        }
+        savedTemplates.push({ name, s: Object.assign({}, customS) });
+        try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
+        syncSelector();
+        document.getElementById('tpl-selector').value = savedTemplates.length - 1;
+        _updateEditState();
+        setSyncBar('', '⏳ 正在保存到服务器...');
+        await syncToExtension();
       }
-      // Sync to server
+    });
+  };
+
+  // 保存修改：直接覆盖当前已选模板
+  window.tplSave = async function() {
+    const sel  = document.getElementById('tpl-selector');
+    const idx  = parseInt(sel.value);
+    if (isNaN(idx) || idx < 0 || !savedTemplates[idx]) return;
+    try {
+      savedTemplates[idx].s = Object.assign({}, customS);
+      try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
+      const saveBtn = document.getElementById('tplSaveBtn');
+      const orig = saveBtn.textContent;
+      saveBtn.textContent = '✅ 已保存'; saveBtn.disabled = true;
+      setTimeout(() => { saveBtn.textContent = orig; saveBtn.disabled = false; }, 2000);
       setSyncBar('', '⏳ 正在保存到服务器...');
       await syncToExtension();
     } catch(err) {
@@ -1724,18 +1738,9 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
 
   function _updateEditState() {
     const isDefault = !document.getElementById('tpl-selector').value;
-    const saveBtn   = document.getElementById('tplSaveBtn');
-    const deleteBtn = document.getElementById('tplDeleteBtn');
-    const nameInput = document.getElementById('tpl-name-input');
-    saveBtn.disabled   = isDefault;
-    deleteBtn.disabled = isDefault;
-    nameInput.disabled = isDefault;
-    if (isDefault) {
-      nameInput.value       = '';
-      nameInput.placeholder = '默认模板不可修改';
-    } else {
-      nameInput.placeholder = '输入模板名称...';
-    }
+    document.getElementById('tplSaveBtn').style.display   = isDefault ? 'none' : '';
+    document.getElementById('tplDeleteBtn').style.display = isDefault ? 'none' : '';
+    document.getElementById('tplNewBtn').style.display    = '';
   }
 
   window.tplLoad = function() {
@@ -1756,21 +1761,32 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   };
 
   // ── 自定义对话框 ─────────────────────────────────────────────
-  function showDialog({ icon, title, msg, confirmText, confirmClass, onConfirm, cancelText }) {
-    const overlay     = document.getElementById('tpl-dialog');
-    const cancelBtn   = document.getElementById('tpl-dialog-cancel');
-    const confirmBtn  = document.getElementById('tpl-dialog-confirm');
+  function showDialog({ icon, title, msg, confirmText, confirmClass, onConfirm, cancelText, inputPlaceholder }) {
+    const overlay    = document.getElementById('tpl-dialog');
+    const cancelBtn  = document.getElementById('tpl-dialog-cancel');
+    const confirmBtn = document.getElementById('tpl-dialog-confirm');
+    const inputEl    = document.getElementById('tpl-dialog-input');
     document.getElementById('tpl-dialog-icon').textContent  = icon  || '';
     document.getElementById('tpl-dialog-title').textContent = title || '';
     document.getElementById('tpl-dialog-msg').textContent   = msg   || '';
-    confirmBtn.textContent  = confirmText  || '确认';
-    confirmBtn.className    = 'tpl-btn ' + (confirmClass || 'danger');
+    confirmBtn.textContent  = confirmText || '确认';
+    confirmBtn.className    = 'tpl-btn ' + (confirmClass || 'primary');
     cancelBtn.textContent   = cancelText || '取消';
     cancelBtn.style.display = cancelText === null ? 'none' : '';
+    if (inputPlaceholder !== undefined) {
+      inputEl.style.display = '';
+      inputEl.placeholder   = inputPlaceholder;
+      inputEl.value         = '';
+      setTimeout(() => inputEl.focus(), 50);
+    } else {
+      inputEl.style.display = 'none';
+    }
     overlay.classList.remove('hidden');
-    function cleanup() { overlay.classList.add('hidden'); confirmBtn.onclick = null; cancelBtn.onclick = null; }
-    confirmBtn.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
-    cancelBtn.onclick  = () => cleanup();
+    function cleanup() { overlay.classList.add('hidden'); confirmBtn.onclick = null; cancelBtn.onclick = null; inputEl.onkeydown = null; }
+    function doConfirm() { cleanup(); if (onConfirm) onConfirm(inputEl.value.trim()); }
+    confirmBtn.onclick  = doConfirm;
+    cancelBtn.onclick   = () => cleanup();
+    inputEl.onkeydown   = (e) => { if (e.key === 'Enter') doConfirm(); };
   }
 
   window.tplDelete = async function() {

@@ -4,8 +4,8 @@ const path    = require('path');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const UPSTASH_URL   = (process.env.UPSTASH_REDIS_REST_URL   || '').trim() || undefined;
+const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || '').trim();
 const KEY           = 'layout_templates';
 
 // CORS — 允许插件 popup (chrome-extension://) 直接请求

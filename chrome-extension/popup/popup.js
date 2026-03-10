@@ -682,6 +682,7 @@ Output ONLY valid JSON: {"p":3,"h1":7,...}`;
         'Content-Type':      'application/json',
         'x-api-key':         apiToken,
         'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model:      'claude-haiku-4-5-20251001',

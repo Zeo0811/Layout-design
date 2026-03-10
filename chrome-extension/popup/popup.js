@@ -553,65 +553,35 @@
 
     const TEXT_PROPS = ['font-size','font-family','color','line-height','letter-spacing','text-align','font-weight'];
 
-    // ── 段落：找有实质文字的 <p>，用 getComputedStyle 获取真实渲染样式
-    const paraEls = [...content.querySelectorAll('p')].filter(el => {
-      const text = el.textContent.trim();
-      if (text.length < 30) return false;
-      // 排除标题行（computed 大字号 + 含 strong 或自身 bold）
-      const cs = window.getComputedStyle(el);
-      const fs = parseFloat(cs.fontSize);
-      const fw = parseInt(cs.fontWeight);
-      if (fs > 17 && (fw >= 600 || el.querySelector('strong,b'))) return false;
-      return true;
-    });
+    // ── 段落：<p> 是唯一语义可信的块级标签
+    // 先拿正文基准字号，后续标题检测以此为基准
+    const paraEls = [...content.querySelectorAll('p')].filter(el => el.textContent.trim().length >= 30);
+    let bodyFs = 15;
     if (paraEls[0]) {
-      // 用 computed 拿文字属性，再加上 padding-bottom 保证换行间距
+      bodyFs = parseFloat(window.getComputedStyle(paraEls[0]).fontSize) || 15;
       result.p = computedStr(paraEls[0], TEXT_PROPS) + ';margin:0;padding-bottom:1em;white-space:pre-line';
     }
 
-    // ── 标题：两种策略并用
-    // 策略 A：自身 inline style 显式写了 font-size >= 16px（WeChat 最常见嵌套写法）
-    const hByOwn = [...content.querySelectorAll('[style]')].filter(el => {
+    // ── 标题：WeChat 全用 inline style，不依赖标签名
+    // 原则：作者显式写了 font-size > 正文字号 → 视为标题
+    // 按字号降序分配 h1 / h2 / h3，每个字号取文档中首个代表元素
+    const fsSizeMap = new Map(); // font-size(px) → 首个符合条件的元素
+    for (const el of content.querySelectorAll('[style]')) {
       const fs = parseFloat(el.style.fontSize);
-      if (!(fs >= 16)) return false;   // !(NaN >= 16) = true → 正确过滤无 font-size 的元素
+      if (!(fs > bodyFs)) continue;          // 跳过 NaN 和 ≤ 正文字号
       const text = el.textContent.trim();
-      return text.length >= 2 && text.length <= 150;
-    });
-    // 策略 B：computed font-size >= 17 + 包含 <strong>/<b>（语义加粗写法）
-    const hByComputed = [...content.querySelectorAll('p,section,div,h1,h2,h3')].filter(el => {
-      const fs = parseFloat(window.getComputedStyle(el).fontSize);
-      if (fs < 17) return false;
-      const text = el.textContent.trim();
-      if (text.length < 2 || text.length > 150) return false;
-      return !!el.querySelector('strong,b');
-    });
-
-    const hCands = [...new Set([...hByOwn, ...hByComputed])];
-    // pre-compute fontSize once per candidate to avoid O(n log n) getComputedStyle calls
-    const hFsMap = new Map(hCands.map(el => [el, parseFloat(window.getComputedStyle(el).fontSize)]));
-    hCands.sort((a, b) => hFsMap.get(b) - hFsMap.get(a));
-    const seenFS = new Set(), hs = [];
-    for (const el of hCands) {
-      const fsKey = Math.round(hFsMap.get(el));
-      if (!seenFS.has(fsKey)) { seenFS.add(fsKey); hs.push(el); }
-      if (hs.length >= 3) break;
+      if (text.length < 2 || text.length > 150) continue;
+      if (!fsSizeMap.has(fs)) fsSizeMap.set(fs, el);
     }
-    // 语义标签兜底
-    ['h1','h2','h3'].forEach((tag, i) => {
-      if (!hs[i]) { const el = content.querySelector(`${tag}[style]`); if (el) hs[i] = el; }
-    });
-    // 标题样式：优先用 inline style（已包含作者意图），再补 computed color/font-family
-    function headingStyle(el) {
-      const inline = gs(el);
-      if (el.style.fontSize) {
-        const extra = computedStr(el, ['color','font-family']);
-        return inline + (extra ? ';' + extra : '');
-      }
-      return computedStr(el, TEXT_PROPS);
-    }
-    if (hs[0]) result.h1 = headingStyle(hs[0]);
-    if (hs[1]) result.h2 = headingStyle(hs[1]);
-    if (hs[2]) result.h3 = headingStyle(hs[2]);
+    [...fsSizeMap.keys()]
+      .sort((a, b) => b - a)               // 字号从大到小 → h1, h2, h3
+      .slice(0, 3)
+      .forEach((fs, i) => {
+        const el = fsSizeMap.get(fs);
+        const inline = gs(el);
+        const extra = computedStr(el, ['color', 'font-family']);
+        result[`h${i + 1}`] = inline + (extra ? ';' + extra : '');
+      });
 
     // ── 加粗行内：优先有 inline style 的 strong，否则用 computed
     const strongEl = content.querySelector('strong[style]') ||

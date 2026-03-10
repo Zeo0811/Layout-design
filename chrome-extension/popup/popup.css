@@ -87,6 +87,21 @@ html, body {
 .template-select:focus { border-color: #407600; box-shadow: 0 0 0 2px rgba(64,118,0,.12); }
 .template-select.applied { border-color: #407600; background: #f0f6e8; }
 
+.btn-sync {
+  width: 28px; height: 28px;
+  border: 1px solid #c8e09b;
+  border-radius: 6px;
+  background: #fff;
+  color: #407600;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.btn-sync:hover { background: #f0f6e8; }
+.btn-sync:disabled { opacity: .5; cursor: not-allowed; }
+
 /* ── 操作按钮区 ──────────────────────────────────────────────── */
 .toolbar {
   display: flex; gap: 8px;

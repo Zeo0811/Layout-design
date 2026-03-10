@@ -547,16 +547,6 @@
 
     let hoveredEl = null;
 
-    function getInlineProp(styleStr, prop) {
-      for (const part of styleStr.split(';')) {
-        const idx = part.indexOf(':');
-        if (idx < 0) continue;
-        if (part.slice(0, idx).trim().toLowerCase() === prop)
-          return part.slice(idx + 1).trim();
-      }
-      return null;
-    }
-
     // 纯行内类型：只提取 CSS 属性，不做 HTML 模板
     const INLINE_TYPES = new Set(['strong', 'em']);
 
@@ -604,31 +594,56 @@
       // 块级：克隆整个顶层块根，把 content 注入点替换为 {{content}}
       const root = findBlockRoot(el);
 
-      // content 注入点：标题类型自动找最大 font-size 的元素，否则用点击的元素
-      let contentEl = el;
-      if (['h1','h2','h3'].includes(blockType)) {
-        let maxFs = parseFloat(window.getComputedStyle(el).fontSize || '0');
-        root.querySelectorAll('*').forEach(node => {
-          const fs = parseFloat(window.getComputedStyle(node).fontSize || '0');
-          if (fs > maxFs) { maxFs = fs; contentEl = node; }
-        });
+      // content 注入点优先级：
+      // 1. mpa-is-content="t" —— 微信模板系统自己标注的可替换内容节点（最准确）
+      // 2. 简单块类型（p / 引用文字 / 列表项）直接替换块根的 innerHTML
+      // 3. 回退到点击的元素
+      let contentEl;
+      const markedEl = root.querySelector('[mpa-is-content]');
+      if (markedEl) {
+        contentEl = markedEl;
+      } else if (['p','blockquote_text','blockquote_wrapper','li_ul','li_ol'].includes(blockType)) {
+        contentEl = root;  // 整块替换
+      } else {
+        contentEl = el;
       }
 
       const clone = root.cloneNode(true);
 
-      // 清理：去除图片 src、去除微信私有属性（减小体积 + 避免外部请求）
+      // 清理：去除图片 src（避免外部请求）+ 去除微信私有属性（减小体积）
       clone.querySelectorAll('img').forEach(img => {
         img.removeAttribute('src');
         img.removeAttribute('data-src');
       });
-      ['mpa-from-tpl','mpa-font-style','leaf','data-textalign','data-colwidth'].forEach(attr => {
-        clone.querySelectorAll('[' + attr + ']').forEach(node => node.removeAttribute(attr));
+      // 注意：data-lazy-bgimg 是背景图延迟加载，可保留 style 中的 background-image
+      const wechatAttrs = [
+        'mpa-from-tpl','mpa-font-style','leaf','mpa-is-content',
+        'data-textalign','data-colwidth','mpa-paragraph-type',
+        'data-mpa-template','data-mpa-action-id','mpa-data-temp-power-by',
+        'data-pm-slice','data-lazy-bgimg','data-ratio','data-s','data-w',
+        'data-type','data-croporisrc','data-cropselx2','data-cropsely2',
+        'data-backw','data-backh','data-imgfileid','data-aistatus',
+        'data-original-style','data-index','data-report-img-idx','data-fail',
+      ];
+      wechatAttrs.forEach(attr => {
+        const sel = '[' + attr + ']';
+        clone.querySelectorAll(sel).forEach(node => node.removeAttribute(attr));
+        if (clone.hasAttribute(attr)) clone.removeAttribute(attr);
       });
+      // visibility:visible 是微信 JS 动态注入的，从 inline style 中移除
+      clone.querySelectorAll('[style]').forEach(node => {
+        node.style.removeProperty('visibility');
+      });
+      if (clone.style) clone.style.removeProperty('visibility');
 
-      // 在克隆树中定位 contentEl 对应节点，注入占位符
-      const path = getPathFromRoot(root, contentEl);
-      const cloneTarget = followPath(clone, path);
-      if (cloneTarget) cloneTarget.innerHTML = '{{content}}';
+      // 注入占位符
+      if (contentEl === root) {
+        clone.innerHTML = '{{content}}';
+      } else {
+        const path = getPathFromRoot(root, contentEl);
+        const cloneTarget = followPath(clone, path);
+        if (cloneTarget) cloneTarget.innerHTML = '{{content}}';
+      }
 
       return clone.outerHTML;
     }

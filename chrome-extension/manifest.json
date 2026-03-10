@@ -30,7 +30,8 @@
     "https://*.bytescm.com/*",
     "https://*.up.railway.app/*",
     "https://*.railway.app/*",
-    "https://*.github.io/*"
+    "https://*.github.io/*",
+    "https://mp.weixin.qq.com/*"
   ],
   "action": {
     "default_icon": {

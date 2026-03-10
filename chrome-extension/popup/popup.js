@@ -15,6 +15,10 @@
   const imageNoteTxt = document.getElementById('imageNoteText');
   const segmentRow   = document.getElementById('segmentRow');
   const segmentBtns  = document.getElementById('segmentBtns');
+  const convertPanel = document.getElementById('convert-panel');
+  const wechatPanel  = document.getElementById('wechat-panel');
+  const extractBtn   = document.getElementById('extractBtn');
+  const wechatNameInput = document.getElementById('wechat-tpl-name');
 
   let formattedHtml     = '';
   let formattedSegments = [];
@@ -136,8 +140,20 @@
       currentTab = tab;
 
       const url = tab.url || '';
-      const isNotion = url.includes('notion.so') || url.includes('notion.site');
-      const isFeishu = url.includes('feishu.cn') || url.includes('larksuite.com');
+      const isNotion  = url.includes('notion.so') || url.includes('notion.site');
+      const isFeishu  = url.includes('feishu.cn') || url.includes('larksuite.com');
+      const isWechat  = url.includes('mp.weixin.qq.com') && url.includes('/s/');
+
+      if (isWechat) {
+        setBadge('wechat', '微信文章');
+        convertPanel.classList.add('hidden');
+        wechatPanel.classList.remove('hidden');
+        return;
+      }
+
+      // 回到 Notion/飞书模式时确保面板正确显示
+      convertPanel.classList.remove('hidden');
+      wechatPanel.classList.add('hidden');
 
       if (!isNotion && !isFeishu) {
         setBadge('unsupported', '不支持');
@@ -461,6 +477,154 @@
     const blockCount = (data.blocks || []).length;
     stats.textContent = `${blockCount} 个块 · ${charCount.toLocaleString()} 字`;
   }
+
+  // ── 微信公众号排版提取 ────────────────────────────────────────
+
+  // 在公众号页面 MAIN world 中执行，提取各类元素的 inline style
+  function wechatExtractFn() {
+    const content = document.querySelector('#js_content') ||
+                    document.querySelector('.rich_media_content');
+    if (!content) return null;
+
+    const result = {};
+    const all    = [...content.querySelectorAll('[style]')];
+
+    function gs(el) { return el ? (el.getAttribute('style') || '').trim() : ''; }
+
+    // ── 段落：有文本内容、无块级子元素、非大号加粗
+    const paraEls = all.filter(el => {
+      const tag = el.tagName.toLowerCase();
+      if (!['p', 'section'].includes(tag)) return false;
+      if (!el.getAttribute('style')) return false;
+      if (el.textContent.trim().length < 25) return false;
+      const hasBlock = [...el.children].some(c =>
+        ['section','div','p','ul','ol','blockquote','pre','table'].includes(c.tagName.toLowerCase())
+      );
+      if (hasBlock) return false;
+      const isBoldLarge = (parseInt(el.style.fontWeight) >= 600 || el.style.fontWeight === 'bold')
+                       && parseFloat(el.style.fontSize) > 17;
+      return !isBoldLarge;
+    });
+    if (paraEls[0]) result.p = gs(paraEls[0]);
+
+    // ── 标题：加粗 + 较大字号，按字号降序，取最多 3 级
+    const hCands = all.filter(el => {
+      if (!el.getAttribute('style')) return false;
+      const txt = el.textContent.trim();
+      if (txt.length < 2 || txt.length > 80) return false;
+      const bold = parseInt(el.style.fontWeight) >= 600 || el.style.fontWeight === 'bold';
+      return bold && parseFloat(el.style.fontSize) >= 17;
+    }).sort((a, b) => parseFloat(b.style.fontSize) - parseFloat(a.style.fontSize));
+    const seenFS = new Set(), hs = [];
+    for (const el of hCands) {
+      const fs = el.style.fontSize;
+      if (!seenFS.has(fs)) { seenFS.add(fs); hs.push(el); }
+      if (hs.length >= 3) break;
+    }
+    // 也尝试语义标签 h1/h2/h3
+    ['h1','h2','h3'].forEach((tag, i) => {
+      if (!hs[i]) { const el = content.querySelector(`${tag}[style]`); if (el) hs[i] = el; }
+    });
+    if (hs[0]) result.h1 = gs(hs[0]);
+    if (hs[1]) result.h2 = gs(hs[1]);
+    if (hs[2]) result.h3 = gs(hs[2]);
+
+    // ── 加粗行内
+    const strongEl = content.querySelector('strong[style]') ||
+      all.find(el => el.tagName === 'SPAN' &&
+        (parseInt(el.style.fontWeight) >= 600 || el.style.fontWeight === 'bold'));
+    if (strongEl) result.strong = gs(strongEl);
+
+    // ── 引用块（含 border-left 或 blockquote 标签）
+    const bqEl = content.querySelector('blockquote[style]') ||
+      all.find(el => {
+        const s = el.getAttribute('style') || '';
+        return s.includes('border-left') && el.textContent.trim().length > 5;
+      });
+    if (bqEl) {
+      result.blockquote_wrapper = gs(bqEl);
+      const inner = bqEl.querySelector('[style]');
+      if (inner) result.blockquote_text = gs(inner);
+    }
+
+    // ── 分割线
+    const hrEl = content.querySelector('hr[style]');
+    if (hrEl) result.hr = gs(hrEl);
+
+    // ── 列表
+    const ulEl = content.querySelector('ul[style]');
+    const olEl = content.querySelector('ol[style]');
+    if (ulEl) { result.ul = gs(ulEl); const li = ulEl.querySelector('li[style]'); if (li) result.li_ul = gs(li); }
+    if (olEl) { result.ol = gs(olEl); const li = olEl.querySelector('li[style]'); if (li) result.li_ol = gs(li); }
+
+    // ── 图片
+    const imgEl = content.querySelector('img[style]');
+    if (imgEl) {
+      result.img = gs(imgEl);
+      const par = imgEl.parentElement;
+      if (par && par !== content && par.getAttribute('style')) result.img_wrapper = gs(par);
+    }
+
+    // ── 代码块
+    const preEl = content.querySelector('pre[style]');
+    if (preEl) result.code_wrapper = gs(preEl);
+    else {
+      const monoEl = all.find(el => {
+        const s = (el.getAttribute('style') || '').toLowerCase();
+        return s.includes('monospace') || s.includes('consolas') || s.includes('menlo') || s.includes('courier');
+      });
+      if (monoEl) result.code_wrapper = gs(monoEl);
+    }
+    const codeEl = content.querySelector('code[style]');
+    if (codeEl) result.code_text = gs(codeEl);
+
+    return Object.keys(result).length > 0 ? result : null;
+  }
+
+  extractBtn.addEventListener('click', async () => {
+    const name = wechatNameInput.value.trim();
+    if (!name) { showStatus('error', '请先输入模板名称'); return; }
+
+    extractBtn.disabled = true;
+    showStatus('loading', '正在提取排版风格...');
+
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: currentTab.id },
+        world:  'MAIN',
+        func:   wechatExtractFn,
+      });
+
+      const extracted = results[0]?.result;
+      if (!extracted) throw new Error('未能提取到样式，请确认文章已完全加载');
+
+      // 获取最新模板列表再追加，避免覆盖
+      const templates = await fetchServerTemplates().catch(() => [...loadedTemplates]);
+      if (templates.find(t => t.name === name)) {
+        throw new Error(`模板「${name}」已存在，请换个名称`);
+      }
+
+      // 以 DEFAULT_S 为底，仅覆盖提取到的 key
+      const s = Object.assign({}, DEFAULT_S, extracted);
+      templates.push({ name, s });
+
+      const res = await fetch(`${SERVER_URL}/api/templates`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ templates }),
+      });
+      if (!res.ok) throw new Error(`服务器错误 ${res.status}`);
+
+      renderTemplateSelector(templates, name);
+      applyTemplate(name);
+      wechatNameInput.value = '';
+      showStatus('success', `「${name}」已保存，可在网页端编辑细节`);
+      setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 4000);
+    } catch (err) {
+      showStatus('error', err.message);
+    }
+    extractBtn.disabled = false;
+  });
 
   init();
 

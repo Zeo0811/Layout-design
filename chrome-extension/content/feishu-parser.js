@@ -55,7 +55,7 @@ function scrollAndCollect() {
         const sorted = [...blocksByPos.entries()]
           .sort((a, b) => a[0] - b[0])
           .map(([, block]) => block);
-        // 合并相邻同类型列表块
+        // 合并相邻同类型列表块，并在相邻非空段落间插入空行（模拟 Notion 行为）
         const merged = [];
         for (const block of sorted) {
           const prev = merged[merged.length - 1];
@@ -64,6 +64,11 @@ function scrollAndCollect() {
               block.items) {
             prev.items.push(...block.items);
           } else {
+            // 两个连续非空段落之间补一个空行，确保微信粘贴后有换行间距
+            if (prev && prev.type === 'paragraph' && (prev.content || '').trim() &&
+                block.type === 'paragraph' && (block.content || '').trim()) {
+              merged.push({ type: 'paragraph', content: '' });
+            }
             merged.push(block);
           }
         }
@@ -242,7 +247,10 @@ function getFeishuBlockType(el) {
       'heading9':  { type: 'h6' },
       'text':      { type: 'paragraph' },
       'paragraph': { type: 'paragraph' },
-      'quote':     { type: 'quote' },
+      'quote':           { type: 'quote' },
+      'quote_container': { type: 'quote' },
+      'block_quote':     { type: 'quote' },
+      'blockquote':      { type: 'quote' },
       'code':      { type: 'code' },
       'callout':   { type: 'callout' },
       'divider':   { type: 'divider' },

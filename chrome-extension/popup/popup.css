@@ -88,18 +88,21 @@ html, body {
 .template-select.applied { border-color: #407600; background: #f0f6e8; }
 
 .btn-sync {
-  width: 28px; height: 28px;
+  height: 28px;
+  padding: 0 10px;
   border: 1px solid #c8e09b;
   border-radius: 6px;
-  background: #fff;
-  color: #407600;
-  font-size: 14px;
+  background: #407600;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; gap: 4px;
   transition: all .15s;
+  white-space: nowrap;
 }
-.btn-sync:hover { background: #f0f6e8; }
+.btn-sync:hover { background: #336000; }
 .btn-sync:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── 操作按钮区 ──────────────────────────────────────────────── */

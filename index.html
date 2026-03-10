@@ -1210,7 +1210,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       <option value="">— 十字路口专用 —</option>
     </select>
     <div class="tpl-topbar-sep"></div>
-    <button id="tplNewBtn"    class="tpl-btn primary" onclick="tplNew()">➕ 新建模板</button>
+    <button id="tplNewBtn"    class="tpl-btn primary" onclick="tplNew()">+ 新建模板</button>
     <button id="tplSaveBtn"   class="tpl-btn primary" onclick="tplSave()">💾 保存修改</button>
     <button id="tplDeleteBtn" class="tpl-btn danger"  onclick="tplDelete()">🗑 删除</button>
     <div class="tpl-topbar-sep"></div>
@@ -1830,11 +1830,13 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   };
 
   window.tplExport = function() {
-    const name = (document.getElementById('tpl-name-input').value||'').trim()||'custom-template';
-    const blob = new Blob([JSON.stringify(customS,null,2)],{type:'application/json'});
+    const sel = document.getElementById('tpl-selector');
+    const idx = parseInt(sel.value);
+    const name = (!isNaN(idx) && savedTemplates[idx]) ? savedTemplates[idx].name : 'custom-template';
+    const blob = new Blob([JSON.stringify(customS, null, 2)], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href=url; a.download=name+'.json'; a.click();
+    a.href = url; a.download = name + '.json'; a.click();
     URL.revokeObjectURL(url);
   };
 

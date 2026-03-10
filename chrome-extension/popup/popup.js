@@ -546,21 +546,47 @@
 
     function gs(el) { return (el.getAttribute('style') || '').trim(); }
 
-    // 为模板构建最终 CSS：有 inline font-size → inline + computed color/family
-    //                     无 inline font-size → 全用 computed 文字属性
+    // 为模板构建最终 CSS：
+    //   有 inline font-size → 保留 inline + 补 computed color/family
+    //                         + 向上遍历祖先，合并容器装饰属性（border/background/padding/margin）
+    //   无 inline font-size → 全用 computed 文字属性
     function buildFinalStyle(el) {
       const cs     = window.getComputedStyle(el);
       const inline = gs(el);
       const TPROPS = ['font-size','font-family','color','line-height',
                       'letter-spacing','text-align','font-weight'];
       if (el.style.fontSize) {
+        // 文字属性：inline 为主，computed color/family 补充
         const aug = ['color','font-family'].map(p => {
           if (inline.toLowerCase().includes(p + ':')) return null;
           const v = cs.getPropertyValue(p).trim();
           if (!v || (p === 'color' && v === 'rgb(0, 0, 0)')) return null;
           return `${p}:${v}`;
         }).filter(Boolean).join(';');
-        return inline + (aug ? ';' + aug : '');
+        let style = inline + (aug ? ';' + aug : '');
+
+        // 向上遍历祖先链，收集容器装饰属性（border / background / padding / margin）
+        // 这是 WeChat 标题把「红色竖线」放在外层 section 的核心原因
+        const CONTAINER_PROPS = ['border-left','border-right','border-top','border-bottom',
+                                 'border','background-color','border-radius','padding'];
+        let ancestor = el.parentElement;
+        while (ancestor && ancestor !== content) {
+          const aStyle = gs(ancestor);
+          if (aStyle) {
+            for (const prop of CONTAINER_PROPS) {
+              if (style.includes(prop + ':')) continue;        // 已有，不覆盖
+              const m = aStyle.match(new RegExp(prop + '\\s*:[^;]+'));
+              if (m) style += ';' + m[0].trim();
+            }
+            // margin 只取最外层有意义的（通常是大间距，如 margin:50px 0px）
+            if (!style.includes('margin:')) {
+              const m = aStyle.match(/margin\s*:[^;]+/);
+              if (m && !/margin:\s*0/.test(m[0])) style += ';' + m[0].trim();
+            }
+          }
+          ancestor = ancestor.parentElement;
+        }
+        return style;
       }
       return TPROPS.map(p => {
         let v = cs.getPropertyValue(p).trim();
@@ -632,9 +658,9 @@ Read the full structure carefully — nesting and context matter.
 
 Block types to identify:
 - p              : body paragraph (font-size ≈ ${bodyFs}px, main reading text)
-- h1             : largest heading (biggest font-size > ${bodyFs}px)
-- h2             : second heading level
-- h3             : third heading level
+- h1             : largest heading — pick the INNERMOST element that explicitly sets font-size > ${bodyFs}px (not its outer wrapper containers)
+- h2             : second heading level (same rule, second largest font-size)
+- h3             : third heading level (same rule)
 - strong         : inline bold (<strong>/<b>, or element with font-weight:bold/700)
 - blockquote_wrapper : blockquote container (look for border-left or distinct background)
 - blockquote_text    : text style INSIDE the blockquote container

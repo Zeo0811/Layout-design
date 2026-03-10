@@ -602,6 +602,52 @@
       if (ov) ov.remove();
     }
 
+    // 找到 #js_content 的直接子节点（顶层视觉块）
+    function findBlockRoot(el) {
+      let cur = el;
+      while (cur && cur.parentElement && cur.parentElement !== content) cur = cur.parentElement;
+      return cur || el;
+    }
+
+    // 根据 blockType 生成示例 HTML（用于右侧预览）
+    function getSampleHtml(blockType, cssStr) {
+      const s = cssStr ? ` style="${cssStr.replace(/"/g, "'")}"` : '';
+      const sampleText = '这是一段示例文字，用于预览排版效果。The quick brown fox.';
+      switch (blockType) {
+        case 'p':             return `<p${s}>${sampleText}</p>`;
+        case 'h1':            return `<h1${s}>一级标题示例</h1>`;
+        case 'h2':            return `<h2${s}>二级标题示例</h2>`;
+        case 'h3':            return `<h3${s}>三级标题示例</h3>`;
+        case 'strong':        return `<p>正文中 <strong${s}>加粗文字</strong> 示例</p>`;
+        case 'blockquote_wrapper': return `<blockquote${s}>${sampleText}</blockquote>`;
+        case 'blockquote_text':    return `<p${s}>${sampleText}</p>`;
+        case 'code_wrapper':  return `<div${s}><code>console.log("hello world")</code></div>`;
+        case 'code_text':     return `<code${s}>console.log("hello world")</code>`;
+        case 'hr':            return `<hr${s}/>`;
+        case 'ul':            return `<ul${s}><li>列表项一</li><li>列表项二</li></ul>`;
+        case 'li_ul':         return `<ul><li${s}>${sampleText}</li></ul>`;
+        case 'ol':            return `<ol${s}><li>列表项一</li><li>列表项二</li></ol>`;
+        case 'li_ol':         return `<ol><li${s}>${sampleText}</li></ol>`;
+        case 'img_wrapper':   return `<div${s}><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23ddd'/%3E%3Ctext x='60' y='45' text-anchor='middle' fill='%23888' font-size='12'%3E图片%3C/text%3E%3C/svg%3E" style="max-width:100%;display:block;" alt=""/></div>`;
+        case 'img':           return `<img${s} src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23ddd'/%3E%3Ctext x='60' y='45' text-anchor='middle' fill='%23888' font-size='12'%3E图片%3C/text%3E%3C/svg%3E" alt=""/>`;
+        default:              return `<div${s}>${sampleText}</div>`;
+      }
+    }
+
+    // 把 blockRoot 的 HTML 克隆出来（替换图片 src 为占位符避免跨域）
+    function getOrigHtml(el) {
+      const root = findBlockRoot(el);
+      const clone = root.cloneNode(true);
+      clone.querySelectorAll('img').forEach(img => {
+        img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23ddd'/%3E%3Ctext x='40' y='35' text-anchor='middle' fill='%23888' font-size='10'%3E图片%3C/text%3E%3C/svg%3E";
+      });
+      // 重置轮廓避免样式污染预览
+      clone.style.outline = 'none';
+      clone.style.maxWidth = '100%';
+      clone.style.overflow = 'hidden';
+      return clone.outerHTML;
+    }
+
     function showOverlay(clientX, clientY, el) {
       removeOverlay();
       const BLOCK_TYPES = [
@@ -624,31 +670,81 @@
       ];
       const opts = BLOCK_TYPES.map(([v, l]) =>
         `<option value="${v}">${v} — ${l}</option>`).join('');
-      const preview = (el.textContent || '').trim().slice(0, 40) || '[无文字内容]';
+      const previewText = (el.textContent || '').trim().slice(0, 50) || '[无文字内容]';
+      const origHtml = getOrigHtml(el);
 
       const ov = document.createElement('div');
       ov.id = '__wzx_overlay__';
       ov.innerHTML = `
-        <div style="font-size:11px;color:#888;margin-bottom:4px;">选择样式类型</div>
-        <div style="font-size:11px;background:#f5f5f5;padding:3px 6px;border-radius:3px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333;">${preview}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:600;color:#222;">选择样式类型</span>
+          <button id="__wzx_cancel__" style="background:none;border:none;cursor:pointer;font-size:16px;color:#aaa;line-height:1;padding:0 2px;">×</button>
+        </div>
+        <div style="font-size:11px;background:#f5f5f5;padding:3px 7px;border-radius:3px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#555;" title="${previewText}">${previewText}</div>
         <select id="__wzx_type__" style="width:100%;margin-bottom:8px;padding:5px 4px;border:1px solid #ddd;border-radius:4px;font-size:12px;color:#333;">
           <option value="">— 选择类型 —</option>
           ${opts}
         </select>
-        <div style="display:flex;gap:6px;">
-          <button id="__wzx_confirm__" style="flex:1;padding:5px;background:#07a11d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;">确认</button>
-          <button id="__wzx_cancel__"  style="flex:1;padding:5px;background:#f0f0f0;color:#555;border:none;border-radius:4px;cursor:pointer;font-size:12px;">取消</button>
-        </div>`;
-      ov.style.cssText = 'position:fixed;z-index:2147483647;background:white;border:1px solid #ccc;border-radius:8px;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.18);width:240px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;';
-      const left = Math.min(clientX + 12, window.innerWidth - 256);
-      const top  = Math.min(clientY + 12, window.innerHeight - 190);
+
+        <div id="__wzx_preview_area__" style="display:none;margin-bottom:8px;">
+          <div style="display:flex;gap:1px;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;">
+            <div style="flex:1;min-width:0;">
+              <div style="background:#f0f0f0;padding:3px 6px;font-size:10px;color:#666;text-align:center;border-bottom:1px solid #e0e0e0;">原始效果</div>
+              <div id="__wzx_left__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
+            </div>
+            <div style="width:1px;background:#e0e0e0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="background:#e8f5e9;padding:3px 6px;font-size:10px;color:#2a6b2a;text-align:center;border-bottom:1px solid #c8e6c9;">提取效果</div>
+              <div id="__wzx_right__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
+            </div>
+          </div>
+          <div id="__wzx_props__" style="margin-top:5px;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:4px 6px;font-size:10px;color:#555;font-family:monospace;max-height:60px;overflow:auto;line-height:1.5;"></div>
+        </div>
+
+        <button id="__wzx_confirm__" disabled style="width:100%;padding:6px;background:#ccc;color:white;border:none;border-radius:4px;cursor:not-allowed;font-size:12px;font-weight:600;">确认保存</button>`;
+
+      ov.style.cssText = 'position:fixed;z-index:2147483647;background:white;border:1px solid #ccc;border-radius:10px;padding:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);width:440px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-sizing:border-box;';
+      const left = Math.min(clientX + 12, window.innerWidth - 452);
+      const top  = Math.min(clientY + 12, window.innerHeight - 320);
       ov.style.left = left + 'px';
       ov.style.top  = top  + 'px';
 
-      ov.querySelector('#__wzx_confirm__').addEventListener('click', () => {
-        const sel = ov.querySelector('#__wzx_type__');
-        const blockType = sel.value;
-        if (!blockType) { sel.style.border = '1px solid red'; return; }
+      const typeSelect  = ov.querySelector('#__wzx_type__');
+      const confirmBtn  = ov.querySelector('#__wzx_confirm__');
+      const previewArea = ov.querySelector('#__wzx_preview_area__');
+      const leftPanel   = ov.querySelector('#__wzx_left__');
+      const rightPanel  = ov.querySelector('#__wzx_right__');
+      const propsPanel  = ov.querySelector('#__wzx_props__');
+
+      typeSelect.addEventListener('change', () => {
+        const blockType = typeSelect.value;
+        if (!blockType) {
+          previewArea.style.display = 'none';
+          confirmBtn.disabled = true;
+          confirmBtn.style.background = '#ccc';
+          confirmBtn.style.cursor = 'not-allowed';
+          return;
+        }
+        const css = extractCSS(el, blockType);
+        // 左侧：原始 DOM 克隆
+        leftPanel.innerHTML = origHtml;
+        // 右侧：样式示例
+        rightPanel.innerHTML = getSampleHtml(blockType, css);
+        // 属性列表
+        const propLines = css ? css.split(';').filter(Boolean).map(p => p.trim()) : [];
+        propsPanel.textContent = propLines.length
+          ? propLines.join('\n')
+          : '（未提取到样式属性）';
+        previewArea.style.display = 'block';
+        confirmBtn.disabled = false;
+        confirmBtn.style.background = '#07a11d';
+        confirmBtn.style.cursor = 'pointer';
+      });
+
+      confirmBtn.addEventListener('click', () => {
+        if (confirmBtn.disabled) return;
+        const blockType = typeSelect.value;
+        if (!blockType) return;
         const css = extractCSS(el, blockType);
         removeOverlay();
         if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }

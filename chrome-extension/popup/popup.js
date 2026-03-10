@@ -538,74 +538,13 @@
 
   // ── 微信公众号排版提取 ────────────────────────────────────────
 
-  // ── Phase 1：生成精简 HTML + styleIndex（在页面 MAIN world 中执行）────────
+  // ── Phase 1：生成精简 HTML（在页面 MAIN world 中执行）────────────────────
   function wechatExtractFn() {
     const content = document.querySelector('#js_content') ||
                     document.querySelector('.rich_media_content');
     if (!content) return null;
 
     function gs(el) { return (el.getAttribute('style') || '').trim(); }
-
-    // 为模板构建最终 CSS：
-    //   有 inline font-size → 保留 inline + 补 computed color/family
-    //                         + 向上遍历祖先，合并容器装饰属性（border/background/padding/margin）
-    //   无 inline font-size → 全用 computed 文字属性
-    function buildFinalStyle(el) {
-      const cs     = window.getComputedStyle(el);
-      const inline = gs(el);
-      const TPROPS = ['font-size','font-family','color','line-height',
-                      'letter-spacing','text-align','font-weight'];
-      if (el.style.fontSize) {
-        // 文字属性：inline 为主，computed color/family 补充
-        const aug = ['color','font-family'].map(p => {
-          if (inline.toLowerCase().includes(p + ':')) return null;
-          const v = cs.getPropertyValue(p).trim();
-          if (!v || (p === 'color' && v === 'rgb(0, 0, 0)')) return null;
-          return `${p}:${v}`;
-        }).filter(Boolean).join(';');
-        let style = inline + (aug ? ';' + aug : '');
-
-        // 向上遍历祖先链，收集容器装饰属性（border / background / padding / margin）
-        // 这是 WeChat 标题把「红色竖线」放在外层 section 的核心原因
-        const CONTAINER_PROPS = ['border-left','border-right','border-top','border-bottom',
-                                 'border','background-color','border-radius','padding'];
-        let ancestor = el.parentElement;
-        while (ancestor && ancestor !== content) {
-          const aStyle = gs(ancestor);
-          if (aStyle) {
-            for (const prop of CONTAINER_PROPS) {
-              if (style.includes(prop + ':')) continue;        // 已有，不覆盖
-              const m = aStyle.match(new RegExp(prop + '\\s*:[^;]+'));
-              if (m) style += ';' + m[0].trim();
-            }
-            // margin 只取最外层有意义的（通常是大间距，如 margin:50px 0px）
-            if (!style.includes('margin:')) {
-              const m = aStyle.match(/margin\s*:[^;]+/);
-              if (m && !/margin:\s*0/.test(m[0])) style += ';' + m[0].trim();
-            }
-          }
-          ancestor = ancestor.parentElement;
-        }
-        return style;
-      }
-      return TPROPS.map(p => {
-        let v = cs.getPropertyValue(p).trim();
-        if (!v) return null;
-        if (p === 'font-weight'    && (v === '400' || v === 'normal'))         return null;
-        if (p === 'text-align'     && (v === 'start' || v === '-webkit-auto')) return null;
-        if (p === 'letter-spacing' && v === 'normal')                          return null;
-        return `${p}:${v}`;
-      }).filter(Boolean).join(';');
-    }
-
-    // styleIndex：inline style → computed-augmented 最终样式（覆盖所有元素，无上限）
-    const styleIndex = {};
-    const selAll = '[style], p, strong, b, hr, ul, ol, li, blockquote, pre, code, img, h1, h2, h3';
-    for (const el of content.querySelectorAll(selAll)) {
-      const s   = gs(el);
-      const key = s || `__tag_${el.tagName.toLowerCase()}`;
-      if (!styleIndex[key]) styleIndex[key] = buildFinalStyle(el);
-    }
 
     // 精简 HTML：只保留 tag + inline style + 前 35 字文字，剥掉所有其他属性
     const SKIP = new Set(['script','style','meta','link','noscript','head','svg','path']);
@@ -642,27 +581,29 @@
       if (fss.length) bodyFs = Math.round(fss.reduce((a, b) => a + b) / fss.length);
     }
 
-    return { html, styleIndex, bodyFs };
+    return { html, bodyFs };
   }
 
-  // ── Phase 2：把完整结构 HTML 发给 Claude，AI 识别各块的 inline style 值 ──
+  // ── Phase 2：把完整结构 HTML 发给 Claude，AI 合成各块完整 CSS ──────────────
   async function classifyWithAI(rawData, apiToken) {
     const { html, bodyFs } = rawData;
 
     const prompt =
-`You are analyzing a WeChat (微信公众号) article to extract CSS styles for content block types.
-Body text font-size baseline: ${bodyFs}px
+`You are analyzing a WeChat (微信公众号) article to extract reusable CSS styles for each content block type.
 
-The HTML below is a simplified version of the article: only tags, inline style attributes, and short text snippets are preserved. All class/id/data attributes are stripped.
-Read the full structure carefully — nesting and context matter.
+WeChat articles distribute visual styles across MULTIPLE levels of nested <section> elements.
+For example, a heading may have font-size on an inner <section> and border-left on an outer <section>.
+You MUST combine styles from ALL relevant nesting levels into a single synthesized CSS string.
+
+Body text font-size baseline: ${bodyFs}px
 
 Block types to identify:
 - p              : body paragraph (font-size ≈ ${bodyFs}px, main reading text)
-- h1             : largest heading — pick the INNERMOST element that explicitly sets font-size > ${bodyFs}px (not its outer wrapper containers)
-- h2             : second heading level (same rule, second largest font-size)
-- h3             : third heading level (same rule)
-- strong         : inline bold (<strong>/<b>, or element with font-weight:bold/700)
-- blockquote_wrapper : blockquote container (look for border-left or distinct background)
+- h1             : largest heading (font-size > ${bodyFs}px) — synthesize font+color from inner element AND decorations (border-left/background/padding/margin) from outer containers
+- h2             : second heading level (same synthesis rule)
+- h3             : third heading level (same synthesis rule)
+- strong         : inline bold (<strong>/<b>, or font-weight:bold/700)
+- blockquote_wrapper : blockquote container — synthesize border-left, background-color, padding from all surrounding sections
 - blockquote_text    : text style INSIDE the blockquote container
 - code_wrapper   : code block outer container (monospace font or code-like background)
 - code_text      : text style inside code block
@@ -674,15 +615,18 @@ Block types to identify:
 - img_wrapper    : parent element wrapping an <img>
 - img            : image element
 
-For each block type found, return the EXACT value of the style="" attribute of the best representative element.
-If an element has no inline style (e.g. plain <p>), return an empty string "".
-Omit block types not present in the article.
+RULES:
+1. For each block type, produce a SYNTHESIZED CSS string combining properties from the element AND its ancestor containers.
+2. If two levels both set the same property, prefer the more specific (inner) value.
+3. Include all visually significant properties: font-size, font-weight, color, line-height, letter-spacing, text-align, border-left, border-right, border-top, border-bottom, background-color, border-radius, padding, margin.
+4. Omit zero/default-only values (e.g. margin:0, letter-spacing:normal).
+5. Omit block types not present in the article.
 
 HTML:
 ${html}
 
-Output ONLY a JSON object — values must be exact style strings from the HTML:
-{"p":"white-space:normal;margin:0px","h1":"font-size:20px;color:#222;font-weight:bold",...}`;
+Output ONLY a JSON object with synthesized CSS strings:
+{"p":"font-size:15px;color:rgb(63,63,63);line-height:1.75","h1":"font-size:20px;font-weight:bold;color:#222;border-left:4px solid #d32f2f;padding-left:12px;margin:30px 0 15px",...}`;
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
@@ -711,12 +655,12 @@ Output ONLY a JSON object — values must be exact style strings from the HTML:
     return JSON.parse(match[0]);
   }
 
-  // ── Phase 3：AI 返回 inline style 字符串 → styleIndex 查 finalStyle ───────
-  function buildResultFromClassification(styleIndex, classification) {
+  // ── Phase 3：AI 直接返回合成 CSS 字符串，无需 styleIndex 查表 ──────────────
+  function buildResultFromClassification(classification) {
     const result = {};
-    for (const [key, inlineStyle] of Object.entries(classification)) {
-      if (typeof inlineStyle !== 'string') continue;
-      let style = styleIndex[inlineStyle] || styleIndex[`__tag_${key}`] || inlineStyle;
+    for (const [key, css] of Object.entries(classification)) {
+      if (typeof css !== 'string') continue;
+      let style = css.trim();
       if (!style) continue;
       if (key === 'p') style += ';margin:0;padding-bottom:1em;white-space:pre-line';
       result[key] = style;
@@ -756,7 +700,7 @@ Output ONLY a JSON object — values must be exact style strings from the HTML:
       const classification = await classifyWithAI(rawData, apiToken);
 
       // Phase 3
-      const extracted = buildResultFromClassification(rawData.styleIndex, classification);
+      const extracted = buildResultFromClassification(classification);
       if (Object.keys(extracted).length === 0) throw new Error('AI 未能识别任何样式块');
 
       lastExtracted = extracted;

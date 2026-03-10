@@ -171,7 +171,8 @@ function renderBlock(block, links, depth) {
     case 'h6': return `<section style="${S.h6}">${pi(block.content)}</section>`;
 
     case 'paragraph': {
-      const text = (block.content || '').trim();
+      // \u200b 是飞书空行末尾自动插入的零宽空格，需视为空行
+      const text = (block.content || '').replace(/\u200b/g, '').trim();
       if (!text) return '<br>';
       return `<p style="${S.p}">${pi(block.content)}</p>`;
     }

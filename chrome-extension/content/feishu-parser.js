@@ -65,8 +65,11 @@ function scrollAndCollect() {
             prev.items.push(...block.items);
           } else {
             // 两个连续非空段落之间补一个空行，确保微信粘贴后有换行间距
-            if (prev && prev.type === 'paragraph' && (prev.content || '').trim() &&
-                block.type === 'paragraph' && (block.content || '').trim()) {
+            // 飞书空行含 \u200b，需去除后再判断是否为空
+            const prevEmpty = !(prev && (prev.content || '').replace(/\u200b/g, '').trim());
+            const curEmpty  = !((block.content || '').replace(/\u200b/g, '').trim());
+            if (prev && prev.type === 'paragraph' && !prevEmpty &&
+                block.type === 'paragraph' && !curEmpty) {
               merged.push({ type: 'paragraph', content: '' });
             }
             merged.push(block);

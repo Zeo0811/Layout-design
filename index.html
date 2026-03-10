@@ -1851,6 +1851,11 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         }
       } catch (_) { savedTemplates = []; }
       syncSelector();
+      // 有自定义模板时自动选中第一个，让保存/删除按钮可见
+      if (savedTemplates.length > 0) {
+        document.getElementById('tpl-selector').value = '0';
+        tplLoad();
+      }
       renderSidebar();
       _updateEditState();
     };

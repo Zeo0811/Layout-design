@@ -234,6 +234,11 @@ function getFeishuBlockType(el) {
   const cls = el.className || '';
   const blockType = el.getAttribute('data-block-type') || '';
 
+  // 飞书引用块：data-block-type="text" 但 class 含 quote-container-render-unit
+  if (cls.includes('quote-container-render-unit') || cls.includes('quote-container-block')) {
+    return { type: 'quote' };
+  }
+
   if (blockType) {
     const typeMap = {
       'heading1':  { type: 'h1' },

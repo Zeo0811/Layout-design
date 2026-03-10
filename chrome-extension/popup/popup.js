@@ -185,7 +185,7 @@
       const url = tab.url || '';
       const isNotion  = url.includes('notion.so') || url.includes('notion.site');
       const isFeishu  = url.includes('feishu.cn') || url.includes('larksuite.com');
-      const isWechat  = url.includes('mp.weixin.qq.com') && url.includes('/s/');
+      const isWechat  = url.includes('mp.weixin.qq.com') && /\/s[/?]/.test(url);
 
       if (isWechat) {
         setBadge('wechat', '微信文章');

@@ -23,8 +23,8 @@
       <span id="badge" class="badge badge--unknown">检测中...</span>
     </header>
 
-    <!-- 排版模板选择 -->
-    <div class="template-row">
+    <!-- 排版模板选择（微信模式下隐藏） -->
+    <div id="template-row" class="template-row">
       <span class="template-label">排版模板</span>
       <select id="templateSelect" class="template-select">
         <option value="">默认样式</option>
@@ -32,7 +32,7 @@
       <button id="syncBtn" class="btn-sync" title="从服务器同步模板">↻ 同步</button>
     </div>
 
-    <!-- 状态提示（两种模式公用） -->
+    <!-- 状态提示（Notion/飞书模式用） -->
     <div id="statusBar" class="status-bar status-bar--hidden">
       <span id="statusIcon" class="status-icon">⏳</span>
       <span id="statusText">处理中...</span>
@@ -40,8 +40,6 @@
 
     <!-- ── Notion / 飞书 转换模式 ── -->
     <div id="convert-panel">
-
-      <!-- 操作按钮区 -->
       <div class="toolbar">
         <button id="convertBtn" class="btn btn--primary">
           <span class="btn-icon">⚡</span>
@@ -52,14 +50,10 @@
           完整复制
         </button>
       </div>
-
-      <!-- 分段复制行（转换后显示） -->
       <div id="segmentRow" class="segment-row hidden">
         <span class="segment-label">分段复制：</span>
         <div id="segmentBtns" class="segment-btns"></div>
       </div>
-
-      <!-- 预览区域 -->
       <div class="preview-panel">
         <div class="preview-header">
           <span class="preview-title">预览</span>
@@ -72,34 +66,45 @@
           </div>
         </div>
       </div>
-
-      <!-- 图片提示 -->
       <div id="imageNote" class="image-note hidden">
         <span class="image-note-icon">🖼</span>
         <span id="imageNoteText">图片已转 Base64，可离线显示</span>
       </div>
-
-    </div><!-- /convert-panel -->
+    </div>
 
     <!-- ── 微信公众号排版提取模式 ── -->
     <div id="wechat-panel" class="wechat-panel hidden">
-      <div class="wechat-hero">
-        <div class="wechat-hero-icon">🎨</div>
-        <div class="wechat-hero-title">复制该公众号排版风格</div>
-        <div class="wechat-hero-desc">自动提取文章的字体、颜色、间距等排版属性，<br>保存为可复用模板，并可在网页端精细编辑</div>
-      </div>
-      <div class="wechat-form">
-        <input id="wechat-tpl-name" class="wechat-name-input"
-               type="text" placeholder="输入模板名称（如：新榜风格）" />
+
+      <!-- Step 1：初始，单按钮 -->
+      <div id="wechat-step1" class="wechat-step">
+        <div class="wechat-hero">
+          <div class="wechat-hero-icon">🎨</div>
+          <div class="wechat-hero-title">复制该公众号排版风格</div>
+          <div class="wechat-hero-desc">分析文章内各类元素的排版属性，<br>保存为可复用模板，可在网页端精细编辑</div>
+        </div>
         <button id="extractBtn" class="btn btn--extract">
           <span class="btn-icon">✨</span>
-          提取并保存为模板
+          提取风格并保存为模板
         </button>
       </div>
-      <div class="wechat-tips">
-        <div class="wechat-tip-item">📐 提取粒度：段落、标题、引用、列表、图片等</div>
-        <div class="wechat-tip-item">✏️ 保存后可在网页端逐项编辑调整</div>
+
+      <!-- Step 2：提取结果 + 命名保存 -->
+      <div id="wechat-step2" class="wechat-step hidden">
+        <div class="results-header">
+          <span class="results-title">提取结果</span>
+          <button id="reExtractBtn" class="btn-reextract">↺ 重新提取</button>
+        </div>
+        <div id="results-list" class="results-list"></div>
+        <div class="wechat-save-form">
+          <input id="wechat-tpl-name" class="wechat-name-input"
+                 type="text" placeholder="输入模板名称（如：新榜风格）" />
+          <button id="saveExtractBtn" class="btn btn--extract">
+            <span class="btn-icon">💾</span>
+            保存为模板
+          </button>
+        </div>
       </div>
+
     </div><!-- /wechat-panel -->
 
   </div>

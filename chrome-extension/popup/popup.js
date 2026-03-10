@@ -15,10 +15,53 @@
   const imageNoteTxt = document.getElementById('imageNoteText');
   const segmentRow   = document.getElementById('segmentRow');
   const segmentBtns  = document.getElementById('segmentBtns');
-  const convertPanel = document.getElementById('convert-panel');
-  const wechatPanel  = document.getElementById('wechat-panel');
-  const extractBtn   = document.getElementById('extractBtn');
+  const convertPanel    = document.getElementById('convert-panel');
+  const templateRow     = document.getElementById('template-row');
+  const wechatPanel     = document.getElementById('wechat-panel');
+  const wechatStep1     = document.getElementById('wechat-step1');
+  const wechatStep2     = document.getElementById('wechat-step2');
+  const extractBtn      = document.getElementById('extractBtn');
+  const reExtractBtn    = document.getElementById('reExtractBtn');
+  const saveExtractBtn  = document.getElementById('saveExtractBtn');
   const wechatNameInput = document.getElementById('wechat-tpl-name');
+  const resultsList     = document.getElementById('results-list');
+
+  // 提取结果暂存（step1→step2 传递）
+  let lastExtracted = null;
+
+  // 与样式预览对齐的颗粒度分类
+  const EXTRACT_CATEGORIES = [
+    { label: 'paragraph · 正文段落', keys: ['p'] },
+    { label: 'H1 · 一级标题',        keys: ['h1'] },
+    { label: 'H2 · 二级标题',        keys: ['h2'] },
+    { label: 'H3 · 三级标题',        keys: ['h3'] },
+    { label: 'inline · 行内加粗',    keys: ['strong'] },
+    { label: 'quote · 引用块',       keys: ['blockquote_wrapper', 'blockquote_text'] },
+    { label: 'code · 代码块',        keys: ['code_wrapper', 'code_text'] },
+    { label: 'hr · 分割线',          keys: ['hr'] },
+    { label: 'list · 列表',          keys: ['ul', 'ol', 'li_ul', 'li_ol'] },
+    { label: 'image · 图片',         keys: ['img_wrapper', 'img'] },
+  ];
+
+  function renderExtractResults(extracted) {
+    resultsList.innerHTML = EXTRACT_CATEGORIES.map(cat => {
+      const found   = cat.keys.filter(k => extracted[k]);
+      const total   = cat.keys.length;
+      const ok      = found.length > 0;
+      return `<div class="result-item ${ok ? 'result-ok' : 'result-missing'}">
+        <span class="result-icon">${ok ? '✅' : '⚠️'}</span>
+        <span class="result-label${ok ? '' : ' dim'}">${cat.label}</span>
+        ${ok
+          ? `<span class="result-count">${found.length}/${total} 属性</span>`
+          : `<span class="result-hint">文章中未发现</span>`}
+      </div>`;
+    }).join('');
+  }
+
+  function showWechatStep(step) {
+    wechatStep1.classList.toggle('hidden', step !== 1);
+    wechatStep2.classList.toggle('hidden', step !== 2);
+  }
 
   let formattedHtml     = '';
   let formattedSegments = [];
@@ -146,12 +189,15 @@
 
       if (isWechat) {
         setBadge('wechat', '微信文章');
+        templateRow.classList.add('hidden');
         convertPanel.classList.add('hidden');
         wechatPanel.classList.remove('hidden');
+        showWechatStep(1);
         return;
       }
 
       // 回到 Notion/飞书模式时确保面板正确显示
+      templateRow.classList.remove('hidden');
       convertPanel.classList.remove('hidden');
       wechatPanel.classList.add('hidden');
 
@@ -581,12 +627,10 @@
     return Object.keys(result).length > 0 ? result : null;
   }
 
+  // Step 1：点击提取 → 跑提取函数 → 渲染结果 → 跳到 Step 2
   extractBtn.addEventListener('click', async () => {
-    const name = wechatNameInput.value.trim();
-    if (!name) { showStatus('error', '请先输入模板名称'); return; }
-
     extractBtn.disabled = true;
-    showStatus('loading', '正在提取排版风格...');
+    extractBtn.textContent = '⏳ 提取中...';
 
     try {
       const results = await chrome.scripting.executeScript({
@@ -598,14 +642,43 @@
       const extracted = results[0]?.result;
       if (!extracted) throw new Error('未能提取到样式，请确认文章已完全加载');
 
-      // 获取最新模板列表再追加，避免覆盖
+      lastExtracted = extracted;
+      renderExtractResults(extracted);
+      wechatNameInput.value = '';
+      showWechatStep(2);
+    } catch (err) {
+      showStatus('error', '提取失败：' + err.message);
+    }
+
+    extractBtn.disabled = false;
+    extractBtn.innerHTML = '<span class="btn-icon">✨</span>提取风格并保存为模板';
+  });
+
+  // 重新提取：回到 Step 1
+  reExtractBtn.addEventListener('click', () => {
+    lastExtracted = null;
+    showWechatStep(1);
+    statusBar.className = 'status-bar status-bar--hidden';
+  });
+
+  // Step 2：保存为模板
+  saveExtractBtn.addEventListener('click', async () => {
+    const name = wechatNameInput.value.trim();
+    if (!name) { wechatNameInput.focus(); wechatNameInput.style.borderColor = '#e85555'; return; }
+    wechatNameInput.style.borderColor = '';
+
+    if (!lastExtracted) { showStatus('error', '请先提取排版风格'); return; }
+
+    saveExtractBtn.disabled = true;
+    saveExtractBtn.innerHTML = '⏳ 保存中...';
+
+    try {
       const templates = await fetchServerTemplates().catch(() => [...loadedTemplates]);
       if (templates.find(t => t.name === name)) {
         throw new Error(`模板「${name}」已存在，请换个名称`);
       }
 
-      // 以 DEFAULT_S 为底，仅覆盖提取到的 key
-      const s = Object.assign({}, DEFAULT_S, extracted);
+      const s = Object.assign({}, DEFAULT_S, lastExtracted);
       templates.push({ name, s });
 
       const res = await fetch(`${SERVER_URL}/api/templates`, {
@@ -617,13 +690,19 @@
 
       renderTemplateSelector(templates, name);
       applyTemplate(name);
-      wechatNameInput.value = '';
       showStatus('success', `「${name}」已保存，可在网页端编辑细节`);
       setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 4000);
+
+      // 保存成功后重置回 Step 1
+      lastExtracted = null;
+      wechatNameInput.value = '';
+      showWechatStep(1);
     } catch (err) {
       showStatus('error', err.message);
     }
-    extractBtn.disabled = false;
+
+    saveExtractBtn.disabled = false;
+    saveExtractBtn.innerHTML = '<span class="btn-icon">💾</span>保存为模板';
   });
 
   init();

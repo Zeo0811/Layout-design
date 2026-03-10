@@ -30,7 +30,10 @@ async function upstash(command, ...args) {
     },
     body: JSON.stringify([command, ...args]),
   });
-  const data = await res.json();
+  const text = await res.text();
+  console.log(`upstash ${command} status=${res.status} body=${text.slice(0, 200)}`);
+  const data = JSON.parse(text);
+  if (data.error) throw new Error(`Upstash: ${data.error}`);
   return data.result ?? null;
 }
 
@@ -62,6 +65,7 @@ app.post('/api/templates', async (req, res) => {
     await saveTemplates(templates);
     res.json({ ok: true });
   } catch (e) {
+    console.error('POST /api/templates error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

@@ -547,7 +547,6 @@
         if (p === 'background-color' && v === 'rgba(0, 0, 0, 0)') return null;
         if (p === 'letter-spacing' && v === 'normal') return null;
         if (p === 'text-decoration-line' && v === 'none') return null;
-        if (p === 'text-align' && v === 'start') v = 'left';
         return `${p}:${v}`;
       }).filter(Boolean).join(';');
     }
@@ -574,7 +573,7 @@
     // 策略 A：自身 inline style 显式写了 font-size >= 16px（WeChat 最常见嵌套写法）
     const hByOwn = [...content.querySelectorAll('[style]')].filter(el => {
       const fs = parseFloat(el.style.fontSize);
-      if (fs < 16) return false;
+      if (!(fs >= 16)) return false;   // !(NaN >= 16) = true → 正确过滤无 font-size 的元素
       const text = el.textContent.trim();
       return text.length >= 2 && text.length <= 150;
     });
@@ -588,12 +587,12 @@
     });
 
     const hCands = [...new Set([...hByOwn, ...hByComputed])];
-    hCands.sort((a, b) =>
-      parseFloat(window.getComputedStyle(b).fontSize) - parseFloat(window.getComputedStyle(a).fontSize)
-    );
+    // pre-compute fontSize once per candidate to avoid O(n log n) getComputedStyle calls
+    const hFsMap = new Map(hCands.map(el => [el, parseFloat(window.getComputedStyle(el).fontSize)]));
+    hCands.sort((a, b) => hFsMap.get(b) - hFsMap.get(a));
     const seenFS = new Set(), hs = [];
     for (const el of hCands) {
-      const fsKey = Math.round(parseFloat(window.getComputedStyle(el).fontSize));
+      const fsKey = Math.round(hFsMap.get(el));
       if (!seenFS.has(fsKey)) { seenFS.add(fsKey); hs.push(el); }
       if (hs.length >= 3) break;
     }
@@ -686,6 +685,7 @@
       wechatNameInput.value = '';
       showWechatStep(2);
     } catch (err) {
+      lastExtracted = null;
       showStatus('error', '提取失败：' + err.message);
     }
 
@@ -704,7 +704,6 @@
   saveExtractBtn.addEventListener('click', async () => {
     const name = wechatNameInput.value.trim();
     if (!name) { wechatNameInput.focus(); wechatNameInput.style.borderColor = '#e85555'; return; }
-    wechatNameInput.style.borderColor = '';
 
     if (!lastExtracted) { showStatus('error', '请先提取排版风格'); return; }
 
@@ -740,6 +739,7 @@
       showStatus('error', err.message);
     }
 
+    wechatNameInput.style.borderColor = '';
     saveExtractBtn.disabled = false;
     saveExtractBtn.innerHTML = '<span class="btn-icon">💾</span>保存为模板';
   });

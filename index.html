@@ -344,6 +344,7 @@
       height: calc(100vh - 53px);
       flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
     #panel-template.active { display: flex; }
 
@@ -1176,8 +1177,8 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     <div class="tpl-topbar-sep"></div>
     <label>另存为：</label>
     <input class="tpl-input" id="tpl-name-input" type="text" placeholder="输入模板名称..." />
-    <button class="tpl-btn primary" onclick="tplSave()">💾 保存模板</button>
-    <button class="tpl-btn danger" onclick="tplDelete()">🗑 删除</button>
+    <button id="tplSaveBtn" class="tpl-btn primary" onclick="tplSave()">💾 保存模板</button>
+    <button id="tplDeleteBtn" class="tpl-btn danger" onclick="tplDelete()">🗑 删除</button>
     <div class="tpl-topbar-sep"></div>
     <button class="tpl-btn" onclick="tplReset()">↩ 恢复默认</button>
     <button class="tpl-btn" onclick="tplExport()">⬇ 导出 JSON</button>
@@ -1687,6 +1688,22 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     }
   };
 
+  function _updateEditState() {
+    const isDefault = !document.getElementById('tpl-selector').value;
+    const saveBtn   = document.getElementById('tplSaveBtn');
+    const deleteBtn = document.getElementById('tplDeleteBtn');
+    const nameInput = document.getElementById('tpl-name-input');
+    saveBtn.disabled   = isDefault;
+    deleteBtn.disabled = isDefault;
+    nameInput.disabled = isDefault;
+    if (isDefault) {
+      nameInput.value       = '';
+      nameInput.placeholder = '默认模板不可修改';
+    } else {
+      nameInput.placeholder = '输入模板名称...';
+    }
+  }
+
   window.tplLoad = function() {
     const sel = document.getElementById('tpl-selector');
     const idx = parseInt(sel.value);
@@ -1698,6 +1715,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       customS = Object.assign({}, S, tpl.s);
       document.getElementById('tpl-name-input').value = tpl.name;
     }
+    _updateEditState();
     if (selectedId) { loadPropState(selectedId); }
     renderPreview();
     renderEditor();
@@ -1718,8 +1736,8 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     if (!confirm('恢复默认样式？当前未保存的修改会丢失。')) return;
     customS = Object.assign({}, S);
     document.getElementById('tpl-selector').value = '';
-    document.getElementById('tpl-name-input').value = '';
     if (selectedId) { loadPropState(selectedId); }
+    _updateEditState();
     renderPreview();
     renderEditor();
   };
@@ -1745,6 +1763,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       } catch(e) { savedTemplates = []; }
       syncSelector();
       renderSidebar();
+      _updateEditState();
       // 从服务器加载模板并合并
       try {
         const res = await fetch('/api/templates');

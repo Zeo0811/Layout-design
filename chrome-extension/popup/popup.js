@@ -557,58 +557,80 @@
       return null;
     }
 
-    // 文字型 key：只取 computed 文字属性，不向上收集容器装饰（避免把外层 border-left 错误归属到文字样式）
-    const TEXT_KEYS = new Set(['p','strong','em','blockquote_text','code_text','img','li_p']);
+    // 纯行内类型：只提取 CSS 属性，不做 HTML 模板
+    const INLINE_TYPES = new Set(['strong', 'em']);
 
-    function extractCSS(el, blockType) {
-      const TPROPS = ['font-size','font-family','color','line-height',
-                      'letter-spacing','text-align','font-weight'];
-      const CPROPS = ['border-left','border-right','border-top','border-bottom','border',
-                      'background-color','border-radius','box-shadow',
-                      'padding','margin','overflow','white-space'];
+    // 计算从 root 到 target 的子节点路径（用于在克隆树中定位同一节点）
+    function getPathFromRoot(root, target) {
+      const path = [];
+      let cur = target;
+      while (cur && cur !== root) {
+        const parent = cur.parentElement;
+        if (!parent) break;
+        path.unshift(Array.from(parent.children).indexOf(cur));
+        cur = parent;
+      }
+      return path;
+    }
 
-      // 微信标题经常把大 font-size / 主色放在深层 section 里，而非最外层。
-      // 对 heading 类型：在整个块根下找 font-size 最大的元素作为文字样式来源。
-      let textEl = el;
+    function followPath(root, path) {
+      let cur = root;
+      for (const idx of path) {
+        if (!cur || !cur.children[idx]) return null;
+        cur = cur.children[idx];
+      }
+      return cur;
+    }
+
+    // 提取模板：行内类型返回 CSS 字符串；块级类型返回带 {{content}} 占位符的完整 outerHTML
+    function extractTemplate(el, blockType) {
+      if (INLINE_TYPES.has(blockType)) {
+        // 纯行内：提取 computed 文字属性
+        const TPROPS = ['font-size','font-family','color','line-height','letter-spacing',
+                        'text-align','font-weight','background-color','border-bottom'];
+        const cs = window.getComputedStyle(el);
+        const parts = {};
+        for (const p of TPROPS) {
+          const v = cs.getPropertyValue(p).trim();
+          if (!v) continue;
+          if (p === 'font-weight' && (v === '400' || v === 'normal')) continue;
+          if (p === 'text-align' && (v === 'start' || v === '-webkit-auto')) continue;
+          if (p === 'letter-spacing' && v === 'normal') continue;
+          parts[p] = v;
+        }
+        return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
+      }
+
+      // 块级：克隆整个顶层块根，把 content 注入点替换为 {{content}}
+      const root = findBlockRoot(el);
+
+      // content 注入点：标题类型自动找最大 font-size 的元素，否则用点击的元素
+      let contentEl = el;
       if (['h1','h2','h3'].includes(blockType)) {
-        const root = findBlockRoot(el);
         let maxFs = parseFloat(window.getComputedStyle(el).fontSize || '0');
         root.querySelectorAll('*').forEach(node => {
           const fs = parseFloat(window.getComputedStyle(node).fontSize || '0');
-          if (fs > maxFs) { maxFs = fs; textEl = node; }
+          if (fs > maxFs) { maxFs = fs; contentEl = node; }
         });
       }
 
-      const cs = window.getComputedStyle(textEl);
-      const parts = {};
-      for (const p of TPROPS) {
-        const v = cs.getPropertyValue(p).trim();
-        if (!v) continue;
-        if (p === 'font-weight' && (v === '400' || v === 'normal')) continue;
-        if (p === 'text-align' && (v === 'start' || v === '-webkit-auto')) continue;
-        if (p === 'letter-spacing' && v === 'normal') continue;
-        parts[p] = v;
-      }
+      const clone = root.cloneNode(true);
 
-      // 容器型 key：扫描整个块根内所有带 style 的元素（包括根自身）
-      // 这样可以捕获跨兄弟节点的装饰样式，例如标题旁边的黄色装饰条 background-color
-      if (!TEXT_KEYS.has(blockType)) {
-        const root = findBlockRoot(el);
-        const scanNode = (node) => {
-          const inlineStyle = node.getAttribute('style') || '';
-          if (!inlineStyle) return;
-          for (const prop of CPROPS) {
-            if (parts[prop]) continue;
-            const val = getInlineProp(inlineStyle, prop);
-            if (val && val.trim() !== '0' && val.trim() !== 'none')
-              parts[prop] = val;
-          }
-        };
-        scanNode(root);                          // 块根自身的 inline style
-        root.querySelectorAll('[style]').forEach(scanNode); // 所有后代的 inline style
-      }
+      // 清理：去除图片 src、去除微信私有属性（减小体积 + 避免外部请求）
+      clone.querySelectorAll('img').forEach(img => {
+        img.removeAttribute('src');
+        img.removeAttribute('data-src');
+      });
+      ['mpa-from-tpl','mpa-font-style','leaf','data-textalign','data-colwidth'].forEach(attr => {
+        clone.querySelectorAll('[' + attr + ']').forEach(node => node.removeAttribute(attr));
+      });
 
-      return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
+      // 在克隆树中定位 contentEl 对应节点，注入占位符
+      const path = getPathFromRoot(root, contentEl);
+      const cloneTarget = followPath(clone, path);
+      if (cloneTarget) cloneTarget.innerHTML = '{{content}}';
+
+      return clone.outerHTML;
     }
 
     function removeOverlay() {
@@ -730,6 +752,22 @@
       const rightPanel  = ov.querySelector('#__wzx_right__');
       const propsPanel  = ov.querySelector('#__wzx_props__');
 
+      // 供预览右侧用：注入对应类型的示例文字
+      function getSampleContent(blockType) {
+        const map = {
+          h1: '一级标题示例', h2: '二级标题示例', h3: '三级标题示例',
+          p: '这是一段正文示例文字，用于预览排版效果。',
+          blockquote_wrapper: '引用块示例文字内容',
+          blockquote_text: '引用段落示例',
+          code_wrapper: '<code>console.log("hello world")</code>',
+          hr: '', ul: '<li>列表项一</li><li>列表项二</li>',
+          ol: '<li>列表项一</li><li>列表项二</li>',
+          li_ul: '无序列表项示例', li_ol: '有序列表项示例',
+          img_wrapper: '', img: '',
+        };
+        return map[blockType] ?? '示例内容';
+      }
+
       typeSelect.addEventListener('change', () => {
         const blockType = typeSelect.value;
         if (!blockType) {
@@ -739,16 +777,23 @@
           confirmBtn.style.cursor = 'not-allowed';
           return;
         }
-        const css = extractCSS(el, blockType);
+        const tpl = extractTemplate(el, blockType);
         // 左侧：原始 DOM 克隆
         leftPanel.innerHTML = origHtml;
-        // 右侧：样式示例
-        rightPanel.innerHTML = getSampleHtml(blockType, css);
-        // 属性列表
-        const propLines = css ? css.split(';').filter(Boolean).map(p => p.trim()) : [];
-        propsPanel.textContent = propLines.length
-          ? propLines.join('\n')
-          : '（未提取到样式属性）';
+        // 右侧：用示例内容替换占位符（HTML 模板）或用样式示例（CSS 字符串）
+        if (tpl.includes('{{content}}')) {
+          rightPanel.innerHTML = tpl.replace('{{content}}', getSampleContent(blockType));
+        } else {
+          rightPanel.innerHTML = getSampleHtml(blockType, tpl);
+        }
+        // 属性面板：HTML 模板显示简短摘要，CSS 显示属性列表
+        if (tpl.includes('{{content}}')) {
+          const len = tpl.length;
+          propsPanel.textContent = `[HTML模板 ${len}字节] ` + tpl.slice(0, 200) + (len > 200 ? '…' : '');
+        } else {
+          const propLines = tpl ? tpl.split(';').filter(Boolean).map(s => s.trim()) : [];
+          propsPanel.textContent = propLines.length ? propLines.join('\n') : '（未提取到属性）';
+        }
         previewArea.style.display = 'block';
         confirmBtn.disabled = false;
         confirmBtn.style.background = '#07a11d';
@@ -759,12 +804,12 @@
         if (confirmBtn.disabled) return;
         const blockType = typeSelect.value;
         if (!blockType) return;
-        const css = extractCSS(el, blockType);
+        const tpl = extractTemplate(el, blockType);
         removeOverlay();
         if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
         chrome.storage.local.get(['wechat_selections'], (data) => {
           const selections = data.wechat_selections || {};
-          selections[blockType] = css;
+          selections[blockType] = tpl;
           chrome.storage.local.set({ wechat_selections: selections });
         });
       });
@@ -948,11 +993,16 @@
         throw new Error(`模板「${name}」已存在，请换个名称`);
       }
 
-      // 逐 key 合并：保留 DEFAULT_S 的布局属性（display/width/margin 等），
-      // 用提取值覆盖视觉属性（color/font-size/border/background 等）
+      // 以默认样式为底，覆盖用户提取的值：
+      // - HTML 模板（含 {{content}}）：直接替换，完整复刻微信结构
+      // - CSS 字符串（行内类型）：与默认 CSS 合并，保留布局属性
       const s = Object.assign({}, DEFAULT_S);
-      for (const [key, css] of Object.entries(lastExtracted)) {
-        s[key] = DEFAULT_S[key] ? mergeCssStrings(DEFAULT_S[key], css) : css;
+      for (const [key, value] of Object.entries(lastExtracted)) {
+        if (value.includes('{{content}}')) {
+          s[key] = value;                                                    // HTML 模板，直接存
+        } else {
+          s[key] = DEFAULT_S[key] ? mergeCssStrings(DEFAULT_S[key], value) : value; // CSS 合并
+        }
       }
       templates.push({ name, s });
 

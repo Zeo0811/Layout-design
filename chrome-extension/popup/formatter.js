@@ -145,6 +145,15 @@ const S = {
   footnote_num:      `color: #222222; font-weight: bold; margin-right: 4px;`,
 };
 
+// ── 模板渲染辅助 ──────────────────────────────────────────────────────────
+// 若 S[key] 是含 {{content}} 的 HTML 模板，直接注入内容；否则用 CSS 字符串包裹
+
+function applyS(key, content, defaultTag = 'section') {
+  const val = S[key] || '';
+  if (val.includes('{{content}}')) return val.replace('{{content}}', content);
+  return `<${defaultTag} style="${val}">${content}</${defaultTag}>`;
+}
+
 // ── 主入口 ───────────────────────────────────────────────────────────────
 
 function formatToWechat(parsedData) {
@@ -163,22 +172,25 @@ function formatToWechat(parsedData) {
 function renderBlock(block, links, depth) {
   if (!block) return '';
   switch (block.type) {
-    case 'h1': return `<section style="${S.h1}">${pi(block.content)}</section>`;
-    case 'h2': return `<section style="${S.h2}">${pi(block.content)}</section>`;
-    case 'h3': return `<section style="${S.h3}">${pi(block.content)}</section>`;
-    case 'h4': return `<section style="${S.h4}">${pi(block.content)}</section>`;
-    case 'h5': return `<section style="${S.h5}">${pi(block.content)}</section>`;
-    case 'h6': return `<section style="${S.h6}">${pi(block.content)}</section>`;
+    case 'h1': return applyS('h1', pi(block.content));
+    case 'h2': return applyS('h2', pi(block.content));
+    case 'h3': return applyS('h3', pi(block.content));
+    case 'h4': return applyS('h4', pi(block.content));
+    case 'h5': return applyS('h5', pi(block.content));
+    case 'h6': return applyS('h6', pi(block.content));
 
     case 'paragraph': {
       // \u200b 是飞书空行末尾自动插入的零宽空格，需视为空行
       const text = (block.content || '').replace(/\u200b/g, '').trim();
       if (!text) return '<br>';
-      return `<p style="${S.p}">${pi(block.content)}</p>`;
+      return applyS('p', pi(block.content), 'p');
     }
 
-    case 'quote':
-      return `<section style="${S.blockquote_wrapper}"><p style="${S.blockquote_text}">${pi(block.content)}</p></section>`;
+    case 'quote': {
+      const bwVal = S.blockquote_wrapper || '';
+      if (bwVal.includes('{{content}}')) return bwVal.replace('{{content}}', pi(block.content));
+      return `<section style="${bwVal}"><p style="${S.blockquote_text}">${pi(block.content)}</p></section>`;
+    }
 
     case 'callout':
       return renderCallout(block);
@@ -187,7 +199,7 @@ function renderBlock(block, links, depth) {
       return renderCodeBlock(block);
 
     case 'divider':
-      return `<section style="${S.hr}"></section>`;
+      return applyS('hr', '');
 
     case 'bulleted_list':
       return renderList(block.items, false, depth);
@@ -367,8 +379,11 @@ function renderFootnotes(links) {
 function pi(html) {
   if (!html) return '';
   return html
-    .replace(/<strong>([\s\S]*?)<\/strong>/g,
-      `<strong style="${S.strong}">$1</strong>`)
+    .replace(/<strong>([\s\S]*?)<\/strong>/g, (_, inner) => {
+      const val = S.strong || '';
+      if (val.includes('{{content}}')) return val.replace('{{content}}', inner);
+      return `<strong style="${val}">${inner}</strong>`;
+    })
     .replace(/<em>([\s\S]*?)<\/em>/g,
       `<em style="${S.em}">$1</em>`)
     .replace(/<code>([\s\S]*?)<\/code>/g,

@@ -180,6 +180,9 @@
     setPreviewLoading();
 
     try {
+      // 0. 先从服务器拉取最新模板（侧边栏不会重载，需主动刷新）
+      await syncFromServer().catch(() => {});
+
       // 1. 解析文档
       const resp = await sendMessage(currentTab.id, { action: 'parse' });
       if (!resp.success) throw new Error(resp.error || '解析失败');

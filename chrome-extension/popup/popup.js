@@ -538,7 +538,7 @@
 
   // ── 微信公众号排版提取 ────────────────────────────────────────
 
-  // ── Phase 1：在页面 MAIN world 中收集候选元素（不分类，纯数据）──────────
+  // ── Phase 1：生成精简 HTML + styleIndex（在页面 MAIN world 中执行）────────
   function wechatExtractFn() {
     const content = document.querySelector('#js_content') ||
                     document.querySelector('.rich_media_content');
@@ -546,135 +546,117 @@
 
     function gs(el) { return (el.getAttribute('style') || '').trim(); }
 
-    // 为模板构建最终 CSS 字符串：有 inline font-size 用 inline，否则用 computed
+    // 为模板构建最终 CSS：有 inline font-size → inline + computed color/family
+    //                     无 inline font-size → 全用 computed 文字属性
     function buildFinalStyle(el) {
-      const cs  = window.getComputedStyle(el);
+      const cs     = window.getComputedStyle(el);
       const inline = gs(el);
-      const TEXT_PROPS = ['font-size','font-family','color','line-height',
-                          'letter-spacing','text-align','font-weight'];
+      const TPROPS = ['font-size','font-family','color','line-height',
+                      'letter-spacing','text-align','font-weight'];
       if (el.style.fontSize) {
-        // inline style 含 font-size → 作者意图明确，保留 inline，补充 computed color/family
         const aug = ['color','font-family'].map(p => {
-          if (inline.toLowerCase().includes(p + ':')) return null; // 已在 inline 中
+          if (inline.toLowerCase().includes(p + ':')) return null;
           const v = cs.getPropertyValue(p).trim();
           if (!v || (p === 'color' && v === 'rgb(0, 0, 0)')) return null;
           return `${p}:${v}`;
         }).filter(Boolean).join(';');
         return inline + (aug ? ';' + aug : '');
       }
-      // 无 inline font-size → 用 computed 文字属性
-      return TEXT_PROPS.map(p => {
+      return TPROPS.map(p => {
         let v = cs.getPropertyValue(p).trim();
         if (!v) return null;
-        if (p === 'font-weight'   && (v === '400' || v === 'normal'))          return null;
-        if (p === 'text-align'    && (v === 'start' || v === '-webkit-auto'))  return null;
+        if (p === 'font-weight'    && (v === '400' || v === 'normal'))         return null;
+        if (p === 'text-align'     && (v === 'start' || v === '-webkit-auto')) return null;
         if (p === 'letter-spacing' && v === 'normal')                          return null;
         return `${p}:${v}`;
       }).filter(Boolean).join(';');
     }
 
-    const candidates = [];
-    const seenStyle  = new Set();
-
-    function addEl(el, force) {
-      const style = gs(el);
-      const tag   = el.tagName.toLowerCase();
-      if (!force && style && seenStyle.has(style)) return;
-      if (style) seenStyle.add(style);
-      const cs = window.getComputedStyle(el);
-      candidates.push({
-        idx:        candidates.length,
-        tag,
-        style,                                          // raw inline style
-        finalStyle: buildFinalStyle(el),               // ready-to-use CSS for template
-        csFs:       Math.round(parseFloat(cs.fontSize) || 0),
-        text:       el.textContent.trim().slice(0, 100),
-      });
+    // styleIndex：inline style → computed-augmented 最终样式（覆盖所有元素，无上限）
+    const styleIndex = {};
+    const selAll = '[style], p, strong, b, hr, ul, ol, li, blockquote, pre, code, img, h1, h2, h3';
+    for (const el of content.querySelectorAll(selAll)) {
+      const s   = gs(el);
+      const key = s || `__tag_${el.tagName.toLowerCase()}`;
+      if (!styleIndex[key]) styleIndex[key] = buildFinalStyle(el);
     }
 
-    // 1. <p> 段落（语义最可信，取前 5 个有实质内容的）
-    let pCount = 0;
-    for (const el of content.querySelectorAll('p')) {
-      if (el.textContent.trim().length >= 10) { addEl(el, pCount < 3); pCount++; }
-      if (pCount >= 5) break;
-    }
-
-    // 2. 有视觉意义的 inline style 元素（font/color/border/background 相关）
-    const VISUAL_RE = /font-size|font-weight|background(-color)?:|border(-left)?:|letter-spacing|line-height/;
-    for (const el of content.querySelectorAll('[style]')) {
-      if (!VISUAL_RE.test(gs(el))) continue;
-      const t = el.textContent.trim();
-      if (t.length < 2 || t.length > 300) continue;
-      addEl(el, false);
-      if (candidates.length >= 80) break;
-    }
-
-    // 3. 语义结构元素（无论有无 style 都尝试收录）
-    for (const sel of ['hr','blockquote','pre','code','strong','b','h1','h2','h3']) {
-      const el = content.querySelector(sel);
-      if (el) addEl(el, true);
-    }
-    // ul/ol 及其 li
-    for (const sel of ['ul','ol']) {
-      const list = content.querySelector(sel);
-      if (list) {
-        addEl(list, true);
-        const li = list.querySelector('li');
-        if (li) addEl(li, true);
+    // 精简 HTML：只保留 tag + inline style + 前 35 字文字，剥掉所有其他属性
+    const SKIP = new Set(['script','style','meta','link','noscript','head','svg','path']);
+    function simplify(el, depth) {
+      if (depth > 20) return '';
+      const tag = el.tagName.toLowerCase();
+      if (SKIP.has(tag)) return '';
+      const s    = gs(el);
+      const attr = s ? ` style="${s}"` : '';
+      if (tag === 'img') return `<img${attr}/>`;
+      if (tag === 'br')  return '<br/>';
+      if (tag === 'hr')  return `<hr${attr}/>`;
+      let inner = '';
+      for (const node of el.childNodes) {
+        if (node.nodeType === 3) {
+          const t = node.textContent.replace(/\s+/g, ' ').trim();
+          if (t) inner += t.length > 35 ? t.slice(0, 35) + '…' : t;
+        } else if (node.nodeType === 1) {
+          inner += simplify(node, depth + 1);
+        }
       }
-    }
-    // 图片及包裹层
-    const imgEl = content.querySelector('img');
-    if (imgEl) {
-      const par = imgEl.parentElement;
-      if (par && par !== content) addEl(par, true);
-      candidates.push({ idx: candidates.length, tag: 'img',
-        style: gs(imgEl), finalStyle: gs(imgEl), csFs: 0, text: '[image]' });
+      if (!s && !inner.trim()) return '';
+      return inner ? `<${tag}${attr}>${inner}</${tag}>` : `<${tag}${attr}/>`;
     }
 
-    if (candidates.length === 0) return null;
+    let html = simplify(content, 0);
+    if (html.length > 40000) html = html.slice(0, 40000) + '\n<!-- truncated -->';
 
-    // 正文基准字号（取 p 元素 computed font-size 均值）
-    const pFs = candidates.filter(c => c.tag === 'p' && c.text.length >= 20 && c.csFs > 0);
-    const bodyFs = pFs.length
-      ? Math.round(pFs.reduce((s, c) => s + c.csFs, 0) / pFs.length)
-      : 15;
+    // 正文基准字号
+    let bodyFs = 15;
+    const pEls = [...content.querySelectorAll('p')].filter(e => e.textContent.trim().length >= 20);
+    if (pEls.length) {
+      const fss = pEls.slice(0, 5).map(e => parseFloat(window.getComputedStyle(e).fontSize) || 0).filter(Boolean);
+      if (fss.length) bodyFs = Math.round(fss.reduce((a, b) => a + b) / fss.length);
+    }
 
-    return { candidates, bodyFs };
+    return { html, styleIndex, bodyFs };
   }
 
-  // ── Phase 2：调 Claude API 分类候选元素 ──────────────────────────────────
+  // ── Phase 2：把完整结构 HTML 发给 Claude，AI 识别各块的 inline style 值 ──
   async function classifyWithAI(rawData, apiToken) {
-    const { candidates, bodyFs } = rawData;
-
-    const lines = candidates.map(c => {
-      const s = c.style || `(computed fs:${c.csFs}px)`;
-      const t = c.text ? `"${c.text.slice(0, 70)}"` : '[no text]';
-      return `${c.idx}: <${c.tag}> | ${s} | ${t}`;
-    }).join('\n');
+    const { html, bodyFs } = rawData;
 
     const prompt =
-`Analyze WeChat article DOM elements and map them to content block types.
+`You are analyzing a WeChat (微信公众号) article to extract CSS styles for content block types.
 Body text font-size baseline: ${bodyFs}px
 
-Block types to identify (output each as key→candidate_index, omit if not found):
-p, h1, h2, h3, strong, blockquote_wrapper, blockquote_text,
-code_wrapper, code_text, hr, ul, ol, li_ul, li_ol, img_wrapper, img
+The HTML below is a simplified version of the article: only tags, inline style attributes, and short text snippets are preserved. All class/id/data attributes are stripped.
+Read the full structure carefully — nesting and context matter.
 
-Rules:
-- h1/h2/h3: inline font-size > ${bodyFs}px; h1=largest, descending
-- blockquote_wrapper: has border-left or distinct background-color, wraps quote text
-- blockquote_text: text element *inside* the blockquote_wrapper
-- code_wrapper: monospace font-family or code background (pre/code tag preferred)
-- code_text: text style inside code block
-- strong: inline bold (<strong>/<b> tag, or font-weight in style)
-- li_ul / li_ol: <li> inside ul / ol respectively
-- img_wrapper: parent container of the image with layout styles
+Block types to identify:
+- p              : body paragraph (font-size ≈ ${bodyFs}px, main reading text)
+- h1             : largest heading (biggest font-size > ${bodyFs}px)
+- h2             : second heading level
+- h3             : third heading level
+- strong         : inline bold (<strong>/<b>, or element with font-weight:bold/700)
+- blockquote_wrapper : blockquote container (look for border-left or distinct background)
+- blockquote_text    : text style INSIDE the blockquote container
+- code_wrapper   : code block outer container (monospace font or code-like background)
+- code_text      : text style inside code block
+- hr             : horizontal divider
+- ul             : unordered list container
+- ol             : ordered list container
+- li_ul          : <li> inside <ul>
+- li_ol          : <li> inside <ol>
+- img_wrapper    : parent element wrapping an <img>
+- img            : image element
 
-Candidates (index: tag | inline_style | text_snippet):
-${lines}
+For each block type found, return the EXACT value of the style="" attribute of the best representative element.
+If an element has no inline style (e.g. plain <p>), return an empty string "".
+Omit block types not present in the article.
 
-Output ONLY valid JSON: {"p":3,"h1":7,...}`;
+HTML:
+${html}
+
+Output ONLY a JSON object — values must be exact style strings from the HTML:
+{"p":"white-space:normal;margin:0px","h1":"font-size:20px;color:#222;font-weight:bold",...}`;
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
@@ -686,7 +668,7 @@ Output ONLY valid JSON: {"p":3,"h1":7,...}`;
       },
       body: JSON.stringify({
         model:      'claude-haiku-4-5-20251001',
-        max_tokens: 256,
+        max_tokens: 1024,
         messages:   [{ role: 'user', content: prompt }],
       }),
     });
@@ -698,18 +680,17 @@ Output ONLY valid JSON: {"p":3,"h1":7,...}`;
 
     const data  = await resp.json();
     const text  = data.content?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*?\}/);
-    if (!match) throw new Error('AI 未返回有效 JSON 分类');
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('AI 未返回有效 JSON');
     return JSON.parse(match[0]);
   }
 
-  // ── Phase 3：将 AI 分类结果组装成 S-key 样式映射 ─────────────────────────
-  function buildResultFromClassification(candidates, classification) {
+  // ── Phase 3：AI 返回 inline style 字符串 → styleIndex 查 finalStyle ───────
+  function buildResultFromClassification(styleIndex, classification) {
     const result = {};
-    for (const [key, idx] of Object.entries(classification)) {
-      const cand = candidates[Number(idx)];
-      if (!cand) continue;
-      let style = cand.finalStyle;
+    for (const [key, inlineStyle] of Object.entries(classification)) {
+      if (typeof inlineStyle !== 'string') continue;
+      let style = styleIndex[inlineStyle] || styleIndex[`__tag_${key}`] || inlineStyle;
       if (!style) continue;
       if (key === 'p') style += ';margin:0;padding-bottom:1em;white-space:pre-line';
       result[key] = style;
@@ -744,11 +725,12 @@ Output ONLY valid JSON: {"p":3,"h1":7,...}`;
 
       // Phase 2
       extractBtn.innerHTML = '<span class="btn-icon">🤖</span>AI 分析中...';
-      showStatus('loading', `AI 正在分析 ${rawData.candidates.length} 个候选元素...`);
+      const htmlKb = Math.round(rawData.html.length / 1024);
+      showStatus('loading', `AI 正在分析文章结构（${htmlKb}KB）...`);
       const classification = await classifyWithAI(rawData, apiToken);
 
       // Phase 3
-      const extracted = buildResultFromClassification(rawData.candidates, classification);
+      const extracted = buildResultFromClassification(rawData.styleIndex, classification);
       if (Object.keys(extracted).length === 0) throw new Error('AI 未能识别任何样式块');
 
       lastExtracted = extracted;

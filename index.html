@@ -1707,7 +1707,6 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
           showDialog({ icon: 'ℹ️', title: '提示', msg: `已存在同名模板「${name}」，请换一个名称`, confirmText: '知道了', confirmClass: '', cancelText: null }); return;
         }
         savedTemplates.push({ name, s: Object.assign({}, customS) });
-        try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
         syncSelector();
         document.getElementById('tpl-selector').value = savedTemplates.length - 1;
         _updateEditState();
@@ -1724,7 +1723,6 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     if (isNaN(idx) || idx < 0 || !savedTemplates[idx]) return;
     try {
       savedTemplates[idx].s = Object.assign({}, customS);
-      try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
       const saveBtn = document.getElementById('tplSaveBtn');
       const orig = saveBtn.textContent;
       saveBtn.textContent = '✅ 已保存'; saveBtn.disabled = true;
@@ -1803,7 +1801,6 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       confirmText: '删除', confirmClass: 'danger',
       onConfirm: async () => {
         savedTemplates.splice(idx, 1);
-        try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
         syncSelector();
         document.getElementById('tpl-selector').value = '';
         _updateEditState();
@@ -1847,27 +1844,15 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       if (done) return;
       done = true;
       try {
-        const raw = localStorage.getItem('layout-templates');
-        savedTemplates = raw ? JSON.parse(raw) : [];
-      } catch(e) { savedTemplates = []; }
-      syncSelector();
-      renderSidebar();
-      _updateEditState();
-      // 从服务器加载模板并合并
-      try {
         const res = await fetch('/api/templates');
         if (res.ok) {
           const { templates: serverTemplates } = await res.json();
-          if (serverTemplates && serverTemplates.length) {
-            serverTemplates.forEach(et => {
-              const i = savedTemplates.findIndex(t => t.name === et.name);
-              if (i >= 0) savedTemplates[i] = et; else savedTemplates.push(et);
-            });
-            try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(_) {}
-            syncSelector();
-          }
+          savedTemplates = Array.isArray(serverTemplates) ? serverTemplates : [];
         }
-      } catch (_) {}
+      } catch (_) { savedTemplates = []; }
+      syncSelector();
+      renderSidebar();
+      _updateEditState();
     };
   })();
 })();

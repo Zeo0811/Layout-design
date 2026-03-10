@@ -557,11 +557,16 @@
       return null;
     }
 
-    function extractCSS(el) {
+    // 文字型 key：只取 computed 文字属性，不向上收集容器装饰（避免把外层 border-left 错误归属到文字样式）
+    const TEXT_KEYS = new Set(['p','strong','em','blockquote_text','code_text','img','li_p']);
+
+    function extractCSS(el, blockType) {
       const TPROPS = ['font-size','font-family','color','line-height',
                       'letter-spacing','text-align','font-weight'];
-      const CPROPS = ['border-left','border-right','border-top','border-bottom',
-                      'border','background-color','border-radius','padding','margin'];
+      // 容器型属性：向上遍历祖先 inline-style 收集
+      const CPROPS = ['border-left','border-right','border-top','border-bottom','border',
+                      'background-color','border-radius','box-shadow',
+                      'padding','margin','overflow','white-space'];
       const cs = window.getComputedStyle(el);
       const parts = {};
       for (const p of TPROPS) {
@@ -572,19 +577,22 @@
         if (p === 'letter-spacing' && v === 'normal') continue;
         parts[p] = v;
       }
-      // 向上收集容器装饰属性（border-left / background 等在外层 section 上）
-      let cur = el;
-      while (cur && cur !== content.parentElement) {
-        const inlineStyle = cur.getAttribute('style') || '';
-        if (inlineStyle) {
-          for (const prop of CPROPS) {
-            if (parts[prop]) continue;
-            const val = getInlineProp(inlineStyle, prop);
-            if (val && val !== '0' && val !== 'none' && !/^0px/.test(val))
-              parts[prop] = val;
+      // 容器型 key 才向上收集装饰属性（标题的 border-bottom、引用块的 border-left 等）
+      if (!TEXT_KEYS.has(blockType)) {
+        let cur = el;
+        while (cur && cur !== content.parentElement) {
+          const inlineStyle = cur.getAttribute('style') || '';
+          if (inlineStyle) {
+            for (const prop of CPROPS) {
+              if (parts[prop]) continue;
+              const val = getInlineProp(inlineStyle, prop);
+              // 过滤掉空值、纯零值（保留 "0 auto" 这类有意义的值）
+              if (val && val.trim() !== '0' && val.trim() !== 'none')
+                parts[prop] = val;
+            }
           }
+          cur = cur.parentElement;
         }
-        cur = cur.parentElement;
       }
       return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
     }
@@ -597,22 +605,22 @@
     function showOverlay(clientX, clientY, el) {
       removeOverlay();
       const BLOCK_TYPES = [
-        ['p',                 '正文段落'],
-        ['h1',                '一级标题'],
-        ['h2',                '二级标题'],
-        ['h3',                '三级标题'],
-        ['strong',            '加粗文字'],
-        ['blockquote_wrapper','引用块容器'],
-        ['blockquote_text',   '引用块文字'],
-        ['code_wrapper',      '代码块容器'],
-        ['code_text',         '代码块文字'],
-        ['hr',                '分隔线'],
-        ['ul',                '无序列表'],
-        ['ol',                '有序列表'],
-        ['li_ul',             '无序列表项'],
-        ['li_ol',             '有序列表项'],
-        ['img_wrapper',       '图片容器'],
-        ['img',               '图片'],
+        ['p',                 'paragraph · 正文段落'],
+        ['h1',                'H1 · 一级标题'],
+        ['h2',                'H2 · 二级标题'],
+        ['h3',                'H3 · 三级标题'],
+        ['strong',            'inline · 行内加粗'],
+        ['blockquote_wrapper','quote · 引用块外层'],
+        ['blockquote_text',   'quote · 引用块文字'],
+        ['code_wrapper',      'code · 代码块外层'],
+        ['code_text',         'code · 代码文字'],
+        ['hr',                'divider · 分割线'],
+        ['ul',                'bulleted_list · 无序列表'],
+        ['li_ul',             'bulleted_list · 无序列表项'],
+        ['ol',                'numbered_list · 有序列表'],
+        ['li_ol',             'numbered_list · 有序列表项'],
+        ['img_wrapper',       'image · 图片容器'],
+        ['img',               'image · 图片样式'],
       ];
       const opts = BLOCK_TYPES.map(([v, l]) =>
         `<option value="${v}">${v} — ${l}</option>`).join('');
@@ -641,7 +649,7 @@
         const sel = ov.querySelector('#__wzx_type__');
         const blockType = sel.value;
         if (!blockType) { sel.style.border = '1px solid red'; return; }
-        const css = extractCSS(el);
+        const css = extractCSS(el, blockType);
         removeOverlay();
         if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
         chrome.storage.local.get(['wechat_selections'], (data) => {
@@ -720,11 +728,22 @@
   }
 
   const BLOCK_LABELS = {
-    p: '正文段落', h1: '一级标题', h2: '二级标题', h3: '三级标题',
-    strong: '加粗文字', blockquote_wrapper: '引用块容器', blockquote_text: '引用块文字',
-    code_wrapper: '代码块容器', code_text: '代码块文字', hr: '分隔线',
-    ul: '无序列表', ol: '有序列表', li_ul: '无序列表项', li_ol: '有序列表项',
-    img_wrapper: '图片容器', img: '图片',
+    p:                 'paragraph · 正文段落',
+    h1:                'H1 · 一级标题',
+    h2:                'H2 · 二级标题',
+    h3:                'H3 · 三级标题',
+    strong:            'inline · 行内加粗',
+    blockquote_wrapper:'quote · 引用块外层',
+    blockquote_text:   'quote · 引用块文字',
+    code_wrapper:      'code · 代码块外层',
+    code_text:         'code · 代码文字',
+    hr:                'divider · 分割线',
+    ul:                'bulleted_list · 无序列表',
+    li_ul:             'bulleted_list · 无序列表项',
+    ol:                'numbered_list · 有序列表',
+    li_ol:             'numbered_list · 有序列表项',
+    img_wrapper:       'image · 图片容器',
+    img:               'image · 图片样式',
   };
 
   function updateMiniList(sel) {
@@ -783,6 +802,26 @@
     statusBar.className = 'status-bar status-bar--hidden';
   });
 
+  // CSS 字符串合并：以 base 为底，extracted 覆盖同名属性（保留 base 中的布局属性）
+  function mergeCssStrings(base, extracted) {
+    const props = {};
+    for (const part of (base || '').split(';')) {
+      const idx = part.indexOf(':');
+      if (idx < 0) continue;
+      const k = part.slice(0, idx).trim().toLowerCase();
+      const v = part.slice(idx + 1).trim();
+      if (k && v) props[k] = v;
+    }
+    for (const part of (extracted || '').split(';')) {
+      const idx = part.indexOf(':');
+      if (idx < 0) continue;
+      const k = part.slice(0, idx).trim().toLowerCase();
+      const v = part.slice(idx + 1).trim();
+      if (k && v) props[k] = v;
+    }
+    return Object.entries(props).map(([k, v]) => `${k}:${v}`).join(';');
+  }
+
   // Step 2：保存为模板
   saveExtractBtn.addEventListener('click', async () => {
     const name = wechatNameInput.value.trim();
@@ -799,7 +838,12 @@
         throw new Error(`模板「${name}」已存在，请换个名称`);
       }
 
-      const s = Object.assign({}, DEFAULT_S, lastExtracted);
+      // 逐 key 合并：保留 DEFAULT_S 的布局属性（display/width/margin 等），
+      // 用提取值覆盖视觉属性（color/font-size/border/background 等）
+      const s = Object.assign({}, DEFAULT_S);
+      for (const [key, css] of Object.entries(lastExtracted)) {
+        s[key] = DEFAULT_S[key] ? mergeCssStrings(DEFAULT_S[key], css) : css;
+      }
       templates.push({ name, s });
 
       const res = await fetch(`${SERVER_URL}/api/templates`, {

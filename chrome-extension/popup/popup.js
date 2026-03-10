@@ -89,6 +89,8 @@
     try {
       const templates = await fetchServerTemplates();
       renderTemplateSelector(templates, templateSelect.value);
+      // Re-apply current template so S is refreshed with latest data
+      applyTemplate(templateSelect.value);
       return true;
     } catch { return false; }
   }

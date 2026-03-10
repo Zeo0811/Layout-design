@@ -20,10 +20,15 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
 
-async function upstash(method, ...args) {
+async function upstash(command, ...args) {
   if (!UPSTASH_URL) return null;
-  const res = await fetch(`${UPSTASH_URL}/${method}/${args.map(encodeURIComponent).join('/')}`, {
-    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+  const res = await fetch(UPSTASH_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${UPSTASH_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([command, ...args]),
   });
   const data = await res.json();
   return data.result ?? null;

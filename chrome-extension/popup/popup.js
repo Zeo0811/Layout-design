@@ -103,6 +103,16 @@
     syncBtn.textContent = '↻ 同步';
     showStatus(ok ? 'success' : 'error', ok ? '模板同步成功' : '同步失败，请检查服务器');
     setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 2500);
+
+    // 若已有转换结果，用新模板样式重新渲染
+    if (ok && lastParsedData) {
+      formattedHtml = formatToWechat(lastParsedData);
+      renderPreview(formattedHtml, lastParsedData);
+      const blockCount = (lastParsedData.blocks || []).length;
+      const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
+      formattedSegments = splitFormatToWechat(lastParsedData, nSeg);
+      renderSegmentButtons(formattedSegments);
+    }
   });
 
   // 启动时直接从服务器拉取，不使用本地缓存

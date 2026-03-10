@@ -86,12 +86,17 @@
   const SERVER_URL = 'https://layout-design-production-fb0b.up.railway.app';
   const syncBtn = document.getElementById('syncBtn');
 
+  async function fetchServerTemplates() {
+    const res = await fetch(`${SERVER_URL}/api/templates`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { templates } = await res.json();
+    if (!Array.isArray(templates)) throw new Error('invalid');
+    return templates;
+  }
+
   async function syncFromServer() {
     try {
-      const res = await fetch(`${SERVER_URL}/api/templates`);
-      if (!res.ok) return false;
-      const { templates } = await res.json();
-      if (!Array.isArray(templates)) return false;
+      const templates = await fetchServerTemplates();
       await new Promise(r => chrome.storage.local.set({ layoutTemplates: templates }, r));
       renderTemplateSelector(templates, templateSelect.value);
       return true;
@@ -108,14 +113,24 @@
     setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 2500);
   });
 
-  // 启动时加载模板列表并自动后台同步
-  chrome.storage.local.get(['layoutTemplates', 'activeTemplate'], async function (result) {
-    const templates    = result.layoutTemplates || [];
-    const activeName   = result.activeTemplate  || '';
-    renderTemplateSelector(templates, activeName);
+  // 启动时：缓存与服务器并行拉取，谁先到用谁，服务器数据到了再覆盖一次
+  (async function initTemplates() {
+    const cachePromise  = new Promise(r => chrome.storage.local.get(['layoutTemplates', 'activeTemplate'], r));
+    const serverPromise = fetchServerTemplates().catch(() => null);
+
+    // 缓存几乎瞬间返回，先渲染
+    const cached     = await cachePromise;
+    const activeName = cached.activeTemplate || '';
+    renderTemplateSelector(cached.layoutTemplates || [], activeName);
     if (activeName) applyTemplate(activeName);
-    syncFromServer(); // 每次打开插件静默拉取最新模板
-  });
+
+    // 等服务器结果，有变化就静默刷新
+    const serverTemplates = await serverPromise;
+    if (serverTemplates) {
+      await new Promise(r => chrome.storage.local.set({ layoutTemplates: serverTemplates }, r));
+      renderTemplateSelector(serverTemplates, templateSelect.value);
+    }
+  })();
 
   async function init() {
     // 每次切换 tab 都先重置按钮状态，避免上一次 disabled 状态残留

@@ -356,6 +356,27 @@
       background: #f5f7f2;
     }
     #tpl-gate.hidden { display: none; }
+
+    /* ── 自定义对话框 ─────────────────────────────────────── */
+    .tpl-dialog-overlay {
+      position: absolute; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.3);
+    }
+    .tpl-dialog-overlay.hidden { display: none; }
+    .tpl-dialog-box {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.15);
+      padding: 32px 28px 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      width: 300px; max-width: 90%;
+    }
+    .tpl-dialog-icon  { font-size: 32px; line-height: 1; }
+    .tpl-dialog-title { font-size: 15px; font-weight: 700; color: #222; }
+    .tpl-dialog-msg   { font-size: 13px; color: #666; text-align: center; line-height: 1.65; margin-bottom: 4px; }
+    .tpl-dialog-btns  { display: flex; gap: 10px; width: 100%; }
+    .tpl-dialog-btns .tpl-btn { flex: 1; justify-content: center; height: 36px; }
+
     .gate-box {
       background: #fff; border-radius: 16px;
       box-shadow: 0 8px 40px rgba(0,0,0,.12);
@@ -1168,6 +1189,19 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     </div>
   </div>
 
+  <!-- 自定义对话框 -->
+  <div id="tpl-dialog" class="tpl-dialog-overlay hidden">
+    <div class="tpl-dialog-box">
+      <div id="tpl-dialog-icon" class="tpl-dialog-icon"></div>
+      <div id="tpl-dialog-title" class="tpl-dialog-title"></div>
+      <div id="tpl-dialog-msg" class="tpl-dialog-msg"></div>
+      <div class="tpl-dialog-btns">
+        <button id="tpl-dialog-cancel" class="tpl-btn">取消</button>
+        <button id="tpl-dialog-confirm" class="tpl-btn danger">确认</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 模板管理栏 -->
   <div class="tpl-topbar">
     <label>当前模板：</label>
@@ -1665,7 +1699,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   window.tplSave = async function() {
     try {
       const name = (document.getElementById('tpl-name-input').value||'').trim();
-      if (!name) { alert('请输入模板名称'); return; }
+      if (!name) { showDialog({ icon: 'ℹ️', title: '提示', msg: '请先输入模板名称', confirmText: '知道了', confirmClass: '', cancelText: null }); return; }
       const idx = savedTemplates.findIndex(t=>t.name===name);
       const entry = { name, s: Object.assign({}, customS) };
       if (idx>=0) savedTemplates[idx]=entry; else savedTemplates.push(entry);
@@ -1684,7 +1718,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       setSyncBar('', '⏳ 正在保存到服务器...');
       await syncToExtension();
     } catch(err) {
-      alert('保存失败：' + err.message);
+      showDialog({ icon: '❌', title: '保存失败', msg: err.message, confirmText: '知道了', confirmClass: 'danger', cancelText: null });
     }
   };
 
@@ -1721,25 +1755,62 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     renderEditor();
   };
 
-  window.tplDelete = function() {
+  // ── 自定义对话框 ─────────────────────────────────────────────
+  function showDialog({ icon, title, msg, confirmText, confirmClass, onConfirm, cancelText }) {
+    const overlay     = document.getElementById('tpl-dialog');
+    const cancelBtn   = document.getElementById('tpl-dialog-cancel');
+    const confirmBtn  = document.getElementById('tpl-dialog-confirm');
+    document.getElementById('tpl-dialog-icon').textContent  = icon  || '';
+    document.getElementById('tpl-dialog-title').textContent = title || '';
+    document.getElementById('tpl-dialog-msg').textContent   = msg   || '';
+    confirmBtn.textContent  = confirmText  || '确认';
+    confirmBtn.className    = 'tpl-btn ' + (confirmClass || 'danger');
+    cancelBtn.textContent   = cancelText || '取消';
+    cancelBtn.style.display = cancelText === null ? 'none' : '';
+    overlay.classList.remove('hidden');
+    function cleanup() { overlay.classList.add('hidden'); confirmBtn.onclick = null; cancelBtn.onclick = null; }
+    confirmBtn.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
+    cancelBtn.onclick  = () => cleanup();
+  }
+
+  window.tplDelete = async function() {
     const sel = document.getElementById('tpl-selector');
     const idx = parseInt(sel.value);
-    if (isNaN(idx)||idx<0||!savedTemplates[idx]) { alert('请先选择一个已保存的模板'); return; }
-    if (!confirm(`确认删除模板「${savedTemplates[idx].name}」？`)) return;
-    savedTemplates.splice(idx,1);
-    try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
-    syncSelector();
-    sel.value = '';
+    if (isNaN(idx)||idx<0||!savedTemplates[idx]) {
+      showDialog({ icon: 'ℹ️', title: '提示', msg: '请先选择一个已保存的模板', confirmText: '知道了', confirmClass: '', cancelText: null });
+      return;
+    }
+    const name = savedTemplates[idx].name;
+    showDialog({
+      icon: '🗑', title: '删除模板',
+      msg: `确认删除「${name}」？此操作不可撤销。`,
+      confirmText: '删除', confirmClass: 'danger',
+      onConfirm: async () => {
+        savedTemplates.splice(idx, 1);
+        try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(e) {}
+        syncSelector();
+        document.getElementById('tpl-selector').value = '';
+        _updateEditState();
+        setSyncBar('', '⏳ 正在同步到服务器...');
+        await syncToExtension();
+      }
+    });
   };
 
   window.tplReset = function() {
-    if (!confirm('恢复默认样式？当前未保存的修改会丢失。')) return;
-    customS = Object.assign({}, S);
-    document.getElementById('tpl-selector').value = '';
-    if (selectedId) { loadPropState(selectedId); }
-    _updateEditState();
-    renderPreview();
-    renderEditor();
+    showDialog({
+      icon: '↩', title: '恢复默认',
+      msg: '当前未保存的修改会丢失，确认恢复默认样式？',
+      confirmText: '恢复', confirmClass: 'danger',
+      onConfirm: () => {
+        customS = Object.assign({}, S);
+        document.getElementById('tpl-selector').value = '';
+        if (selectedId) { loadPropState(selectedId); }
+        _updateEditState();
+        renderPreview();
+        renderEditor();
+      }
+    });
   };
 
   window.tplExport = function() {

@@ -64,11 +64,6 @@ function scrollAndCollect() {
               block.items) {
             prev.items.push(...block.items);
           } else {
-            // 两个连续非空段落之间补一个空行，确保微信粘贴后有换行间距
-            if (prev && prev.type === 'paragraph' && (prev.content || '').trim() &&
-                block.type === 'paragraph' && (block.content || '').trim()) {
-              merged.push({ type: 'paragraph', content: '' });
-            }
             merged.push(block);
           }
         }

@@ -66,7 +66,7 @@ const S = {
   h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
-  p: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 10px 0; letter-spacing: 0.1em; white-space: pre-line; color: rgb(63,63,63); font-size: 15px;`,
+  p: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; padding-bottom: 1em; letter-spacing: 0.1em; white-space: pre-line; color: rgb(63,63,63); font-size: 15px;`,
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
   // 迭代：正文加粗颜色 #407600（commonStyles.span.strong word-break:break-all + font-weight）

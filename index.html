@@ -1750,7 +1750,6 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       const tpl = savedTemplates[idx];
       if (!tpl) return;
       customS = Object.assign({}, S, tpl.s);
-      document.getElementById('tpl-name-input').value = tpl.name;
     }
     _updateEditState();
     if (selectedId) { loadPropState(selectedId); }

@@ -65,11 +65,8 @@ function scrollAndCollect() {
             prev.items.push(...block.items);
           } else {
             // 两个连续非空段落之间补一个空行，确保微信粘贴后有换行间距
-            // 飞书空行含 \u200b，需去除后再判断是否为空
-            const prevEmpty = !(prev && (prev.content || '').replace(/\u200b/g, '').trim());
-            const curEmpty  = !((block.content || '').replace(/\u200b/g, '').trim());
-            if (prev && prev.type === 'paragraph' && !prevEmpty &&
-                block.type === 'paragraph' && !curEmpty) {
+            if (prev && prev.type === 'paragraph' && (prev.content || '').trim() &&
+                block.type === 'paragraph' && (block.content || '').trim()) {
               merged.push({ type: 'paragraph', content: '' });
             }
             merged.push(block);
@@ -503,6 +500,9 @@ function convertFeishuNodeToHtml(node, links) {
     const inner = convertFeishuNodeToHtml(child, links);
 
     if (tag === 'br') { html += '<br>'; continue; }
+
+    // 飞书行尾自动插入的 enter 标记（含零宽空格），直接跳过
+    if (child.getAttribute('data-enter') === 'true') continue;
 
     if (tag === 'code' || cls.includes('code')) {
       html += `<code>${escapeFeishuHtml(child.textContent)}</code>`;

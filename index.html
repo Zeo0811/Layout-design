@@ -1310,8 +1310,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   // ── prop state: sectionKey → [{prop, val}]
   let propState = {};
   // ── 插件同步状态
-  let syncTimer      = null; // 等待 ACK 的超时句柄
-  let bridgeAvailable = null; // null=未知 true=可用 false=不可用
+  let syncTimer      = null; // 已弃用，保留防止引用报错
 
   function loadPropState(blockId) {
     const def = BLOCK_DEFS.find(d=>d.id===blockId);
@@ -1633,36 +1632,24 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     bar.textContent = msg;
   }
 
-  // ── Extension sync ────────────────────────────────────────────────────────
-  function syncToExtension() {
-    // Send the full templates array so the extension can show a selector
-    window.postMessage({ type: 'LAYOUT_SYNC_TEMPLATES', templates: savedTemplates }, '*');
-  }
-
-  window.addEventListener('message', function(e) {
-    if (e.source!==window || !e.data) return;
-
-    if (e.data.type === 'LAYOUT_SYNC_ACK') {
-      if (syncTimer) { clearTimeout(syncTimer); syncTimer = null; }
-      bridgeAvailable = true;
-      setSyncBar('ok', '✅ 已同步到插件，插件下拉框已更新');
-      setTimeout(() => setSyncBar('', ''), 3000);
-    }
-
-    if (e.data.type === 'LAYOUT_TEMPLATES_LOADED') {
-      // bridge 确认可用
-      bridgeAvailable = true;
-      setSyncBar('', '');
-      // Merge: extension templates → local
-      const extTemplates = e.data.templates || [];
-      if (extTemplates.length === 0) return;
-      extTemplates.forEach(et => {
-        if (!savedTemplates.find(t => t.name === et.name)) savedTemplates.push(et);
+  // ── Server sync ──────────────────────────────────────────────────────────
+  async function syncToExtension() {
+    try {
+      const res = await fetch('/api/templates', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ templates: savedTemplates }),
       });
-      try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(_) {}
-      syncSelector();
+      if (res.ok) {
+        setSyncBar('ok', '✅ 已保存到服务器，插件打开配置页时自动同步');
+        setTimeout(() => setSyncBar('', ''), 3000);
+      } else {
+        setSyncBar('err', '⚠️ 服务器返回错误 ' + res.status);
+      }
+    } catch (err) {
+      setSyncBar('err', '⚠️ 保存失败：' + err.message);
     }
-  });
+  }
 
   // ── Public API ────────────────────────────────────────────────────────────
 
@@ -1674,7 +1661,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     renderEditor();
   };
 
-  window.tplSave = function() {
+  window.tplSave = async function() {
     try {
       const name = (document.getElementById('tpl-name-input').value||'').trim();
       if (!name) { alert('请输入模板名称'); return; }
@@ -1692,19 +1679,9 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         saveBtn.disabled = true;
         setTimeout(() => { saveBtn.textContent = orig; saveBtn.disabled = false; }, 2000);
       }
-      // Sync to extension — wait for LAYOUT_SYNC_ACK, show error on timeout
-      syncToExtension();
-      setSyncBar('', '⏳ 正在同步到插件...');
-      if (syncTimer) clearTimeout(syncTimer);
-      syncTimer = setTimeout(() => {
-        syncTimer = null;
-        if (bridgeAvailable === false) {
-          setSyncBar('err',
-            '⚠️ 插件未连接 — 请重新下载最新 chrome-extension.zip，解压后在 chrome://extensions 点击「重新加载」，再刷新此页');
-        } else {
-          setSyncBar('err', '⚠️ 同步超时，模板已保存到本地，请检查插件是否正常运行');
-        }
-      }, 3000);
+      // Sync to server
+      setSyncBar('', '⏳ 正在保存到服务器...');
+      await syncToExtension();
     } catch(err) {
       alert('保存失败：' + err.message);
     }
@@ -1759,7 +1736,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   // Lazy init — called first time the template tab is opened
   window._initTemplateEditorOnce = (function() {
     let done = false;
-    return function() {
+    return async function() {
       if (done) return;
       done = true;
       try {
@@ -1768,16 +1745,21 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       } catch(e) { savedTemplates = []; }
       syncSelector();
       renderSidebar();
-      // Request stored templates from extension (to merge/restore)
-      // 同时检测 bridge 是否可用：2.5s 无响应视为不可用
-      window.postMessage({ type: 'LAYOUT_REQUEST_TEMPLATES' }, '*');
-      setTimeout(() => {
-        if (bridgeAvailable === null) {
-          bridgeAvailable = false;
-          setSyncBar('err',
-            '⚠️ 未检测到插件连接 — 请确认已安装最新版插件（v1.5.6+），并在 chrome://extensions 点「重新加载」后刷新此页');
+      // 从服务器加载模板并合并
+      try {
+        const res = await fetch('/api/templates');
+        if (res.ok) {
+          const { templates: serverTemplates } = await res.json();
+          if (serverTemplates && serverTemplates.length) {
+            serverTemplates.forEach(et => {
+              const i = savedTemplates.findIndex(t => t.name === et.name);
+              if (i >= 0) savedTemplates[i] = et; else savedTemplates.push(et);
+            });
+            try { localStorage.setItem('layout-templates', JSON.stringify(savedTemplates)); } catch(_) {}
+            syncSelector();
+          }
         }
-      }, 2500);
+      } catch (_) {}
     };
   })();
 })();

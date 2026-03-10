@@ -82,12 +82,44 @@
     }
   });
 
+  // ── 服务器同步 ───────────────────────────────────────────────
+  const syncBtn = document.getElementById('syncBtn');
+
+  async function syncFromServer(serverUrl) {
+    try {
+      const res = await fetch(`${serverUrl}/api/templates`);
+      if (!res.ok) return false;
+      const { templates } = await res.json();
+      if (!templates || !templates.length) return false;
+      await new Promise(r => chrome.storage.local.set({ layoutTemplates: templates, serverUrl }, r));
+      renderTemplateSelector(templates, templateSelect.value);
+      return true;
+    } catch { return false; }
+  }
+
+  syncBtn.addEventListener('click', async () => {
+    const { serverUrl } = await new Promise(r => chrome.storage.local.get('serverUrl', r));
+    if (!serverUrl) {
+      showStatus('error', '请先访问 Railway 配置页面，插件会自动记录服务器地址');
+      return;
+    }
+    syncBtn.disabled = true;
+    syncBtn.textContent = '⏳';
+    const ok = await syncFromServer(serverUrl);
+    syncBtn.disabled = false;
+    syncBtn.textContent = '↻';
+    showStatus(ok ? 'success' : 'error', ok ? '模板同步成功' : '同步失败，请检查服务器');
+    setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 2500);
+  });
+
   // 启动时加载模板列表并应用上次激活的模板
-  chrome.storage.local.get(['layoutTemplates', 'activeTemplate'], function (result) {
+  chrome.storage.local.get(['layoutTemplates', 'activeTemplate', 'serverUrl'], async function (result) {
     const templates    = result.layoutTemplates || [];
     const activeName   = result.activeTemplate  || '';
     renderTemplateSelector(templates, activeName);
     if (activeName) applyTemplate(activeName);
+    // 后台静默同步（若有 serverUrl）
+    if (result.serverUrl) syncFromServer(result.serverUrl);
   });
 
   async function init() {
@@ -103,6 +135,20 @@
       const url = tab.url || '';
       const isNotion = url.includes('notion.so') || url.includes('notion.site');
       const isFeishu = url.includes('feishu.cn') || url.includes('larksuite.com');
+
+      // 若当前是配置页（Railway/localhost），自动记录并同步模板
+      const isConfigPage = url.includes('railway.app') || url.includes('github.io') ||
+                           url.includes('localhost') || url.includes('127.0.0.1');
+      if (isConfigPage) {
+        try {
+          const origin = new URL(url).origin;
+          const ok = await syncFromServer(origin);
+          setBadge('unknown', '配置页');
+          showStatus(ok ? 'success' : 'loading', ok ? '模板已从服务器同步' : '正在连接服务器...');
+        } catch {}
+        convertBtn.disabled = true;
+        return;
+      }
 
       if (!isNotion && !isFeishu) {
         setBadge('unsupported', '不支持');

@@ -239,6 +239,11 @@ function getFeishuBlockType(el) {
     return { type: 'quote' };
   }
 
+  // 飞书高亮/callout 块：data-block-type="text" 但 class 含 callout-render-unit
+  if (cls.includes('callout-render-unit')) {
+    return { type: 'callout' };
+  }
+
   if (blockType) {
     const typeMap = {
       'heading1':  { type: 'h1' },
@@ -328,7 +333,12 @@ function parseFeishuBlock(el, blockType, links) {
     }
 
     case 'callout': {
-      const iconEl = el.querySelector('[class*="icon"]') || el.querySelector('[class*="emoji"]');
+      // 飞书新格式：el 是 callout-render-unit 文本块，emoji 在祖先 callout-block 里
+      const calloutRoot = el.closest('[class*="callout-block"]') || el;
+      const iconEl = calloutRoot.querySelector('[class*="callout-block-emoji"]') ||
+                     calloutRoot.querySelector('[class*="callout-emoji"]') ||
+                     el.querySelector('[class*="icon"]') ||
+                     el.querySelector('[class*="emoji"]');
       const icon = iconEl ? iconEl.textContent.trim() : '💡';
       const clone = el.cloneNode(true);
       const cloneIcon = clone.querySelector('[class*="icon"]') || clone.querySelector('[class*="emoji"]');

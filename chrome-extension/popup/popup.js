@@ -105,10 +105,10 @@
 
   syncBtn.addEventListener('click', async () => {
     syncBtn.disabled = true;
-    syncBtn.textContent = '⏳';
+    syncBtn.textContent = '⏳ 同步中';
     const ok = await syncFromServer();
     syncBtn.disabled = false;
-    syncBtn.textContent = '↻';
+    syncBtn.textContent = '↻ 同步';
     showStatus(ok ? 'success' : 'error', ok ? '模板同步成功' : '同步失败，请检查服务器');
     setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 2500);
   });

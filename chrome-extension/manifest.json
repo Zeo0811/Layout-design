@@ -31,7 +31,8 @@
     "https://*.up.railway.app/*",
     "https://*.railway.app/*",
     "https://*.github.io/*",
-    "https://mp.weixin.qq.com/*"
+    "https://mp.weixin.qq.com/*",
+    "https://api.anthropic.com/*"
   ],
   "action": {
     "default_icon": {

@@ -24,7 +24,7 @@
   // 快照默认样式（formatter.js 已在此之前执行，S 已定义）
   const DEFAULT_S = Object.assign({}, S);
 
-  let loadedTemplates   = []; // 从 chrome.storage 同步来的模板列表
+  let loadedTemplates   = []; // 从服务器拉取的模板列表
 
   // ── 初始化 ────────────────────────────────────────────────────
 
@@ -73,15 +73,6 @@
     }
   });
 
-  // 实时监听 storage 变化（配置页保存新模板时自动刷新下拉框）
-  chrome.storage.onChanged.addListener(function (changes) {
-    if (changes.layoutTemplates) {
-      const templates = changes.layoutTemplates.newValue || [];
-      const current   = templateSelect.value;
-      renderTemplateSelector(templates, current);
-    }
-  });
-
   // ── 服务器同步 ───────────────────────────────────────────────
   const SERVER_URL = 'https://layout-design-production-fb0b.up.railway.app';
   const syncBtn = document.getElementById('syncBtn');
@@ -97,7 +88,6 @@
   async function syncFromServer() {
     try {
       const templates = await fetchServerTemplates();
-      await new Promise(r => chrome.storage.local.set({ layoutTemplates: templates }, r));
       renderTemplateSelector(templates, templateSelect.value);
       return true;
     } catch { return false; }
@@ -113,23 +103,14 @@
     setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 2500);
   });
 
-  // 启动时：缓存与服务器并行拉取，谁先到用谁，服务器数据到了再覆盖一次
+  // 启动时直接从服务器拉取，不使用本地缓存
   (async function initTemplates() {
-    const cachePromise  = new Promise(r => chrome.storage.local.get(['layoutTemplates', 'activeTemplate'], r));
-    const serverPromise = fetchServerTemplates().catch(() => null);
-
-    // 缓存几乎瞬间返回，先渲染
-    const cached     = await cachePromise;
-    const activeName = cached.activeTemplate || '';
-    renderTemplateSelector(cached.layoutTemplates || [], activeName);
+    const activeName = await new Promise(r =>
+      chrome.storage.local.get('activeTemplate', d => r(d.activeTemplate || ''))
+    );
+    const templates = await fetchServerTemplates().catch(() => []);
+    renderTemplateSelector(templates, activeName);
     if (activeName) applyTemplate(activeName);
-
-    // 等服务器结果，有变化就静默刷新
-    const serverTemplates = await serverPromise;
-    if (serverTemplates) {
-      await new Promise(r => chrome.storage.local.set({ layoutTemplates: serverTemplates }, r));
-      renderTemplateSelector(serverTemplates, templateSelect.value);
-    }
   })();
 
   async function init() {

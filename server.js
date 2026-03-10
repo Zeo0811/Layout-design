@@ -1,10 +1,12 @@
 const express = require('express');
-const fs      = require('fs');
 const path    = require('path');
 
-const app       = express();
-const PORT      = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'templates.json');
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
+const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const KEY           = 'layout_templates';
 
 // CORS — 允许插件 popup (chrome-extension://) 直接请求
 app.use((req, res, next) => {
@@ -18,30 +20,41 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
 
-function loadTemplates() {
+async function upstash(method, ...args) {
+  if (!UPSTASH_URL) return null;
+  const res = await fetch(`${UPSTASH_URL}/${method}/${args.map(encodeURIComponent).join('/')}`, {
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+  });
+  const data = await res.json();
+  return data.result ?? null;
+}
+
+async function loadTemplates() {
   try {
-    if (!fs.existsSync(DATA_FILE)) return [];
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const raw = await upstash('get', KEY);
+    return raw ? JSON.parse(raw) : [];
   } catch { return []; }
 }
 
-function saveTemplates(templates) {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(templates), 'utf8');
+async function saveTemplates(templates) {
+  await upstash('set', KEY, JSON.stringify(templates));
 }
 
 // GET /api/templates
-app.get('/api/templates', (req, res) => {
-  res.json({ templates: loadTemplates() });
+app.get('/api/templates', async (req, res) => {
+  try {
+    res.json({ templates: await loadTemplates() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // POST /api/templates
-app.post('/api/templates', (req, res) => {
+app.post('/api/templates', async (req, res) => {
   try {
     const { templates } = req.body;
     if (!Array.isArray(templates)) return res.status(400).json({ error: 'invalid' });
-    saveTemplates(templates);
+    await saveTemplates(templates);
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });

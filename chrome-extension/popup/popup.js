@@ -633,28 +633,111 @@
       if (clone.style) clone.style.removeProperty('visibility');
     }
 
+    // 将原始元素树的 computed style 全量内联到克隆树
+    // 每个节点都从原始 DOM 读取实际渲染值并写入 inline style，
+    // 确保提取的模板完全自包含，不依赖任何外部 CSS（CSS类、继承链、浏览器默认值等）
+    function inlineAllComputedStyles(origRoot, cloneRoot) {
+      const PROPS = [
+        // 字体 & 文字
+        'font-size','font-family','font-weight','font-style','font-variant',
+        'color','line-height','letter-spacing','word-spacing',
+        'text-align','text-decoration','text-transform','text-indent',
+        'white-space','word-break','word-wrap','overflow-wrap',
+        // 盒模型
+        'display','box-sizing','vertical-align','float',
+        'margin-top','margin-right','margin-bottom','margin-left',
+        'padding-top','padding-right','padding-bottom','padding-left',
+        'width','height','max-width','min-width','max-height',
+        // 边框（拆分写，避免 shorthand 解析差异）
+        'border-top-width','border-top-style','border-top-color',
+        'border-right-width','border-right-style','border-right-color',
+        'border-bottom-width','border-bottom-style','border-bottom-color',
+        'border-left-width','border-left-style','border-left-color',
+        'border-top-left-radius','border-top-right-radius',
+        'border-bottom-left-radius','border-bottom-right-radius',
+        // 背景
+        'background-color','background-image','background-size',
+        'background-position','background-repeat',
+        // Flex
+        'flex-direction','flex-wrap','align-items','align-self',
+        'justify-content','flex-grow','flex-shrink','flex-basis',
+        // 其他视觉
+        'overflow','overflow-x','overflow-y','position',
+        'opacity','box-shadow','text-shadow','list-style-type',
+      ];
+      // 跳过明确的默认值，减少冗余属性
+      const DEFAULTS = {
+        'display':'inline','position':'static','opacity':'1',
+        'overflow':'visible','overflow-x':'visible','overflow-y':'visible',
+        'float':'none','box-shadow':'none','text-shadow':'none',
+        'background-image':'none','background-color':'rgba(0, 0, 0, 0)',
+        'width':'auto','height':'auto','min-width':'0px',
+        'max-width':'none','max-height':'none',
+        'text-indent':'0px','text-transform':'none',
+        'letter-spacing':'normal','word-spacing':'0px',
+        'font-variant':'normal','list-style-type':'none',
+        'border-top-width':'0px','border-right-width':'0px',
+        'border-bottom-width':'0px','border-left-width':'0px',
+        'border-top-style':'none','border-right-style':'none',
+        'border-bottom-style':'none','border-left-style':'none',
+        'margin-top':'0px','margin-right':'0px',
+        'margin-bottom':'0px','margin-left':'0px',
+        'padding-top':'0px','padding-right':'0px',
+        'padding-bottom':'0px','padding-left':'0px',
+        'flex-direction':'row','flex-wrap':'nowrap',
+        'align-items':'normal','align-self':'auto',
+        'justify-content':'normal','flex-grow':'0',
+        'flex-shrink':'1','flex-basis':'auto',
+        'text-align':'start','vertical-align':'baseline',
+        'white-space':'normal','word-break':'normal','word-wrap':'normal',
+        'overflow-wrap':'normal',
+      };
+
+      function walk(orig, clone) {
+        if (!orig || !clone || orig.nodeType !== 1) return;
+        const cs = window.getComputedStyle(orig);
+        for (const p of PROPS) {
+          const v = cs.getPropertyValue(p).trim();
+          if (!v) continue;
+          if (DEFAULTS[p] === v) continue;
+          // 透明背景统一跳过
+          if (p === 'background-color' && (v === 'transparent' || v === 'rgba(0, 0, 0, 0)')) continue;
+          // text-align: start / -webkit-auto 是浏览器内部值，跳过
+          if (p === 'text-align' && (v === 'start' || v === '-webkit-auto')) continue;
+          // 已有 inline style 时保留原值（原始 inline style 更精确）
+          if (clone.style.getPropertyValue(p)) continue;
+          clone.style.setProperty(p, v);
+        }
+        const origKids = orig.children;
+        const cloneKids = clone.children;
+        for (let i = 0; i < Math.min(origKids.length, cloneKids.length); i++) {
+          walk(origKids[i], cloneKids[i]);
+        }
+      }
+      walk(origRoot, cloneRoot);
+    }
+
     // 提取模板：行内类型 → CSS 字符串；块级类型 → 带 {{content}} 的 outerHTML
-    // 使用选中元素本身作为模板根，不再强制走到 #js_content 直接子节点
     function extractTemplate(el, blockType) {
       if (INLINE_TYPES.has(blockType)) {
-        // 行内类型：用 getComputedStyle 完整提取视觉属性（含继承自 CSS 类的值）
+        // 行内类型：直接读取完整 computed style
+        const cs = window.getComputedStyle(el);
+        const parts = {};
         const TPROPS = [
           'font-size','font-family','font-weight','font-style',
           'color','line-height','letter-spacing','text-align',
           'background-color','border-bottom','text-decoration',
-          'word-break','padding','margin',
+          'word-break','padding-top','padding-right','padding-bottom','padding-left',
         ];
-        const cs = window.getComputedStyle(el);
-        const parts = {};
         for (const p of TPROPS) {
           const v = cs.getPropertyValue(p).trim();
           if (!v) continue;
-          if (p === 'font-weight' && (v === '400' || v === 'normal')) continue;
-          if (p === 'font-style'  && v === 'normal') continue;
-          if (p === 'text-align'  && (v === 'start' || v === '-webkit-auto')) continue;
-          if (p === 'letter-spacing' && v === 'normal') continue;
+          if (p === 'font-weight'     && (v === '400' || v === 'normal')) continue;
+          if (p === 'font-style'      && v === 'normal') continue;
+          if (p === 'text-align'      && (v === 'start' || v === '-webkit-auto')) continue;
+          if (p === 'letter-spacing'  && v === 'normal') continue;
           if (p === 'text-decoration' && v.startsWith('none')) continue;
-          if (p === 'background-color' && (v === 'transparent' || v === 'rgba(0, 0, 0, 0)')) continue;
+          if (p === 'background-color'&& (v === 'transparent' || v === 'rgba(0, 0, 0, 0)')) continue;
           parts[p] = v;
         }
         return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
@@ -664,11 +747,11 @@
       const clone = root.cloneNode(true);
       cleanClone(clone);
 
-      // 内容注入点优先级：
-      // 1. mpa-is-content 标记（微信自己的可替换节点）
-      // 2. 简单块标签（p/h1-h6/li/blockquote 等）→ 整块替换
-      // 3. 在子树中找第一个文本容器
-      // 4. 回退：整块替换
+      // 全量内联：对整棵树每个节点都内联 computed style
+      // 这是让提取效果与原始效果完全一致的关键
+      inlineAllComputedStyles(root, clone);
+
+      // 确定内容注入点（{{content}} 放置位置）
       const markedEl = root.querySelector('[mpa-is-content]');
       let contentEl;
       if (markedEl) {
@@ -676,40 +759,15 @@
       } else {
         const tag = root.tagName.toLowerCase();
         const SIMPLE_TAGS = ['p','h1','h2','h3','h4','h5','h6','li','blockquote','td','th','dt','dd','figcaption'];
-        if (SIMPLE_TAGS.includes(tag)) {
-          contentEl = root;
-        } else {
-          const leaf = root.querySelector('p,h1,h2,h3,h4,h5,h6,li,blockquote');
-          contentEl = leaf || root;
-        }
+        contentEl = SIMPLE_TAGS.includes(tag) ? root : (root.querySelector('p,h1,h2,h3,h4,h5,h6,li,blockquote') || root);
       }
 
-      // 找到 clone 中对应的目标节点
       let cloneTarget;
       if (contentEl === root) {
         cloneTarget = clone;
       } else {
         const path = getPathFromRoot(root, contentEl);
         cloneTarget = followPath(clone, path) || clone;
-      }
-
-      // 将 contentEl 的 computed 视觉样式注入到 cloneTarget
-      // 这样即使原始样式来自 CSS 类（非 inline style），也能完整保留字体字号等属性
-      const VISUAL_PROPS = [
-        'font-size','font-family','font-weight','font-style',
-        'color','line-height','letter-spacing','text-align','text-decoration',
-      ];
-      const cs = window.getComputedStyle(contentEl);
-      for (const p of VISUAL_PROPS) {
-        const v = cs.getPropertyValue(p).trim();
-        if (!v) continue;
-        if (p === 'font-style'      && v === 'normal') continue;
-        if (p === 'text-align'      && (v === 'start' || v === '-webkit-auto')) continue;
-        if (p === 'text-decoration' && v.startsWith('none')) continue;
-        // 只在 inline style 中尚未设置时才注入，避免覆盖更精确的原始值
-        if (!cloneTarget.style.getPropertyValue(p)) {
-          cloneTarget.style.setProperty(p, v);
-        }
       }
 
       cloneTarget.innerHTML = '{{content}}';

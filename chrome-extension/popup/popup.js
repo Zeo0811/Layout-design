@@ -840,12 +840,9 @@
       hoveredEl = blockRoot;
       hoveredEl.style.outline = '2px dashed rgba(7,161,29,.6)';
     }
-    function onMouseout(e) {
+    function onMouseout() {
       if (document.getElementById('__wzx_overlay__')) return;
-      // 只有当鼠标真正离开 content 区域时才清除高亮，避免在子元素间移动时频繁闪烁
-      if (!content.contains(e.relatedTarget)) {
-        if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
-      }
+      if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
     }
     function onClick(e) {
       e.preventDefault();

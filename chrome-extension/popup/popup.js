@@ -1155,6 +1155,20 @@
     statusBar.className = 'status-bar status-bar--hidden';
   });
 
+  // 为 HTML 模板的根元素（最外层）自动补充缺失的 CSS 属性（用于块间距等）
+  function ensureStylesOnRoot(htmlTpl, styleMap) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = htmlTpl;
+    const root = wrapper.firstElementChild;
+    if (!root) return htmlTpl;
+    for (const [prop, val] of Object.entries(styleMap)) {
+      if (!root.style.getPropertyValue(prop)) {
+        root.style.setProperty(prop, val);
+      }
+    }
+    return root.outerHTML;
+  }
+
   // 为 HTML 模板中含 {{content}} 的元素自动补充缺失的 CSS 属性
   // 只补充模板本身没有设置的属性，不覆盖用户提取的值
   function ensureStylesOnContentEl(htmlTpl, styleMap) {
@@ -1222,28 +1236,52 @@
       // 以默认样式为底，覆盖用户提取的值：
       // - HTML 模板（含 {{content}}）：直接替换，完整复刻微信结构
       // - CSS 字符串（行内类型）：与默认 CSS 合并，保留布局属性
-      // 段落类块自动补充换行（white-space:pre-line）和空行（padding-bottom:1em）属性
+      // PARA_LINE_DEFAULTS：注入到 {{content}} 元素（段落换行、行内间距）
+      // BLOCK_MARGIN_DEFAULTS：注入到模板根元素（块间距，WeChat 由外层 section 提供，提取后需补充）
       const PARA_LINE_DEFAULTS = {
         p:               { 'white-space': 'pre-line', 'padding-bottom': '1em' },
         blockquote_text: { 'white-space': 'pre-line', 'padding-bottom': '0.5em' },
         li_ul:           { 'white-space': 'pre-line' },
         li_ol:           { 'white-space': 'pre-line' },
       };
+      const BLOCK_MARGIN_DEFAULTS = {
+        h1:                 { 'margin-top': '0.8em', 'margin-bottom': '0.5em' },
+        h2:                 { 'margin-top': '0.8em', 'margin-bottom': '0.5em' },
+        h3:                 { 'margin-top': '0.6em', 'margin-bottom': '0.4em' },
+        h4:                 { 'margin-top': '0.5em', 'margin-bottom': '0.3em' },
+        h5:                 { 'margin-top': '0.4em', 'margin-bottom': '0.3em' },
+        p:                  { 'margin-bottom': '0.5em' },
+        blockquote_wrapper: { 'margin-top': '1em',   'margin-bottom': '1em'   },
+        ul:                 { 'margin-bottom': '0.8em' },
+        ol:                 { 'margin-bottom': '0.8em' },
+        img_wrapper:        { 'margin-top': '0.5em', 'margin-bottom': '0.5em' },
+        code_wrapper:       { 'margin-top': '0.8em', 'margin-bottom': '0.8em' },
+        hr:                 { 'margin-top': '1em',   'margin-bottom': '1em'   },
+      };
 
       const s = Object.assign({}, DEFAULT_S);
       for (const [key, value] of Object.entries(lastExtracted)) {
         if (value.includes('{{content}}')) {
-          // HTML 模板：自动注入段落类块的换行和空行属性
+          // HTML 模板：先注入 content 级别的属性，再注入 root 级别的块间距
+          let tpl = value;
           const lineDefaults = PARA_LINE_DEFAULTS[key];
-          s[key] = lineDefaults ? ensureStylesOnContentEl(value, lineDefaults) : value;
+          if (lineDefaults) tpl = ensureStylesOnContentEl(tpl, lineDefaults);
+          const marginDefaults = BLOCK_MARGIN_DEFAULTS[key];
+          if (marginDefaults) tpl = ensureStylesOnRoot(tpl, marginDefaults);
+          s[key] = tpl;
         } else {
           // CSS 字符串：合并默认值，同时确保段落类块有换行和空行属性
           const lineDefaults = PARA_LINE_DEFAULTS[key];
+          const marginDefaults = BLOCK_MARGIN_DEFAULTS[key];
           const lineDefaultsCss = lineDefaults
             ? Object.entries(lineDefaults).map(([k, v]) => `${k}:${v}`).join(';')
             : '';
-          const base = lineDefaultsCss
-            ? mergeCssStrings(lineDefaultsCss, DEFAULT_S[key] || '')
+          const marginDefaultsCss = marginDefaults
+            ? Object.entries(marginDefaults).map(([k, v]) => `${k}:${v}`).join(';')
+            : '';
+          const combinedDefaults = [lineDefaultsCss, marginDefaultsCss].filter(Boolean).join(';');
+          const base = combinedDefaults
+            ? mergeCssStrings(combinedDefaults, DEFAULT_S[key] || '')
             : (DEFAULT_S[key] || '');
           s[key] = base ? mergeCssStrings(base, value) : value;
         }

@@ -637,16 +637,24 @@
     // 使用选中元素本身作为模板根，不再强制走到 #js_content 直接子节点
     function extractTemplate(el, blockType) {
       if (INLINE_TYPES.has(blockType)) {
-        const TPROPS = ['font-size','font-family','color','line-height','letter-spacing',
-                        'text-align','font-weight','background-color','border-bottom'];
+        // 行内类型：用 getComputedStyle 完整提取视觉属性（含继承自 CSS 类的值）
+        const TPROPS = [
+          'font-size','font-family','font-weight','font-style',
+          'color','line-height','letter-spacing','text-align',
+          'background-color','border-bottom','text-decoration',
+          'word-break','padding','margin',
+        ];
         const cs = window.getComputedStyle(el);
         const parts = {};
         for (const p of TPROPS) {
           const v = cs.getPropertyValue(p).trim();
           if (!v) continue;
           if (p === 'font-weight' && (v === '400' || v === 'normal')) continue;
-          if (p === 'text-align' && (v === 'start' || v === '-webkit-auto')) continue;
+          if (p === 'font-style'  && v === 'normal') continue;
+          if (p === 'text-align'  && (v === 'start' || v === '-webkit-auto')) continue;
           if (p === 'letter-spacing' && v === 'normal') continue;
+          if (p === 'text-decoration' && v.startsWith('none')) continue;
+          if (p === 'background-color' && (v === 'transparent' || v === 'rgba(0, 0, 0, 0)')) continue;
           parts[p] = v;
         }
         return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
@@ -659,7 +667,7 @@
       // 内容注入点优先级：
       // 1. mpa-is-content 标记（微信自己的可替换节点）
       // 2. 简单块标签（p/h1-h6/li/blockquote 等）→ 整块替换
-      // 3. 在子树中找第一个带 style 的 span/a 等文本节点
+      // 3. 在子树中找第一个文本容器
       // 4. 回退：整块替换
       const markedEl = root.querySelector('[mpa-is-content]');
       let contentEl;
@@ -676,13 +684,35 @@
         }
       }
 
+      // 找到 clone 中对应的目标节点
+      let cloneTarget;
       if (contentEl === root) {
-        clone.innerHTML = '{{content}}';
+        cloneTarget = clone;
       } else {
         const path = getPathFromRoot(root, contentEl);
-        const cloneTarget = followPath(clone, path);
-        if (cloneTarget) cloneTarget.innerHTML = '{{content}}';
+        cloneTarget = followPath(clone, path) || clone;
       }
+
+      // 将 contentEl 的 computed 视觉样式注入到 cloneTarget
+      // 这样即使原始样式来自 CSS 类（非 inline style），也能完整保留字体字号等属性
+      const VISUAL_PROPS = [
+        'font-size','font-family','font-weight','font-style',
+        'color','line-height','letter-spacing','text-align','text-decoration',
+      ];
+      const cs = window.getComputedStyle(contentEl);
+      for (const p of VISUAL_PROPS) {
+        const v = cs.getPropertyValue(p).trim();
+        if (!v) continue;
+        if (p === 'font-style'      && v === 'normal') continue;
+        if (p === 'text-align'      && (v === 'start' || v === '-webkit-auto')) continue;
+        if (p === 'text-decoration' && v.startsWith('none')) continue;
+        // 只在 inline style 中尚未设置时才注入，避免覆盖更精确的原始值
+        if (!cloneTarget.style.getPropertyValue(p)) {
+          cloneTarget.style.setProperty(p, v);
+        }
+      }
+
+      cloneTarget.innerHTML = '{{content}}';
       return clone.outerHTML;
     }
 
@@ -1055,6 +1085,34 @@
     statusBar.className = 'status-bar status-bar--hidden';
   });
 
+  // 为 HTML 模板中含 {{content}} 的元素自动补充缺失的 CSS 属性
+  // 只补充模板本身没有设置的属性，不覆盖用户提取的值
+  function ensureStylesOnContentEl(htmlTpl, styleMap) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = htmlTpl;
+    const root = wrapper.firstElementChild;
+    if (!root) return htmlTpl;
+
+    // 找到 innerHTML === '{{content}}' 的元素
+    function findTarget(el) {
+      if ((el.innerHTML || '').trim() === '{{content}}') return el;
+      for (const child of el.children) {
+        const found = findTarget(child);
+        if (found) return found;
+      }
+      return null;
+    }
+    const target = findTarget(root);
+    if (!target) return htmlTpl;
+
+    for (const [prop, val] of Object.entries(styleMap)) {
+      if (!target.style.getPropertyValue(prop)) {
+        target.style.setProperty(prop, val);
+      }
+    }
+    return root.outerHTML;
+  }
+
   // CSS 字符串合并：以 base 为底，extracted 覆盖同名属性（保留 base 中的布局属性）
   function mergeCssStrings(base, extracted) {
     const props = {};
@@ -1094,12 +1152,30 @@
       // 以默认样式为底，覆盖用户提取的值：
       // - HTML 模板（含 {{content}}）：直接替换，完整复刻微信结构
       // - CSS 字符串（行内类型）：与默认 CSS 合并，保留布局属性
+      // 段落类块自动补充换行（white-space:pre-line）和空行（padding-bottom:1em）属性
+      const PARA_LINE_DEFAULTS = {
+        p:               { 'white-space': 'pre-line', 'padding-bottom': '1em' },
+        blockquote_text: { 'white-space': 'pre-line', 'padding-bottom': '0.5em' },
+        li_ul:           { 'white-space': 'pre-line' },
+        li_ol:           { 'white-space': 'pre-line' },
+      };
+
       const s = Object.assign({}, DEFAULT_S);
       for (const [key, value] of Object.entries(lastExtracted)) {
         if (value.includes('{{content}}')) {
-          s[key] = value;                                                    // HTML 模板，直接存
+          // HTML 模板：自动注入段落类块的换行和空行属性
+          const lineDefaults = PARA_LINE_DEFAULTS[key];
+          s[key] = lineDefaults ? ensureStylesOnContentEl(value, lineDefaults) : value;
         } else {
-          s[key] = DEFAULT_S[key] ? mergeCssStrings(DEFAULT_S[key], value) : value; // CSS 合并
+          // CSS 字符串：合并默认值，同时确保段落类块有换行和空行属性
+          const lineDefaults = PARA_LINE_DEFAULTS[key];
+          const lineDefaultsCss = lineDefaults
+            ? Object.entries(lineDefaults).map(([k, v]) => `${k}:${v}`).join(';')
+            : '';
+          const base = lineDefaultsCss
+            ? mergeCssStrings(lineDefaultsCss, DEFAULT_S[key] || '')
+            : (DEFAULT_S[key] || '');
+          s[key] = base ? mergeCssStrings(base, value) : value;
         }
       }
       templates.push({ name, s });

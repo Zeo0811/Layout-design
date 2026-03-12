@@ -758,19 +758,29 @@
       }
     }
 
-    // 供预览右侧用的示例文字
-    function getSampleContent(blockType) {
-      const map = {
-        h1: '一级标题示例', h2: '二级标题示例', h3: '三级标题示例',
-        p: '这是一段正文示例文字，用于预览排版效果。',
-        blockquote_wrapper: '引用块示例文字内容', blockquote_text: '引用段落示例',
-        code_wrapper: '<code>console.log("hello world")</code>',
-        hr: '', ul: '<li>列表项一</li><li>列表项二</li>',
-        ol: '<li>列表项一</li><li>列表项二</li>',
-        li_ul: '无序列表项示例', li_ol: '有序列表项示例',
-        img_wrapper: '', img: '',
-      };
-      return map[blockType] ?? '示例内容';
+    // 获取 contentEl 的原始 innerHTML 用于右侧精准预览
+    // 与 extractTemplate 的 contentEl 查找逻辑保持一致，确保两侧对比的是同一层级内容
+    function getActualContentHtml(el, blockType) {
+      let src;
+      if (INLINE_TYPES.has(blockType)) {
+        src = el;
+      } else {
+        const markedEl = el.querySelector('[mpa-is-content]');
+        if (markedEl) {
+          src = markedEl;
+        } else {
+          const tag = el.tagName.toLowerCase();
+          const SIMPLE_TAGS = ['p','h1','h2','h3','h4','h5','h6','li','blockquote','td','th','dt','dd','figcaption'];
+          src = SIMPLE_TAGS.includes(tag) ? el : (el.querySelector('p,h1,h2,h3,h4,h5,h6,li,blockquote') || el);
+        }
+      }
+      // 替换图片 src 避免跨域，其余 innerHTML 原样保留（含 inline style）
+      const tmp = document.createElement('div');
+      tmp.innerHTML = src.innerHTML;
+      tmp.querySelectorAll('img').forEach(img => {
+        img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23ddd'/%3E%3Ctext x='40' y='35' text-anchor='middle' fill='%23888' font-size='10'%3E图片%3C/text%3E%3C/svg%3E";
+      });
+      return tmp.innerHTML;
     }
 
     // 构建面包屑：从当前元素向上到 content 的祖先链（用于层级导航）
@@ -852,12 +862,12 @@
             <div style="display:flex;gap:1px;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;">
               <div style="flex:1;min-width:0;">
                 <div style="background:#f0f0f0;padding:3px 6px;font-size:10px;color:#666;text-align:center;border-bottom:1px solid #e0e0e0;">原始效果</div>
-                <div id="__wzx_left__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
+                <div id="__wzx_left__" style="padding:6px;overflow:auto;max-height:150px;background:#fff;"></div>
               </div>
               <div style="width:1px;background:#e0e0e0;"></div>
               <div style="flex:1;min-width:0;">
                 <div style="background:#e8f5e9;padding:3px 6px;font-size:10px;color:#2a6b2a;text-align:center;border-bottom:1px solid #c8e6c9;">提取效果</div>
-                <div id="__wzx_right__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
+                <div id="__wzx_right__" style="padding:6px;overflow:auto;max-height:150px;background:#fff;"></div>
               </div>
             </div>
             <div id="__wzx_props__" style="margin-top:5px;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:4px 6px;font-size:10px;color:#555;font-family:monospace;max-height:60px;overflow:auto;line-height:1.5;"></div>
@@ -907,7 +917,8 @@
           const tpl = extractTemplate(selectedEl, blockType);
           leftPanel.innerHTML = getOrigHtml(selectedEl);
           if (tpl.includes('{{content}}')) {
-            rightPanel.innerHTML = tpl.replace('{{content}}', getSampleContent(blockType));
+            // 用原始 contentEl 的真实内容填充，确保右侧与左侧可以直接对比
+            rightPanel.innerHTML = tpl.replace('{{content}}', getActualContentHtml(selectedEl, blockType));
           } else {
             rightPanel.innerHTML = getSampleHtml(blockType, tpl);
           }

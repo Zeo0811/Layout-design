@@ -782,6 +782,7 @@
     // 克隆元素用于左侧"原始效果"预览（替换图片避免跨域）
     function getOrigHtml(el) {
       const clone = el.cloneNode(true);
+      inlineAllComputedStyles(el, clone);
       clone.querySelectorAll('img').forEach(img => {
         img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23ddd'/%3E%3Ctext x='40' y='35' text-anchor='middle' fill='%23888' font-size='10'%3E图片%3C/text%3E%3C/svg%3E";
       });
@@ -832,13 +833,13 @@
           src = SIMPLE_TAGS.includes(tag) ? el : (el.querySelector('p,h1,h2,h3,h4,h5,h6,li,blockquote') || el);
         }
       }
-      // 替换图片 src 避免跨域，其余 innerHTML 原样保留（含 inline style）
-      const tmp = document.createElement('div');
-      tmp.innerHTML = src.innerHTML;
-      tmp.querySelectorAll('img').forEach(img => {
+      // 克隆 src 并内联计算样式，确保脱离外部 CSS 也能正确渲染
+      const clone = src.cloneNode(true);
+      inlineAllComputedStyles(src, clone);
+      clone.querySelectorAll('img').forEach(img => {
         img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23ddd'/%3E%3Ctext x='40' y='35' text-anchor='middle' fill='%23888' font-size='10'%3E图片%3C/text%3E%3C/svg%3E";
       });
-      return tmp.innerHTML;
+      return clone.innerHTML;
     }
 
     // 构建面包屑：从当前元素向上到 content 的祖先链（用于层级导航）

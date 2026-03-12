@@ -545,12 +545,50 @@
                     document.querySelector('.rich_media_content');
     if (!content) return 'no_content';
 
-    let hoveredEl = null;
+    // ── 浮动高亮层（借鉴 Chrome DevTools 选择器：不修改目标元素样式）──
+    const hlBox = document.createElement('div');
+    hlBox.id = '__wzx_hlbox__';
+    hlBox.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;box-sizing:border-box;border:2px solid #07a11d;background:rgba(7,161,29,0.08);border-radius:2px;display:none;';
+    document.body.appendChild(hlBox);
+
+    const hlBadge = document.createElement('div');
+    hlBadge.id = '__wzx_hlbadge__';
+    hlBadge.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483646;background:#07a11d;color:#fff;font:bold 11px/18px monospace;padding:1px 8px;border-radius:0 0 3px 3px;display:none;white-space:nowrap;';
+    document.body.appendChild(hlBadge);
+
+    let currentEl = null;
+
+    function showHighlight(el) {
+      if (!el || !content.contains(el)) { hideHighlight(); return; }
+      const r = el.getBoundingClientRect();
+      // 跳过零尺寸元素，尝试父节点
+      if (r.width === 0 && r.height === 0) { showHighlight(el.parentElement); return; }
+      currentEl = el;
+      hlBox.style.display = 'block';
+      hlBox.style.left   = r.left + 'px';
+      hlBox.style.top    = r.top  + 'px';
+      hlBox.style.width  = r.width + 'px';
+      hlBox.style.height = r.height + 'px';
+      const tag = el.tagName.toLowerCase();
+      const id  = el.id ? '#' + el.id : '';
+      const cls = typeof el.className === 'string' && el.className.trim()
+        ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
+      hlBadge.textContent = tag + id + cls;
+      hlBadge.style.display = 'block';
+      hlBadge.style.left = Math.max(0, r.left) + 'px';
+      hlBadge.style.top  = (r.top >= 20 ? r.top - 20 : r.bottom) + 'px';
+    }
+
+    function hideHighlight() {
+      hlBox.style.display   = 'none';
+      hlBadge.style.display = 'none';
+      currentEl = null;
+    }
 
     // 纯行内类型：只提取 CSS 属性，不做 HTML 模板
     const INLINE_TYPES = new Set(['strong', 'em']);
 
-    // 计算从 root 到 target 的子节点路径（用于在克隆树中定位同一节点）
+    // 计算从 root 到 target 的子节点索引路径
     function getPathFromRoot(root, target) {
       const path = [];
       let cur = target;
@@ -572,10 +610,33 @@
       return cur;
     }
 
-    // 提取模板：行内类型返回 CSS 字符串；块级类型返回带 {{content}} 占位符的完整 outerHTML
+    // 清理克隆节点：去图片 src + 微信私有属性 + visibility
+    function cleanClone(clone) {
+      clone.querySelectorAll('img').forEach(img => {
+        img.removeAttribute('src');
+        img.removeAttribute('data-src');
+      });
+      const wechatAttrs = [
+        'mpa-from-tpl','mpa-font-style','leaf','mpa-is-content',
+        'data-textalign','data-colwidth','mpa-paragraph-type',
+        'data-mpa-template','data-mpa-action-id','mpa-data-temp-power-by',
+        'data-pm-slice','data-lazy-bgimg','data-ratio','data-s','data-w',
+        'data-type','data-croporisrc','data-cropselx2','data-cropsely2',
+        'data-backw','data-backh','data-imgfileid','data-aistatus',
+        'data-original-style','data-index','data-report-img-idx','data-fail',
+      ];
+      wechatAttrs.forEach(attr => {
+        clone.querySelectorAll('[' + attr + ']').forEach(n => n.removeAttribute(attr));
+        if (clone.hasAttribute(attr)) clone.removeAttribute(attr);
+      });
+      clone.querySelectorAll('[style]').forEach(n => n.style.removeProperty('visibility'));
+      if (clone.style) clone.style.removeProperty('visibility');
+    }
+
+    // 提取模板：行内类型 → CSS 字符串；块级类型 → 带 {{content}} 的 outerHTML
+    // 使用选中元素本身作为模板根，不再强制走到 #js_content 直接子节点
     function extractTemplate(el, blockType) {
       if (INLINE_TYPES.has(blockType)) {
-        // 纯行内：提取 computed 文字属性
         const TPROPS = ['font-size','font-family','color','line-height','letter-spacing',
                         'text-align','font-weight','background-color','border-bottom'];
         const cs = window.getComputedStyle(el);
@@ -591,52 +652,30 @@
         return Object.entries(parts).map(([k, v]) => `${k}:${v}`).join(';');
       }
 
-      // 块级：克隆整个顶层块根，把 content 注入点替换为 {{content}}
-      const root = findBlockRoot(el);
+      const root  = el;
+      const clone = root.cloneNode(true);
+      cleanClone(clone);
 
-      // content 注入点优先级：
-      // 1. mpa-is-content="t" —— 微信模板系统自己标注的可替换内容节点（最准确）
-      // 2. 简单块类型（p / 引用文字 / 列表项）直接替换块根的 innerHTML
-      // 3. 回退到点击的元素
-      let contentEl;
+      // 内容注入点优先级：
+      // 1. mpa-is-content 标记（微信自己的可替换节点）
+      // 2. 简单块标签（p/h1-h6/li/blockquote 等）→ 整块替换
+      // 3. 在子树中找第一个带 style 的 span/a 等文本节点
+      // 4. 回退：整块替换
       const markedEl = root.querySelector('[mpa-is-content]');
+      let contentEl;
       if (markedEl) {
         contentEl = markedEl;
-      } else if (['p','blockquote_text','blockquote_wrapper','li_ul','li_ol'].includes(blockType)) {
-        contentEl = root;  // 整块替换
       } else {
-        contentEl = el;
+        const tag = root.tagName.toLowerCase();
+        const SIMPLE_TAGS = ['p','h1','h2','h3','h4','h5','h6','li','blockquote','td','th','dt','dd','figcaption'];
+        if (SIMPLE_TAGS.includes(tag)) {
+          contentEl = root;
+        } else {
+          const leaf = root.querySelector('p,h1,h2,h3,h4,h5,h6,li,blockquote');
+          contentEl = leaf || root;
+        }
       }
 
-      const clone = root.cloneNode(true);
-
-      // 清理：去除图片 src（避免外部请求）+ 去除微信私有属性（减小体积）
-      clone.querySelectorAll('img').forEach(img => {
-        img.removeAttribute('src');
-        img.removeAttribute('data-src');
-      });
-      // 注意：data-lazy-bgimg 是背景图延迟加载，可保留 style 中的 background-image
-      const wechatAttrs = [
-        'mpa-from-tpl','mpa-font-style','leaf','mpa-is-content',
-        'data-textalign','data-colwidth','mpa-paragraph-type',
-        'data-mpa-template','data-mpa-action-id','mpa-data-temp-power-by',
-        'data-pm-slice','data-lazy-bgimg','data-ratio','data-s','data-w',
-        'data-type','data-croporisrc','data-cropselx2','data-cropsely2',
-        'data-backw','data-backh','data-imgfileid','data-aistatus',
-        'data-original-style','data-index','data-report-img-idx','data-fail',
-      ];
-      wechatAttrs.forEach(attr => {
-        const sel = '[' + attr + ']';
-        clone.querySelectorAll(sel).forEach(node => node.removeAttribute(attr));
-        if (clone.hasAttribute(attr)) clone.removeAttribute(attr);
-      });
-      // visibility:visible 是微信 JS 动态注入的，从 inline style 中移除
-      clone.querySelectorAll('[style]').forEach(node => {
-        node.style.removeProperty('visibility');
-      });
-      if (clone.style) clone.style.removeProperty('visibility');
-
-      // 注入占位符
       if (contentEl === root) {
         clone.innerHTML = '{{content}}';
       } else {
@@ -644,7 +683,6 @@
         const cloneTarget = followPath(clone, path);
         if (cloneTarget) cloneTarget.innerHTML = '{{content}}';
       }
-
       return clone.outerHTML;
     }
 
@@ -653,11 +691,16 @@
       if (ov) ov.remove();
     }
 
-    // 找到 #js_content 的直接子节点（顶层视觉块）
-    function findBlockRoot(el) {
-      let cur = el;
-      while (cur && cur.parentElement && cur.parentElement !== content) cur = cur.parentElement;
-      return cur || el;
+    // 克隆元素用于左侧"原始效果"预览（替换图片避免跨域）
+    function getOrigHtml(el) {
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('img').forEach(img => {
+        img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23ddd'/%3E%3Ctext x='40' y='35' text-anchor='middle' fill='%23888' font-size='10'%3E图片%3C/text%3E%3C/svg%3E";
+      });
+      clone.style.outline  = 'none';
+      clone.style.maxWidth = '100%';
+      clone.style.overflow = 'hidden';
+      return clone.outerHTML;
     }
 
     // 根据 blockType 生成示例 HTML（用于右侧预览）
@@ -665,42 +708,56 @@
       const s = cssStr ? ` style="${cssStr.replace(/"/g, "'")}"` : '';
       const sampleText = '这是一段示例文字，用于预览排版效果。The quick brown fox.';
       switch (blockType) {
-        case 'p':             return `<p${s}>${sampleText}</p>`;
-        case 'h1':            return `<h1${s}>一级标题示例</h1>`;
-        case 'h2':            return `<h2${s}>二级标题示例</h2>`;
-        case 'h3':            return `<h3${s}>三级标题示例</h3>`;
-        case 'strong':        return `<p>正文中 <strong${s}>加粗文字</strong> 示例</p>`;
+        case 'p':                  return `<p${s}>${sampleText}</p>`;
+        case 'h1':                 return `<h1${s}>一级标题示例</h1>`;
+        case 'h2':                 return `<h2${s}>二级标题示例</h2>`;
+        case 'h3':                 return `<h3${s}>三级标题示例</h3>`;
+        case 'strong':             return `<p>正文中 <strong${s}>加粗文字</strong> 示例</p>`;
         case 'blockquote_wrapper': return `<blockquote${s}>${sampleText}</blockquote>`;
         case 'blockquote_text':    return `<p${s}>${sampleText}</p>`;
-        case 'code_wrapper':  return `<div${s}><code>console.log("hello world")</code></div>`;
-        case 'code_text':     return `<code${s}>console.log("hello world")</code>`;
-        case 'hr':            return `<hr${s}/>`;
-        case 'ul':            return `<ul${s}><li>列表项一</li><li>列表项二</li></ul>`;
-        case 'li_ul':         return `<ul><li${s}>${sampleText}</li></ul>`;
-        case 'ol':            return `<ol${s}><li>列表项一</li><li>列表项二</li></ol>`;
-        case 'li_ol':         return `<ol><li${s}>${sampleText}</li></ol>`;
-        case 'img_wrapper':   return `<div${s}><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23ddd'/%3E%3Ctext x='60' y='45' text-anchor='middle' fill='%23888' font-size='12'%3E图片%3C/text%3E%3C/svg%3E" style="max-width:100%;display:block;" alt=""/></div>`;
-        case 'img':           return `<img${s} src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23ddd'/%3E%3Ctext x='60' y='45' text-anchor='middle' fill='%23888' font-size='12'%3E图片%3C/text%3E%3C/svg%3E" alt=""/>`;
-        default:              return `<div${s}>${sampleText}</div>`;
+        case 'code_wrapper':       return `<div${s}><code>console.log("hello world")</code></div>`;
+        case 'code_text':          return `<code${s}>console.log("hello world")</code>`;
+        case 'hr':                 return `<hr${s}/>`;
+        case 'ul':                 return `<ul${s}><li>列表项一</li><li>列表项二</li></ul>`;
+        case 'li_ul':              return `<ul><li${s}>${sampleText}</li></ul>`;
+        case 'ol':                 return `<ol${s}><li>列表项一</li><li>列表项二</li></ol>`;
+        case 'li_ol':              return `<ol><li${s}>${sampleText}</li></ol>`;
+        case 'img_wrapper':        return `<div${s}><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23ddd'/%3E%3Ctext x='60' y='45' text-anchor='middle' fill='%23888' font-size='12'%3E图片%3C/text%3E%3C/svg%3E" style="max-width:100%;display:block;" alt=""/></div>`;
+        case 'img':                return `<img${s} src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23ddd'/%3E%3Ctext x='60' y='45' text-anchor='middle' fill='%23888' font-size='12'%3E图片%3C/text%3E%3C/svg%3E" alt=""/>`;
+        default:                   return `<div${s}>${sampleText}</div>`;
       }
     }
 
-    // 把 blockRoot 的 HTML 克隆出来（替换图片 src 为占位符避免跨域）
-    function getOrigHtml(el) {
-      const root = findBlockRoot(el);
-      const clone = root.cloneNode(true);
-      clone.querySelectorAll('img').forEach(img => {
-        img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect width='80' height='60' fill='%23ddd'/%3E%3Ctext x='40' y='35' text-anchor='middle' fill='%23888' font-size='10'%3E图片%3C/text%3E%3C/svg%3E";
-      });
-      // 重置轮廓避免样式污染预览
-      clone.style.outline = 'none';
-      clone.style.maxWidth = '100%';
-      clone.style.overflow = 'hidden';
-      return clone.outerHTML;
+    // 供预览右侧用的示例文字
+    function getSampleContent(blockType) {
+      const map = {
+        h1: '一级标题示例', h2: '二级标题示例', h3: '三级标题示例',
+        p: '这是一段正文示例文字，用于预览排版效果。',
+        blockquote_wrapper: '引用块示例文字内容', blockquote_text: '引用段落示例',
+        code_wrapper: '<code>console.log("hello world")</code>',
+        hr: '', ul: '<li>列表项一</li><li>列表项二</li>',
+        ol: '<li>列表项一</li><li>列表项二</li>',
+        li_ul: '无序列表项示例', li_ol: '有序列表项示例',
+        img_wrapper: '', img: '',
+      };
+      return map[blockType] ?? '示例内容';
     }
 
-    function showOverlay(clientX, clientY, el) {
+    // 构建面包屑：从当前元素向上到 content 的祖先链（用于层级导航）
+    function getAncestors(el) {
+      const ancestors = [];
+      let cur = el;
+      while (cur && cur !== content && content.contains(cur)) {
+        ancestors.unshift(cur);
+        cur = cur.parentElement;
+      }
+      return ancestors;
+    }
+
+    function showOverlay(clientX, clientY, clickedEl) {
       removeOverlay();
+      hideHighlight();
+
       const BLOCK_TYPES = [
         ['p',                 'paragraph · 正文段落'],
         ['h1',                'H1 · 一级标题'],
@@ -721,154 +778,178 @@
       ];
       const opts = BLOCK_TYPES.map(([v, l]) =>
         `<option value="${v}">${v} — ${l}</option>`).join('');
-      const previewText = (el.textContent || '').trim().slice(0, 50) || '[无文字内容]';
-      const origHtml = getOrigHtml(el);
+
+      const ancestors = getAncestors(clickedEl);
+      let selectedEl  = clickedEl;
 
       const ov = document.createElement('div');
       ov.id = '__wzx_overlay__';
-      ov.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:12px;font-weight:600;color:#222;">选择样式类型</span>
-          <button id="__wzx_cancel__" style="background:none;border:none;cursor:pointer;font-size:16px;color:#aaa;line-height:1;padding:0 2px;">×</button>
-        </div>
-        <div style="font-size:11px;background:#f5f5f5;padding:3px 7px;border-radius:3px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#555;" title="${previewText}">${previewText}</div>
-        <select id="__wzx_type__" style="width:100%;margin-bottom:8px;padding:5px 4px;border:1px solid #ddd;border-radius:4px;font-size:12px;color:#333;">
-          <option value="">— 选择类型 —</option>
-          ${opts}
-        </select>
-
-        <div id="__wzx_preview_area__" style="display:none;margin-bottom:8px;">
-          <div style="display:flex;gap:1px;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;">
-            <div style="flex:1;min-width:0;">
-              <div style="background:#f0f0f0;padding:3px 6px;font-size:10px;color:#666;text-align:center;border-bottom:1px solid #e0e0e0;">原始效果</div>
-              <div id="__wzx_left__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
-            </div>
-            <div style="width:1px;background:#e0e0e0;"></div>
-            <div style="flex:1;min-width:0;">
-              <div style="background:#e8f5e9;padding:3px 6px;font-size:10px;color:#2a6b2a;text-align:center;border-bottom:1px solid #c8e6c9;">提取效果</div>
-              <div id="__wzx_right__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
-            </div>
-          </div>
-          <div id="__wzx_props__" style="margin-top:5px;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:4px 6px;font-size:10px;color:#555;font-family:monospace;max-height:60px;overflow:auto;line-height:1.5;"></div>
-        </div>
-
-        <button id="__wzx_confirm__" disabled style="width:100%;padding:6px;background:#ccc;color:white;border:none;border-radius:4px;cursor:not-allowed;font-size:12px;font-weight:600;">确认保存</button>`;
-
-      ov.style.cssText = 'position:fixed;z-index:2147483647;background:white;border:1px solid #ccc;border-radius:10px;padding:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);width:440px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-sizing:border-box;';
-      const left = Math.min(clientX + 12, window.innerWidth - 452);
-      const top  = Math.min(clientY + 12, window.innerHeight - 320);
+      ov.style.cssText = 'position:fixed;z-index:2147483647;background:white;border:1px solid #ccc;border-radius:10px;padding:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);width:460px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-sizing:border-box;';
+      const left = Math.min(clientX + 12, window.innerWidth  - 472);
+      const top  = Math.min(clientY + 12, window.innerHeight - 360);
       ov.style.left = left + 'px';
       ov.style.top  = top  + 'px';
 
-      const typeSelect  = ov.querySelector('#__wzx_type__');
-      const confirmBtn  = ov.querySelector('#__wzx_confirm__');
-      const previewArea = ov.querySelector('#__wzx_preview_area__');
-      const leftPanel   = ov.querySelector('#__wzx_left__');
-      const rightPanel  = ov.querySelector('#__wzx_right__');
-      const propsPanel  = ov.querySelector('#__wzx_props__');
-
-      // 供预览右侧用：注入对应类型的示例文字
-      function getSampleContent(blockType) {
-        const map = {
-          h1: '一级标题示例', h2: '二级标题示例', h3: '三级标题示例',
-          p: '这是一段正文示例文字，用于预览排版效果。',
-          blockquote_wrapper: '引用块示例文字内容',
-          blockquote_text: '引用段落示例',
-          code_wrapper: '<code>console.log("hello world")</code>',
-          hr: '', ul: '<li>列表项一</li><li>列表项二</li>',
-          ol: '<li>列表项一</li><li>列表项二</li>',
-          li_ul: '无序列表项示例', li_ol: '有序列表项示例',
-          img_wrapper: '', img: '',
-        };
-        return map[blockType] ?? '示例内容';
+      function renderBreadcrumb() {
+        return ancestors.map((a, i) => {
+          const tag  = a.tagName.toLowerCase();
+          const isSel = a === selectedEl;
+          const bg   = isSel ? '#07a11d' : '#f0f0f0';
+          const col  = isSel ? '#fff'    : '#444';
+          return `<span data-idx="${i}" style="cursor:pointer;background:${bg};color:${col};padding:2px 6px;border-radius:3px;font:bold 11px monospace;white-space:nowrap;">${tag}</span>`;
+        }).join('<span style="color:#bbb;margin:0 1px;font-size:11px;">›</span>');
       }
 
-      typeSelect.addEventListener('change', () => {
-        const blockType = typeSelect.value;
-        if (!blockType) {
-          previewArea.style.display = 'none';
-          confirmBtn.disabled = true;
-          confirmBtn.style.background = '#ccc';
-          confirmBtn.style.cursor = 'not-allowed';
-          return;
-        }
-        const tpl = extractTemplate(el, blockType);
-        // 左侧：原始 DOM 克隆
-        leftPanel.innerHTML = origHtml;
-        // 右侧：用示例内容替换占位符（HTML 模板）或用样式示例（CSS 字符串）
-        if (tpl.includes('{{content}}')) {
-          rightPanel.innerHTML = tpl.replace('{{content}}', getSampleContent(blockType));
-        } else {
-          rightPanel.innerHTML = getSampleHtml(blockType, tpl);
-        }
-        // 属性面板：HTML 模板显示简短摘要，CSS 显示属性列表
-        if (tpl.includes('{{content}}')) {
-          const len = tpl.length;
-          propsPanel.textContent = `[HTML模板 ${len}字节] ` + tpl.slice(0, 200) + (len > 200 ? '…' : '');
-        } else {
-          const propLines = tpl ? tpl.split(';').filter(Boolean).map(s => s.trim()) : [];
-          propsPanel.textContent = propLines.length ? propLines.join('\n') : '（未提取到属性）';
-        }
-        previewArea.style.display = 'block';
-        confirmBtn.disabled = false;
-        confirmBtn.style.background = '#07a11d';
-        confirmBtn.style.cursor = 'pointer';
-      });
+      function buildOverlayHTML() {
+        const previewText = (selectedEl.textContent || '').trim().slice(0, 60) || '[无文字内容]';
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:#222;">选择样式类型</span>
+            <button id="__wzx_cancel__" style="background:none;border:none;cursor:pointer;font-size:16px;color:#aaa;line-height:1;padding:0 2px;">×</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <div style="font-size:10px;color:#999;margin-bottom:3px;">层级导航（点击选择要提取的元素层级）</div>
+            <div id="__wzx_breadcrumb__" style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:4px 6px;background:#f8f8f8;border-radius:4px;border:1px solid #e8e8e8;">
+              ${renderBreadcrumb()}
+            </div>
+          </div>
+          <div style="font-size:11px;background:#f5f5f5;padding:3px 7px;border-radius:3px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#555;">${previewText}</div>
+          <select id="__wzx_type__" style="width:100%;margin-bottom:8px;padding:5px 4px;border:1px solid #ddd;border-radius:4px;font-size:12px;color:#333;">
+            <option value="">— 选择类型 —</option>
+            ${opts}
+          </select>
+          <div id="__wzx_preview_area__" style="display:none;margin-bottom:8px;">
+            <div style="display:flex;gap:1px;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;">
+              <div style="flex:1;min-width:0;">
+                <div style="background:#f0f0f0;padding:3px 6px;font-size:10px;color:#666;text-align:center;border-bottom:1px solid #e0e0e0;">原始效果</div>
+                <div id="__wzx_left__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
+              </div>
+              <div style="width:1px;background:#e0e0e0;"></div>
+              <div style="flex:1;min-width:0;">
+                <div style="background:#e8f5e9;padding:3px 6px;font-size:10px;color:#2a6b2a;text-align:center;border-bottom:1px solid #c8e6c9;">提取效果</div>
+                <div id="__wzx_right__" style="padding:6px;font-size:11px;overflow:auto;max-height:120px;background:#fff;"></div>
+              </div>
+            </div>
+            <div id="__wzx_props__" style="margin-top:5px;background:#fafafa;border:1px solid #eee;border-radius:4px;padding:4px 6px;font-size:10px;color:#555;font-family:monospace;max-height:60px;overflow:auto;line-height:1.5;"></div>
+          </div>
+          <button id="__wzx_confirm__" disabled style="width:100%;padding:6px;background:#ccc;color:white;border:none;border-radius:4px;cursor:not-allowed;font-size:12px;font-weight:600;">确认保存</button>`;
+      }
 
-      confirmBtn.addEventListener('click', () => {
-        if (confirmBtn.disabled) return;
-        const blockType = typeSelect.value;
-        if (!blockType) return;
-        const tpl = extractTemplate(el, blockType);
-        removeOverlay();
-        if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
-        chrome.storage.local.get(['wechat_selections'], (data) => {
-          const selections = data.wechat_selections || {};
-          selections[blockType] = tpl;
-          chrome.storage.local.set({ wechat_selections: selections });
-        });
-      });
-      ov.querySelector('#__wzx_cancel__').addEventListener('click', removeOverlay);
+      ov.innerHTML = buildOverlayHTML();
       document.body.appendChild(ov);
+
+      function resetPreview() {
+        const previewArea = ov.querySelector('#__wzx_preview_area__');
+        const confirmBtn  = ov.querySelector('#__wzx_confirm__');
+        const typeSelect  = ov.querySelector('#__wzx_type__');
+        if (previewArea) previewArea.style.display = 'none';
+        if (confirmBtn)  { confirmBtn.disabled = true; confirmBtn.style.background = '#ccc'; confirmBtn.style.cursor = 'not-allowed'; }
+        if (typeSelect)  typeSelect.value = '';
+      }
+
+      function bindEvents() {
+        const typeSelect  = ov.querySelector('#__wzx_type__');
+        const confirmBtn  = ov.querySelector('#__wzx_confirm__');
+        const previewArea = ov.querySelector('#__wzx_preview_area__');
+        const leftPanel   = ov.querySelector('#__wzx_left__');
+        const rightPanel  = ov.querySelector('#__wzx_right__');
+        const propsPanel  = ov.querySelector('#__wzx_props__');
+        const breadcrumb  = ov.querySelector('#__wzx_breadcrumb__');
+
+        // 面包屑层级切换
+        breadcrumb.addEventListener('click', e => {
+          const span = e.target.closest('[data-idx]');
+          if (!span) return;
+          selectedEl = ancestors[+span.dataset.idx];
+          // 高亮显示当前选中层级
+          showHighlight(selectedEl);
+          // 刷新面包屑 + 预览文本
+          breadcrumb.innerHTML = renderBreadcrumb();
+          const previewDiv = breadcrumb.parentElement.nextElementSibling;
+          if (previewDiv) previewDiv.textContent = (selectedEl.textContent || '').trim().slice(0, 60) || '[无文字内容]';
+          resetPreview();
+          bindEvents();
+        });
+
+        typeSelect.addEventListener('change', () => {
+          const blockType = typeSelect.value;
+          if (!blockType) { resetPreview(); return; }
+          const tpl = extractTemplate(selectedEl, blockType);
+          leftPanel.innerHTML = getOrigHtml(selectedEl);
+          if (tpl.includes('{{content}}')) {
+            rightPanel.innerHTML = tpl.replace('{{content}}', getSampleContent(blockType));
+          } else {
+            rightPanel.innerHTML = getSampleHtml(blockType, tpl);
+          }
+          if (tpl.includes('{{content}}')) {
+            const len = tpl.length;
+            propsPanel.textContent = `[HTML模板 ${len}字节] ` + tpl.slice(0, 200) + (len > 200 ? '…' : '');
+          } else {
+            const propLines = tpl ? tpl.split(';').filter(Boolean).map(s => s.trim()) : [];
+            propsPanel.textContent = propLines.length ? propLines.join('\n') : '（未提取到属性）';
+          }
+          previewArea.style.display = 'block';
+          confirmBtn.disabled = false;
+          confirmBtn.style.background = '#07a11d';
+          confirmBtn.style.cursor = 'pointer';
+        });
+
+        confirmBtn.addEventListener('click', () => {
+          if (confirmBtn.disabled) return;
+          const blockType = typeSelect.value;
+          if (!blockType) return;
+          const tpl = extractTemplate(selectedEl, blockType);
+          removeOverlay();
+          chrome.storage.local.get(['wechat_selections'], (data) => {
+            const selections = data.wechat_selections || {};
+            selections[blockType] = tpl;
+            chrome.storage.local.set({ wechat_selections: selections });
+          });
+        });
+
+        ov.querySelector('#__wzx_cancel__').addEventListener('click', removeOverlay);
+      }
+
+      bindEvents();
     }
 
-    function onMouseover(e) {
+    // mousemove + elementFromPoint：精确追踪光标下的元素（Chrome DevTools 同款方案）
+    function onMousemove(e) {
       if (document.getElementById('__wzx_overlay__')) return;
-      const blockRoot = findBlockRoot(e.target);
-      if (hoveredEl === blockRoot) return;
-      if (hoveredEl) hoveredEl.style.outline = '';
-      hoveredEl = blockRoot;
-      hoveredEl.style.outline = '2px dashed rgba(7,161,29,.6)';
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      if (!target || target === hlBox || target === hlBadge) return;
+      if (!content.contains(target)) { hideHighlight(); return; }
+      if (target === currentEl) return;
+      showHighlight(target);
     }
-    function onMouseout() {
-      if (document.getElementById('__wzx_overlay__')) return;
-      if (hoveredEl) { hoveredEl.style.outline = ''; hoveredEl = null; }
-    }
+
     function onClick(e) {
+      // 点在 overlay 或高亮层本身时忽略
+      if (e.target.closest && (e.target.closest('#__wzx_overlay__') ||
+          e.target === hlBox || e.target === hlBadge)) return;
+      if (!content.contains(e.target)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      showOverlay(e.clientX, e.clientY, e.target);
+      showOverlay(e.clientX, e.clientY, currentEl || e.target);
     }
 
-    content.addEventListener('mouseover', onMouseover, true);
-    content.addEventListener('mouseout',  onMouseout,  true);
-    content.addEventListener('click',     onClick,     true);
+    document.addEventListener('mousemove', onMousemove, true);
+    document.addEventListener('click',     onClick,     true);
     window.__wzxActive   = true;
-    window.__wzxHandlers = { onMouseover, onMouseout, onClick, content };
+    window.__wzxHandlers = { onMousemove, onClick };
     return 'ok';
   }
 
   function stopWechatSelectorFn() {
-    const ov = document.getElementById('__wzx_overlay__');
-    if (ov) ov.remove();
+    document.getElementById('__wzx_overlay__')?.remove();
+    document.getElementById('__wzx_hlbox__')?.remove();
+    document.getElementById('__wzx_hlbadge__')?.remove();
     if (window.__wzxHandlers) {
-      const { onMouseover, onMouseout, onClick, content } = window.__wzxHandlers;
-      content.removeEventListener('mouseover', onMouseover, true);
-      content.removeEventListener('mouseout',  onMouseout,  true);
-      content.removeEventListener('click',     onClick,     true);
+      const { onMousemove, onClick } = window.__wzxHandlers;
+      document.removeEventListener('mousemove', onMousemove, true);
+      document.removeEventListener('click',     onClick,     true);
       window.__wzxHandlers = null;
     }
-    document.querySelectorAll('[style*="outline"]').forEach(el => { el.style.outline = ''; });
     window.__wzxActive = false;
   }
 

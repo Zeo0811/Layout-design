@@ -124,11 +124,17 @@
   const syncBtn = document.getElementById('syncBtn');
 
   async function fetchServerTemplates() {
-    const res = await fetch(`${SERVER_URL}/api/templates`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { templates } = await res.json();
-    if (!Array.isArray(templates)) throw new Error('invalid');
-    return templates;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/templates`, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { templates } = await res.json();
+      if (!Array.isArray(templates)) throw new Error('invalid');
+      return templates;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async function syncFromServer() {
@@ -343,15 +349,19 @@
 
     let base64Map = {};
 
-    // 非 blob URL → background script（无跨域限制，无超时限制）
+    // 非 blob URL → background script 逐张转换（避免超过 Chrome 64MB 消息限制）
     const regularUrls = urls.filter(u => !u.startsWith('blob:'));
     if (regularUrls.length > 0) {
-      try {
-        const resp = await new Promise(resolve => {
-          chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls: regularUrls }, resolve);
-        });
-        if (resp && resp.success) base64Map = resp.data || {};
-      } catch (_) {}
+      const results = await Promise.all(regularUrls.map(url =>
+        new Promise(resolve => {
+          const timer = setTimeout(() => resolve(null), 15000);
+          chrome.runtime.sendMessage({ action: 'fetchImageAsBase64', url }, r => {
+            clearTimeout(timer);
+            resolve(r);
+          });
+        }).catch(() => null)
+      ));
+      results.forEach(r => { if (r && r.success && r.data) base64Map[r.url] = r.data; });
     }
 
     // blob URL + background 未成功的 URL → MAIN world（有页面 auth cookie）
@@ -467,9 +477,11 @@
 
   // ── 工具函数 ──────────────────────────────────────────────────
 
-  function sendMessage(tabId, msg) {
+  function sendMessage(tabId, msg, timeout = 15000) {
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('解析超时，请刷新页面后重试')), timeout);
       chrome.tabs.sendMessage(tabId, msg, resp => {
+        clearTimeout(timer);
         if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
         else resolve(resp);
       });

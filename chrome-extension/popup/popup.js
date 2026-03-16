@@ -349,19 +349,19 @@
 
     let base64Map = {};
 
-    // 非 blob URL → background script（加 30 秒超时避免卡死）
+    // 非 blob URL → background script 逐张转换（避免超过 Chrome 64MB 消息限制）
     const regularUrls = urls.filter(u => !u.startsWith('blob:'));
     if (regularUrls.length > 0) {
-      try {
-        const resp = await new Promise((resolve, reject) => {
-          const timer = setTimeout(() => resolve(null), 30000);
-          chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls: regularUrls }, r => {
+      const results = await Promise.all(regularUrls.map(url =>
+        new Promise(resolve => {
+          const timer = setTimeout(() => resolve(null), 15000);
+          chrome.runtime.sendMessage({ action: 'fetchImageAsBase64', url }, r => {
             clearTimeout(timer);
             resolve(r);
           });
-        });
-        if (resp && resp.success) base64Map = resp.data || {};
-      } catch (_) {}
+        }).catch(() => null)
+      ));
+      results.forEach(r => { if (r && r.success && r.data) base64Map[r.url] = r.data; });
     }
 
     // blob URL + background 未成功的 URL → MAIN world（有页面 auth cookie）

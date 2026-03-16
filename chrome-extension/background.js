@@ -23,33 +23,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
 
-    // 图片 Base64 转换
-    case 'fetchImagesAsBase64': {
-      const urls = request.urls || [];
-      if (urls.length === 0) {
-        sendResponse({ success: true, data: {} });
-        return true;
-      }
-      Promise.all(
-        urls.map(url =>
-          fetch(url, { credentials: 'omit' })
-            .then(r => {
-              if (!r.ok) throw new Error(`HTTP ${r.status}`);
-              return r.blob();
-            })
-            .then(blob => new Promise((res, rej) => {
-              const reader = new FileReader();
-              reader.onloadend = () => res({ url, data: reader.result });
-              reader.onerror  = () => res({ url, data: null });
-              reader.readAsDataURL(blob);
-            }))
-            .catch(() => ({ url, data: null }))
-        )
-      ).then(results => {
-        const map = {};
-        results.forEach(({ url, data }) => { if (data) map[url] = data; });
-        sendResponse({ success: true, data: map });
-      });
+    // 单张图片 Base64 转换（避免批量返回超过 Chrome 64MB 消息限制）
+    case 'fetchImageAsBase64': {
+      const url = request.url;
+      if (!url) { sendResponse({ success: false }); return true; }
+      fetch(url, { credentials: 'omit' })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
+        .then(blob => new Promise((res) => {
+          const reader = new FileReader();
+          reader.onloadend = () => res(reader.result);
+          reader.onerror  = () => res(null);
+          reader.readAsDataURL(blob);
+        }))
+        .then(data => sendResponse({ success: true, url, data }))
+        .catch(() => sendResponse({ success: true, url, data: null }));
       return true;
     }
 

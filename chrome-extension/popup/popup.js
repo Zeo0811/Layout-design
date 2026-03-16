@@ -124,11 +124,17 @@
   const syncBtn = document.getElementById('syncBtn');
 
   async function fetchServerTemplates() {
-    const res = await fetch(`${SERVER_URL}/api/templates`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { templates } = await res.json();
-    if (!Array.isArray(templates)) throw new Error('invalid');
-    return templates;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/templates`, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { templates } = await res.json();
+      if (!Array.isArray(templates)) throw new Error('invalid');
+      return templates;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async function syncFromServer() {
@@ -343,12 +349,16 @@
 
     let base64Map = {};
 
-    // 非 blob URL → background script（无跨域限制，无超时限制）
+    // 非 blob URL → background script（加 30 秒超时避免卡死）
     const regularUrls = urls.filter(u => !u.startsWith('blob:'));
     if (regularUrls.length > 0) {
       try {
-        const resp = await new Promise(resolve => {
-          chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls: regularUrls }, resolve);
+        const resp = await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => resolve(null), 30000);
+          chrome.runtime.sendMessage({ action: 'fetchImagesAsBase64', urls: regularUrls }, r => {
+            clearTimeout(timer);
+            resolve(r);
+          });
         });
         if (resp && resp.success) base64Map = resp.data || {};
       } catch (_) {}
@@ -467,9 +477,11 @@
 
   // ── 工具函数 ──────────────────────────────────────────────────
 
-  function sendMessage(tabId, msg) {
+  function sendMessage(tabId, msg, timeout = 15000) {
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('解析超时，请刷新页面后重试')), timeout);
       chrome.tabs.sendMessage(tabId, msg, resp => {
+        clearTimeout(timer);
         if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
         else resolve(resp);
       });

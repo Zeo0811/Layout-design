@@ -20,6 +20,7 @@
   "host_permissions": [
     "https://*.notion.so/*",
     "https://*.notion.site/*",
+    "https://*.notionusercontent.com/*",
     "https://*.feishu.cn/*",
     "https://*.larksuite.com/*",
     "https://*.amazonaws.com/*",

@@ -83,17 +83,12 @@ const S = {
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
   blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 20px 0; border-left: 8px solid #222222; background-color: #f5f5f5; font-family: ${FONT};`,
   // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
-  blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: rgb(63,63,63); font-size: 15px;`,
+  blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  // section.styled-callout = commonStyles + tech_black
-  callout_wrapper: `font-size: 15px; white-space: normal; margin: 20px 0; color: rgba(0,0,0,.9); font-family: ${FONT}; line-height: 26px; background-color: #fff; border-bottom: 1px dashed #222222; border-right: 1px dashed #222222;`,
+  callout_wrapper: `font-size: 15px; white-space: normal; margin: 20px 0; color: #3f3f3f; font-family: ${FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #407600; border-radius: 8px; padding: 16px 20px;`,
 
-  // section.styled-callout_section.header-wrapper_section.styled-callout-header
-  callout_header: `width: 90%; padding-right: 10px; padding-left: 10px; border-style: solid; border-width: 1px 0 0 10px; border-color: #222222;`,
-
-  // section.styled-callout_section.wechat-callout-block（commonStyles）
-  callout_content: `padding: 0 12px 15px; color: #3f3f3f; letter-spacing: 0.1em;`,
+  callout_content: ``,
 
   // ── 代码块（commonStyles.pre，tech_black 未覆盖）─────────────────────
   code_wrapper:  `margin: 20px 10px; display: block; width: calc(100% - 20px); box-sizing: border-box; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
@@ -241,20 +236,11 @@ function renderBlock(block, links, depth) {
   }
 }
 
-// ── Callout（对标 section.styled-callout 结构）───────────────────────────
-// 外层：section.styled-callout
-// 内层头部：section.header-wrapper > section.styled-callout-header（图标+厚左边框）
-// 内层内容：section.wechat-callout-block
+// ── Callout（简约绿色描边圆角矩形）───────────────────────────────────────
 
 function renderCallout(block) {
-  const icon = block.icon || '💡';
   return (
-    `<section style="${S.callout_wrapper}">` +
-      `<section>` +
-        `<section style="${S.callout_header}">${icon}</section>` +
-      `</section>` +
-      `<section style="${S.callout_content}">${pi(block.content)}</section>` +
-    `</section>`
+    `<section style="${S.callout_wrapper}">${pi(block.content)}</section>`
   );
 }
 

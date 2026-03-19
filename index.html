@@ -987,10 +987,9 @@ const S = {
   code_inline:         `background:rgba(135,131,120,.15);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:#222222;font-family:${MONO};`,
   s:                   `text-decoration:line-through;color:#888888;`,
   blockquote_wrapper:  `line-height:26px;word-spacing:normal;hyphens:auto;text-align:left;outline:0;max-width:100%;border-top:none;border-right:none;border-bottom:none;display:block;overflow:auto;padding:10px;margin:20px 0;border-left:8px solid #222222;background-color:#f5f5f5;font-family:${FONT};`,
-  blockquote_text:     `text-align:left;line-height:26px;font-family:${FONT};margin:0;letter-spacing:0.1em;color:rgb(63,63,63);font-size:15px;`,
-  callout_wrapper:     `font-size:15px;white-space:normal;margin:20px 0;color:rgba(0,0,0,.9);font-family:${FONT};line-height:26px;background-color:#fff;border-bottom:1px dashed #222222;border-right:1px dashed #222222;`,
-  callout_header:      `width:90%;padding-right:10px;padding-left:10px;border-style:solid;border-width:1px 0 0 10px;border-color:#222222;`,
-  callout_content:     `padding:0 12px 15px;color:#3f3f3f;letter-spacing:0.1em;`,
+  blockquote_text:     `text-align:left;line-height:26px;font-family:${FONT};margin:0;letter-spacing:0.1em;color:#407600;font-size:15px;`,
+  callout_wrapper:     `font-size:15px;white-space:normal;margin:20px 0;color:#3f3f3f;font-family:${FONT};line-height:26px;letter-spacing:0.1em;background-color:#f9fdf5;border:1px solid #407600;border-radius:8px;padding:16px 20px;`,
+  callout_content:     ``,
   code_wrapper:        `margin:20px 10px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:${MONO};`,
   code_lang_bar:       `font-size:11px;color:#999;font-family:${MONO};padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
   code_pre:            `margin:0;padding:0;overflow-x:auto;background:transparent;`,
@@ -1022,7 +1021,7 @@ const S = {
   footnote_num:        `color:#222222;font-weight:bold;margin-right:4px;`,
   todo_check:          `word-break:break-all;font-weight:600;color:#407600;`,
   // ── 内容文字（plain text，非 CSS）──────────────────────────────────
-  callout_default_icon: '💡',
+  callout_default_icon: '',
   video_label_text:     '📹 视频内容请前往原文查看',
   embed_icon_char:      '📎',
   todo_done_icon:       '✅',
@@ -1076,10 +1075,7 @@ const blocks = [
     `<section style="${S.blockquote_wrapper}"><p style="${S.blockquote_text}">这是一段引用内容，左侧有 8px 黑色粗边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>`),
 
   card('callout · 高亮块',
-    `<section style="${S.callout_wrapper}">
-      <section><section style="${S.callout_header}">💡</section></section>
-      <section style="${S.callout_content}">这是一个 Callout 高亮块，带有左侧粗边框和顶部图标区域，适合强调注意事项或提示信息。</section>
-    </section>`),
+    `<section style="${S.callout_wrapper}">这是一个 Callout 高亮块，品牌绿描边圆角矩形，简约风格，适合强调注意事项或提示信息。</section>`),
 
   card('code · 代码块',
     `<section style="${S.code_wrapper}">
@@ -1291,8 +1287,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     p:  [{prop:'text-indent', val:'0'},{prop:'background-color', val:'transparent'}],
     strong: [{prop:'background-color', val:'transparent'}],
     blockquote_wrapper: [{prop:'border-left-color', val:'#222222'},{prop:'border-left-width', val:'8px'},{prop:'border-left-style', val:'solid'}],
-    callout_wrapper:    [{prop:'background-color', val:'#ffffff'},{prop:'border-color', val:'#222222'}],
-    callout_header:     [{prop:'background-color', val:'transparent'},{prop:'border-left-color', val:'#222222'}],
+    callout_wrapper:    [{prop:'background-color', val:'#f9fdf5'},{prop:'border-color', val:'#407600'},{prop:'border-radius', val:'8px'}],
     hr: [{prop:'border-top-color', val:'#797979'},{prop:'border-top-width', val:'1px'},{prop:'border-top-style', val:'solid'}],
     img: [{prop:'border-radius', val:'10px'}],
     toggle_summary: [{prop:'background-color', val:'transparent'},{prop:'border-left-color', val:'#222222'}],
@@ -1515,9 +1510,8 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       render: cs => `<p style="${cs.p}">包含 <strong style="${cs.strong}">加粗文字</strong>、<em style="${cs.em}">斜体文字</em>、<s style="${cs.s}">删除线</s>、<code style="${cs.code_inline}">行内代码</code> 的混排效果。</p>` },
     { id: 'quote', label: 'quote · 引用块', keys: ['blockquote_wrapper', 'blockquote_text'],
       render: cs => `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">这是一段引用内容，左侧有 8px 粗边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>` },
-    { id: 'callout', label: 'callout · 高亮块', keys: ['callout_wrapper', 'callout_header', 'callout_content'],
-      content_fields: [{key:'callout_default_icon', label:'统一图标（非💡时覆盖文档图标）', placeholder:'💡'}],
-      render: cs => `<section style="${cs.callout_wrapper}"><section><section style="${cs.callout_header}">${cs.callout_default_icon||'💡'}</section></section><section style="${cs.callout_content}">这是一个 Callout 高亮块，带有左侧粗边框和顶部图标区域，适合强调注意事项。</section></section>` },
+    { id: 'callout', label: 'callout · 高亮块', keys: ['callout_wrapper', 'callout_content'],
+      render: cs => `<section style="${cs.callout_wrapper}">这是一个 Callout 高亮块，品牌绿描边圆角矩形，简约风格，适合强调注意事项。</section>` },
     { id: 'code', label: 'code · 代码块', keys: ['code_wrapper', 'code_lang_bar', 'code_pre', 'code_text'],
       content_fields: [
         {key:'code_dot1', label:'● 左点颜色', placeholder:'#ed6c60', type:'color'},
@@ -1567,7 +1561,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     p: '正文段落',
     strong: '加粗', em: '斜体', code_inline: '行内代码', s: '删除线',
     blockquote_wrapper: '引用块外层', blockquote_text: '引用块文字',
-    callout_wrapper: '高亮块外层', callout_header: '高亮块头部', callout_content: '高亮块内容',
+    callout_wrapper: '高亮块外层', callout_content: '高亮块内容',
     code_wrapper: '代码块外层', code_lang_bar: '语言栏', code_pre: 'pre 元素', code_text: '代码文字',
     hr: '分割线',
     ul: '无序列表', ol: '有序列表', li_ul: '无序列表项', li_ol: '有序列表项', li_p: '列表段落',

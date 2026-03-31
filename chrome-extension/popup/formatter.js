@@ -81,7 +81,7 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 20px 0; border-left: 8px solid #222222; background-color: #f5f5f5; font-family: ${FONT};`,
+  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 20px 0; border-left: 3px solid #407600; background-color: #f5f5f5; font-family: ${FONT};`,
   // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
   blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
 
@@ -313,10 +313,12 @@ function renderImage(block) {
 // ── 视频 ─────────────────────────────────────────────────────────────────
 
 function renderVideo(block) {
-  if (block.thumbnailUrl) {
-    return `<section style="${S.img_wrapper}"><img src="${escAttr(block.thumbnailUrl)}" style="${S.img}" alt="视频封面" /><p style="${S.img_caption}">📹 视频内容请前往原文查看</p></section>`;
+  const videoUrl = escAttr(block.url || '');
+  const thumbSrc = block.thumbnailUrl ? escAttr(block.thumbnailUrl) : '';
+  if (thumbSrc) {
+    return `<section data-video-src="${videoUrl}" data-video-thumb="${thumbSrc}" style="${S.img_wrapper}"><img src="${thumbSrc}" style="${S.img}" alt="视频封面" /><p style="${S.img_caption}">📹 视频内容请前往原文查看</p></section>`;
   }
-  return `<section style="${S.video_wrapper}"><p style="${S.video_label}">📹 视频内容请前往原文查看</p></section>`;
+  return `<section data-video-src="${videoUrl}" style="${S.video_wrapper}"><p style="${S.video_label}">📹 视频内容请前往原文查看</p></section>`;
 }
 
 // ── Toggle ────────────────────────────────────────────────────────────────

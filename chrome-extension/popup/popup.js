@@ -17,6 +17,9 @@
   const segmentBtns  = document.getElementById('segmentBtns');
   const convertPanel    = document.getElementById('convert-panel');
   const templateRow     = document.getElementById('template-row');
+  const targetRow       = document.getElementById('targetRow');
+  const targetWechatBtn = document.getElementById('targetWechat');
+  const targetFeishuBtn = document.getElementById('targetFeishu');
   const wechatPanel     = document.getElementById('wechat-panel');
   const wechatStep1     = document.getElementById('wechat-step1');
   const wechatStep2     = document.getElementById('wechat-step2');
@@ -66,6 +69,8 @@
   let formattedSegments = [];
   let currentTab        = null;
   let lastParsedData    = null; // 保存最近一次解析结果，供模板切换时重新渲染
+  let outputTarget      = 'wechat'; // 'wechat' | 'feishu'
+  let currentPageType   = null;     // 'notion' | 'feishu' | null
 
   // 快照默认样式（formatter.js 已在此之前执行，S 已定义）
   const DEFAULT_S = Object.assign({}, S);
@@ -109,15 +114,45 @@
     setTimeout(() => templateSelect.classList.remove('applied'), 1200);
 
     // 若已有转换结果，立即用新样式重新渲染预览
-    if (lastParsedData) {
-      formattedHtml = formatToWechat(lastParsedData);
-      renderPreview(formattedHtml, lastParsedData);
-      const blockCount = (lastParsedData.blocks || []).length;
-      const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
-      formattedSegments = splitFormatToWechat(lastParsedData, nSeg);
-      renderSegmentButtons(formattedSegments);
-    }
+    if (lastParsedData) rerender();
   });
+
+  // ── 输出目标切换 ─────────────────────────────────────────────
+
+  function setOutputTarget(target) {
+    outputTarget = target;
+    targetWechatBtn.classList.toggle('target-btn--active', target === 'wechat');
+    targetFeishuBtn.classList.toggle('target-btn--active', target === 'feishu');
+    // 微信模式显示模板选择器，飞书模式隐藏
+    templateRow.classList.toggle('hidden', target === 'feishu');
+    // 若已有转换结果，立即用新目标重新渲染
+    if (lastParsedData) {
+      rerender();
+    }
+  }
+
+  function rerender() {
+    if (!lastParsedData) return;
+    if (outputTarget === 'feishu') {
+      formattedHtml = formatToFeishu(lastParsedData);
+      formattedSegments = splitFormatToFeishu(lastParsedData,
+        segCount(lastParsedData));
+    } else {
+      formattedHtml = formatToWechat(lastParsedData);
+      formattedSegments = splitFormatToWechat(lastParsedData,
+        segCount(lastParsedData));
+    }
+    renderPreview(formattedHtml, lastParsedData);
+    renderSegmentButtons(formattedSegments);
+  }
+
+  function segCount(data) {
+    const blockCount = (data.blocks || []).length;
+    return blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
+  }
+
+  targetWechatBtn.addEventListener('click', () => setOutputTarget('wechat'));
+  targetFeishuBtn.addEventListener('click', () => setOutputTarget('feishu'));
 
   // ── 服务器同步 ───────────────────────────────────────────────
   const SERVER_URL = 'https://layout-design-production-fb0b.up.railway.app';
@@ -157,14 +192,7 @@
     setTimeout(() => { statusBar.className = 'status-bar status-bar--hidden'; }, 2500);
 
     // 若已有转换结果，用新模板样式重新渲染
-    if (ok && lastParsedData) {
-      formattedHtml = formatToWechat(lastParsedData);
-      renderPreview(formattedHtml, lastParsedData);
-      const blockCount = (lastParsedData.blocks || []).length;
-      const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
-      formattedSegments = splitFormatToWechat(lastParsedData, nSeg);
-      renderSegmentButtons(formattedSegments);
-    }
+    if (ok && lastParsedData) rerender();
   });
 
   // 启动时直接从服务器拉取，不使用本地缓存
@@ -195,6 +223,7 @@
       if (isWechat) {
         setBadge('wechat', '微信文章');
         templateRow.classList.add('hidden');
+        targetRow.classList.add('hidden');
         convertPanel.classList.add('hidden');
         wechatPanel.classList.remove('hidden');
         showWechatStep(1);
@@ -210,13 +239,31 @@
       }
 
       // 回到 Notion/飞书模式时确保面板正确显示
-      templateRow.classList.remove('hidden');
       convertPanel.classList.remove('hidden');
       wechatPanel.classList.add('hidden');
+
+      // 记录页面类型，控制输出目标可见性
+      currentPageType = isNotion ? 'notion' : isFeishu ? 'feishu' : null;
+
+      if (isNotion) {
+        // Notion 页面：显示"微信/飞书"双目标切换
+        targetRow.classList.remove('hidden');
+        targetFeishuBtn.classList.remove('hidden');
+        // 保持上次选择的目标，根据目标决定是否显示模板行
+        templateRow.classList.toggle('hidden', outputTarget === 'feishu');
+      } else if (isFeishu) {
+        // 飞书页面：只能转微信，隐藏飞书目标按钮
+        targetRow.classList.remove('hidden');
+        targetFeishuBtn.classList.add('hidden');
+        setOutputTarget('wechat');
+        templateRow.classList.remove('hidden');
+      }
 
       if (!isNotion && !isFeishu) {
         setBadge('unsupported', '不支持');
         convertBtn.disabled = true;
+        targetRow.classList.add('hidden');
+        templateRow.classList.add('hidden');
         showStatus('error', '请在 Notion 或飞书文章页面使用本插件');
         return;
       }
@@ -276,17 +323,21 @@
       showStatus('loading', '正在转换图片...');
       await convertImages(currentTab.id, resp.data.blocks);
 
-      // 3. 格式化 & 渲染
+      // 3. 格式化 & 渲染（根据输出目标选择 formatter）
       lastParsedData = resp.data;
-      formattedHtml = formatToWechat(resp.data);
+      const isFeishuTarget = outputTarget === 'feishu';
+      formattedHtml = isFeishuTarget
+        ? formatToFeishu(resp.data)
+        : formatToWechat(resp.data);
       renderPreview(formattedHtml, resp.data);
       copyBtn.disabled = false;
       convertBtn.disabled = false;
 
       // 4. 分段切割（自动按块数决定段数）
-      const blockCount = (resp.data.blocks || []).length;
-      const nSeg = blockCount <= 6 ? 2 : blockCount <= 18 ? 3 : 4;
-      formattedSegments = splitFormatToWechat(resp.data, nSeg);
+      const nSeg = segCount(resp.data);
+      formattedSegments = isFeishuTarget
+        ? splitFormatToFeishu(resp.data, nSeg)
+        : splitFormatToWechat(resp.data, nSeg);
       renderSegmentButtons(formattedSegments);
 
       // 5. 图片提示
@@ -296,11 +347,16 @@
       if (hasImages) {
         imageNote.classList.remove('hidden');
         imageNoteTxt.textContent = hasBase64
-          ? '图片已转 Base64，粘贴后可离线显示'
-          : '图片 URL 已包含，需在微信编辑器中手动上传';
+          ? isFeishuTarget
+            ? '图片已转 Base64，粘贴到飞书后自动上传'
+            : '图片已转 Base64，粘贴后可离线显示'
+          : isFeishuTarget
+            ? '图片 URL 已包含，粘贴到飞书时会自动加载'
+            : '图片 URL 已包含，需在微信编辑器中手动上传';
       }
 
-      showStatus('success', '转换成功 — 可完整复制或分段复制到微信编辑器');
+      const targetName = isFeishuTarget ? '飞书文档' : '微信编辑器';
+      showStatus('success', `转换成功 — 可完整复制或分段复制到${targetName}`);
     } catch (err) {
       convertBtn.disabled = false;
       showStatus('error', err.message);

@@ -40,6 +40,14 @@
 
     <!-- ── Notion / 飞书 转换模式 ── -->
     <div id="convert-panel">
+      <!-- 输出目标切换（仅 Notion 页面显示飞书选项） -->
+      <div id="targetRow" class="target-row">
+        <span class="target-label">输出目标</span>
+        <div class="target-toggle">
+          <button id="targetWechat" class="target-btn target-btn--active" data-target="wechat">微信公众号</button>
+          <button id="targetFeishu" class="target-btn" data-target="feishu">飞书文档</button>
+        </div>
+      </div>
       <div class="toolbar">
         <button id="convertBtn" class="btn btn--primary">
           <span class="btn-icon">⚡</span>
@@ -116,6 +124,7 @@
 
   <script src="highlight.min.js"></script>
   <script src="formatter.js"></script>
+  <script src="formatter-feishu.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -56,6 +56,55 @@ html, body {
 .badge--unknown     { background: #f5f5f5; color: #888;    border: 1px solid #e0e0e0; }
 .badge--unsupported { background: #f5f5f5; color: #888;    border: 1px solid #e0e0e0; }
 
+/* ── 输出目标切换行 ─────────────────────────────────────────── */
+.target-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+.target-label {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.target-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow: hidden;
+  flex: 1;
+}
+.target-btn {
+  flex: 1;
+  height: 28px;
+  border: none;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.target-btn + .target-btn { border-left: 1px solid #d9d9d9; }
+.target-btn:hover { background: #f5f5f5; }
+.target-btn--active[data-target="wechat"] {
+  background: #07a11d;
+  color: #fff;
+  font-weight: 600;
+}
+.target-btn--active[data-target="feishu"] {
+  background: #d46b08;
+  color: #fff;
+  font-weight: 600;
+}
+
 /* ── 排版模板选择行 ──────────────────────────────────────────── */
 .template-row {
   display: flex;

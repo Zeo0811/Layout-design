@@ -338,7 +338,9 @@ function parseNotionCallout(el, links) {
     clone.querySelector('[class*="icon"]');
   if (cloneIcon) cloneIcon.remove();
 
-  return { type: 'callout', icon, content: convertNodeToHtml(clone, links) };
+  const raw = convertNodeToHtml(clone, links);
+  const content = raw.replace(/^(<br\s*\/?>)+/i, '').replace(/(<br\s*\/?>)+$/i, '');
+  return { type: 'callout', icon, content };
 }
 
 function parseNotionImage(el) {

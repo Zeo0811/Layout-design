@@ -339,7 +339,7 @@ function parseNotionCallout(el, links) {
   if (cloneIcon) cloneIcon.remove();
 
   const raw = convertNodeToHtml(clone, links);
-  const content = raw.replace(/^(<br\s*\/?>)+/i, '').replace(/(<br\s*\/?>)+$/i, '');
+  const content = raw.replace(/^(\s*<br\s*\/?>)+\s*/i, '').replace(/\s*(<br\s*\/?>[\s]*)+$/i, '');
   return { type: 'callout', icon, content };
 }
 

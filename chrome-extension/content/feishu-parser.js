@@ -339,7 +339,7 @@ function parseFeishuBlock(el, blockType, links) {
       const cloneIcon = clone.querySelector('[class*="icon"]') || clone.querySelector('[class*="emoji"]');
       if (cloneIcon) cloneIcon.remove();
       const raw = extractFeishuText(clone, links);
-      const content = raw.replace(/^(<br\s*\/?>)+/i, '').replace(/(<br\s*\/?>)+$/i, '');
+      const content = raw.replace(/^(\s*<br\s*\/?>)+\s*/i, '').replace(/\s*(<br\s*\/?>[\s]*)+$/i, '');
       return { type: 'callout', icon, content };
     }
 

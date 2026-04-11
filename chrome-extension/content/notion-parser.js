@@ -288,10 +288,10 @@ function convertNodeToHtml(node, links) {
       continue;
     }
 
-    // 块级元素（div/p）之间插入换行，支持 callout 内多段落
-    if ((tag === 'div' || tag === 'p') && innerHtml.trim()) {
+    // 块级元素（div/p）之间插入换行，空块保留为空行
+    if (tag === 'div' || tag === 'p') {
       if (html.trim()) html += '<br>';
-      html += innerHtml;
+      if (innerHtml.trim()) html += innerHtml;
       continue;
     }
 

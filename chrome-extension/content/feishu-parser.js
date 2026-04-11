@@ -531,9 +531,11 @@ function convertFeishuNodeToHtml(node, links) {
     if (isItalic) result = `<em>${result}</em>`;
     if (isStrike) result = `<s>${result}</s>`;
 
-    // 块级元素（div/p）之间插入换行，支持 callout 内多段落
-    if ((tag === 'div' || tag === 'p') && result.trim() && html.trim()) {
-      html += '<br>';
+    // 块级元素（div/p）之间插入换行，空块保留为空行
+    if (tag === 'div' || tag === 'p') {
+      if (html.trim()) html += '<br>';
+      if (result.trim()) html += result;
+      continue;
     }
     html += result;
   }

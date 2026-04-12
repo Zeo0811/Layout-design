@@ -145,16 +145,29 @@ const S = {
   footnote_num:      `color: #222222; font-weight: bold; margin-right: 4px;`,
 };
 
+// ── 公众号链接判断 ────────────────────────────────────────────────────────
+// 凡是 mp.weixin.qq.com 域名的链接，视为"公众号文章跳转链接"
+
+function isMpLink(url) {
+  return typeof url === 'string' && url.includes('mp.weixin.qq.com');
+}
+
 // ── 主入口 ───────────────────────────────────────────────────────────────
+
+// 每次渲染前清空：记录哪些 link 索引（1-based）已在 callout 中作为卡片渲染，不再出现在脚注
+let _calloutMpSet = new Set();
 
 function formatToWechat(parsedData) {
   if (!parsedData || !parsedData.blocks) {
     return '<p style="color:red">解析数据为空，请重试</p>';
   }
+  _calloutMpSet = new Set();
   const { blocks, links = [] } = parsedData;
   let html = '';
   for (const block of blocks) html += renderBlock(block, links, 0);
-  if (links.length > 0) html += renderFootnotes(links);
+  // 脚注：跳过已在 callout 中渲染成卡片的链接
+  const footLinks = links.filter((_, i) => !_calloutMpSet.has(i + 1));
+  if (footLinks.length > 0) html += renderFootnotes(footLinks);
   return `<section style="${S.wrapper}">${html}</section>`;
 }
 
@@ -180,7 +193,7 @@ function renderBlock(block, links, depth) {
       return `<section style="${S.blockquote_wrapper}"><p style="${S.blockquote_text}">${pi(block.content)}</p></section>`;
 
     case 'callout':
-      return renderCallout(block);
+      return renderCallout(block, links);
 
     case 'code':
       return renderCodeBlock(block);
@@ -230,15 +243,41 @@ function renderBlock(block, links, depth) {
 // 内层头部：section.header-wrapper > section.styled-callout-header（图标+厚左边框）
 // 内层内容：section.wechat-callout-block
 
-function renderCallout(block) {
+function renderCallout(block, links) {
   const icon = block.icon || '💡';
+
+  // 把 content 里的 <sup>[n]</sup> 替换处理：
+  // 若对应链接是公众号文章链接 → 渲染成文章卡片，并标记跳过脚注
+  // 否则保持原有脚注引用样式
+  let content = (block.content || '').replace(/<sup>\[(\d+)\]<\/sup>/g, (match, numStr) => {
+    const idx = parseInt(numStr, 10);
+    const link = links && links[idx - 1];
+    if (link && isMpLink(link.url)) {
+      _calloutMpSet.add(idx);
+      return renderMpCard(link.text, link.url);
+    }
+    return match;
+  });
+
   return (
     `<section style="${S.callout_wrapper}">` +
       `<section>` +
         `<section style="${S.callout_header}">${icon}</section>` +
       `</section>` +
-      `<section style="${S.callout_content}">${pi(block.content)}</section>` +
+      `<section style="${S.callout_content}">${pi(content)}</section>` +
     `</section>`
+  );
+}
+
+// ── 公众号文章跳转卡片 ────────────────────────────────────────────────────
+// 渲染成一个可点击的文章卡片，适合粘贴到微信公众号编辑器
+
+function renderMpCard(text, url) {
+  return (
+    `<a href="${escAttr(url)}" style="display:block;text-decoration:none;margin:10px 0 4px;padding:10px 14px;border:1px solid #d9d9d9;background:#fff;" target="_blank">` +
+      `<span style="font-size:13px;color:#222222;display:block;margin-bottom:4px;font-weight:600;">${escHtml(text || '公众号文章')}</span>` +
+      `<span style="font-size:11px;color:#999999;">点击阅读原文 →</span>` +
+    `</a>`
   );
 }
 

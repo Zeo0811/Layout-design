@@ -66,7 +66,7 @@ const S = {
   h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
-  p: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 10px 0; letter-spacing: 0.1em; white-space: pre-line; color: rgb(63,63,63); font-size: 15px;`,
+  p: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; padding-bottom: 1em; letter-spacing: 0.1em; white-space: pre-line; color: rgb(63,63,63); font-size: 15px;`,
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
   // 迭代：正文加粗颜色 #407600（commonStyles.span.strong word-break:break-all + font-weight）
@@ -81,22 +81,17 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 20px 0; border-left: 8px solid #222222; background-color: #f5f5f5; font-family: ${FONT};`,
+  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 20px 0; border-left: 3px solid #407600; background-color: #f5f5f5; font-family: ${FONT};`,
   // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
-  blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: rgb(63,63,63); font-size: 15px;`,
+  blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  // section.styled-callout = commonStyles + tech_black
-  callout_wrapper: `font-size: 15px; white-space: normal; margin: 20px 0; color: rgba(0,0,0,.9); font-family: ${FONT}; line-height: 26px; background-color: #fff; border-bottom: 1px dashed #222222; border-right: 1px dashed #222222;`,
+  callout_wrapper: `font-size: 15px; white-space: normal; margin: 20px 0; color: #3f3f3f; font-family: ${FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #407600; border-radius: 8px; padding: 16px 20px;`,
 
-  // section.styled-callout_section.header-wrapper_section.styled-callout-header
-  callout_header: `width: 90%; padding-right: 10px; padding-left: 10px; border-style: solid; border-width: 1px 0 0 10px; border-color: #222222;`,
-
-  // section.styled-callout_section.wechat-callout-block（commonStyles）
-  callout_content: `padding: 0 12px 15px; color: #3f3f3f; letter-spacing: 0.1em;`,
+  callout_content: ``,
 
   // ── 代码块（commonStyles.pre，tech_black 未覆盖）─────────────────────
-  code_wrapper:  `margin: 20px 10px; display: block; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow: auto; font-family: ${MONO};`,
+  code_wrapper:  `margin: 20px 10px; display: block; width: calc(100% - 20px); box-sizing: border-box; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
   code_lang_bar: `font-size: 11px; color: #999; font-family: ${MONO}; padding-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;`,
   code_pre:      `margin: 0; padding: 0; overflow-x: auto; background: transparent;`,
   code_text:     `font-family: ${MONO}; font-size: 14px; line-height: 1.65; white-space: pre; word-break: normal; display: block; color: #333;`,
@@ -122,8 +117,8 @@ const S = {
   video_label:   `color: rgba(255,255,255,.45); font-size: 14px;`,
 
   // ── Toggle（参考未定义，合理实现）────────────────────────────────────
-  toggle_summary: `font-size: 15px; font-weight: bold; color: #222222; margin: 12px 0 5px; padding-left: 15px; border-left: 3px solid #222222; font-family: ${FONT};`,
-  toggle_content: `padding-left: 15px; border-left: 2px solid rgba(0,0,0,.15); margin-left: 4px;`,
+  toggle_summary: `display:block;font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${FONT};`,
+  toggle_content: `display:block;padding-left:15px;border-left:2px solid rgba(0,0,0,.15);margin-left:4px;`,
 
   // ── 表格 ─────────────────────────────────────────────────────────────
   table_wrapper: `overflow-x: auto; margin: 1em 0;`,
@@ -145,8 +140,16 @@ const S = {
   footnote_num:      `color: #222222; font-weight: bold; margin-right: 4px;`,
 };
 
-// ── 公众号链接判断 ────────────────────────────────────────────────────────
-// 凡是 mp.weixin.qq.com 域名的链接，视为"公众号文章跳转链接"
+// ── 模板渲染辅助 ──────────────────────────────────────────────────────────
+// 若 S[key] 是含 {{content}} 的 HTML 模板，直接注入内容；否则用 CSS 字符串包裹
+
+function applyS(key, content, defaultTag = 'section') {
+  const val = S[key] || '';
+  if (val.includes('{{content}}')) return val.replace('{{content}}', content);
+  return `<${defaultTag} style="${val}">${content}</${defaultTag}>`;
+}
+
+// ── 公众号文章链接判断 ────────────────────────────────────────────────────
 
 function isMpLink(url) {
   return typeof url === 'string' && url.includes('mp.weixin.qq.com');
@@ -154,7 +157,7 @@ function isMpLink(url) {
 
 // ── 主入口 ───────────────────────────────────────────────────────────────
 
-// 每次渲染前清空：记录哪些 link 索引（1-based）已在 callout 中作为卡片渲染，不再出现在脚注
+// 记录哪些 link 索引（1-based）已在 callout 中渲染为卡片，不再出现在脚注
 let _calloutMpSet = new Set();
 
 function formatToWechat(parsedData) {
@@ -163,10 +166,24 @@ function formatToWechat(parsedData) {
   }
   _calloutMpSet = new Set();
   const { blocks, links = [] } = parsedData;
+
+  // 跳过开头的空块（空段落、空行），避免文章顶部出现多余空白
+  let startIndex = 0;
+  while (startIndex < blocks.length) {
+    const b = blocks[startIndex];
+    if (b.type === 'paragraph') {
+      const text = (b.content || '').replace(/\u200b/g, '').trim();
+      if (!text) { startIndex++; continue; }
+    }
+    break;
+  }
+
   let html = '';
-  for (const block of blocks) html += renderBlock(block, links, 0);
-  // 脚注：跳过已在 callout 中渲染成卡片的链接
-  const footLinks = links.filter((_, i) => !_calloutMpSet.has(i + 1));
+  for (let i = startIndex; i < blocks.length; i++) html += renderBlock(blocks[i], links, 0);
+  // 脚注：排除已在 callout 中渲染为卡片的链接
+  const footLinks = links
+    .map((link, i) => _calloutMpSet.has(i + 1) ? null : link)
+    .filter(Boolean);
   if (footLinks.length > 0) html += renderFootnotes(footLinks);
   return `<section style="${S.wrapper}">${html}</section>`;
 }
@@ -176,21 +193,25 @@ function formatToWechat(parsedData) {
 function renderBlock(block, links, depth) {
   if (!block) return '';
   switch (block.type) {
-    case 'h1': return `<section style="${S.h1}">${pi(block.content)}</section>`;
-    case 'h2': return `<section style="${S.h2}">${pi(block.content)}</section>`;
-    case 'h3': return `<section style="${S.h3}">${pi(block.content)}</section>`;
-    case 'h4': return `<section style="${S.h4}">${pi(block.content)}</section>`;
-    case 'h5': return `<section style="${S.h5}">${pi(block.content)}</section>`;
-    case 'h6': return `<section style="${S.h6}">${pi(block.content)}</section>`;
+    case 'h1': return applyS('h1', pi(block.content));
+    case 'h2': return applyS('h2', pi(block.content));
+    case 'h3': return applyS('h3', pi(block.content));
+    case 'h4': return applyS('h4', pi(block.content));
+    case 'h5': return applyS('h5', pi(block.content));
+    case 'h6': return applyS('h6', pi(block.content));
 
     case 'paragraph': {
-      const text = (block.content || '').trim();
+      // \u200b 是飞书空行末尾自动插入的零宽空格，需视为空行
+      const text = (block.content || '').replace(/\u200b/g, '').trim();
       if (!text) return '<br>';
-      return `<p style="${S.p}">${pi(block.content)}</p>`;
+      return applyS('p', pi(block.content), 'p');
     }
 
-    case 'quote':
-      return `<section style="${S.blockquote_wrapper}"><p style="${S.blockquote_text}">${pi(block.content)}</p></section>`;
+    case 'quote': {
+      const bwVal = S.blockquote_wrapper || '';
+      if (bwVal.includes('{{content}}')) return bwVal.replace('{{content}}', pi(block.content));
+      return `<section style="${bwVal}"><p style="${S.blockquote_text}">${pi(block.content)}</p></section>`;
+    }
 
     case 'callout':
       return renderCallout(block, links);
@@ -199,7 +220,7 @@ function renderBlock(block, links, depth) {
       return renderCodeBlock(block);
 
     case 'divider':
-      return `<section style="${S.hr}"></section>`;
+      return applyS('hr', '');
 
     case 'bulleted_list':
       return renderList(block.items, false, depth);
@@ -221,7 +242,10 @@ function renderBlock(block, links, depth) {
       return `<p style="${S.p}">🔗 <a href="${escAttr(block.url)}" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">${escHtml(block.text || block.url)}</a><sup style="color:#222222;font-size:.7em;font-weight:bold;line-height:0;">[${block.linkIndex}]</sup></p>`;
 
     case 'todo':
-      return `<p style="${S.p}">${block.checked ? '✅' : '☐'} ${pi(block.content)}</p>`;
+      if (block.checked) {
+        return `<p style="${S.p}">✅ <span style="text-decoration:line-through;color:#aaaaaa;">${pi(block.content)}</span></p>`;
+      }
+      return `<p style="${S.p}">☐ ${pi(block.content)}</p>`;
 
     case 'table':
       return renderTable(block);
@@ -238,16 +262,11 @@ function renderBlock(block, links, depth) {
   }
 }
 
-// ── Callout（对标 section.styled-callout 结构）───────────────────────────
-// 外层：section.styled-callout
-// 内层头部：section.header-wrapper > section.styled-callout-header（图标+厚左边框）
-// 内层内容：section.wechat-callout-block
+// ── Callout（简约绿色描边圆角矩形）───────────────────────────────────────
 
 function renderCallout(block, links) {
-  const icon = block.icon || '💡';
-
-  // 把 content 里的 <sup>[n]</sup> 替换处理：
-  // 若对应链接是公众号文章链接 → 渲染成文章卡片，并标记跳过脚注
+  // 把 content 里的 <sup>[n]</sup> 处理：
+  // 若对应链接是公众号文章（mp.weixin.qq.com）→ 渲染为可点击卡片，并标记不进脚注
   // 否则保持原有脚注引用样式
   let content = (block.content || '').replace(/<sup>\[(\d+)\]<\/sup>/g, (match, numStr) => {
     const idx = parseInt(numStr, 10);
@@ -258,25 +277,16 @@ function renderCallout(block, links) {
     }
     return match;
   });
-
-  return (
-    `<section style="${S.callout_wrapper}">` +
-      `<section>` +
-        `<section style="${S.callout_header}">${icon}</section>` +
-      `</section>` +
-      `<section style="${S.callout_content}">${pi(content)}</section>` +
-    `</section>`
-  );
+  return `<section style="${S.callout_wrapper}">${pi(content)}</section>`;
 }
 
 // ── 公众号文章跳转卡片 ────────────────────────────────────────────────────
-// 渲染成一个可点击的文章卡片，适合粘贴到微信公众号编辑器
 
 function renderMpCard(text, url) {
   return (
-    `<a href="${escAttr(url)}" style="display:block;text-decoration:none;margin:10px 0 4px;padding:10px 14px;border:1px solid #d9d9d9;background:#fff;" target="_blank">` +
-      `<span style="font-size:13px;color:#222222;display:block;margin-bottom:4px;font-weight:600;">${escHtml(text || '公众号文章')}</span>` +
-      `<span style="font-size:11px;color:#999999;">点击阅读原文 →</span>` +
+    `<a href="${escAttr(url)}" style="display:block;text-decoration:none;margin:8px 0 4px;padding:10px 14px;border:1px solid #c8e09b;background:#f0f6e8;border-radius:4px;" target="_blank">` +
+      `<span style="font-size:13px;color:#222222;display:block;margin-bottom:3px;font-weight:600;">${escHtml(text || '公众号文章')}</span>` +
+      `<span style="font-size:11px;color:#888888;">点击阅读原文 →</span>` +
     `</a>`
   );
 }
@@ -318,24 +328,24 @@ function renderCodeBlock(block) {
   return `<section style="${S.code_wrapper}">${topBar}${langBar}<pre style="${S.code_pre}"><code style="${S.code_text}">${codeHtml}</code></pre></section>`;
 }
 
-// ── 列表（对标 ul.nc-list / nc-list_li / nc-list_li_p）──────────────────
+// ── 列表（微信公众号不支持 ul/ol/li 及 list-style-type，改用 p + 手动标记）────
 
 function renderList(items, isOrdered, depth) {
   if (!items || items.length === 0) return '';
-  const tag      = isOrdered ? 'ol' : 'ul';
-  const ulStyle  = isOrdered ? S.ol : S.ul;
-  const liStyle  = isOrdered ? S.li_ol : S.li_ul;
+  const indent = depth > 0 ? `padding-left: ${depth * 1.5}em;` : '';
+  const baseStyle = `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 5px 0; letter-spacing: 0.1em; color: rgb(63,63,63); font-size: 15px; ${indent}`;
+  const markerStyle = `display: inline-block; min-width: 1.5em; margin-right: 0.3em;`;
 
   let html = '';
-  items.forEach(item => {
+  items.forEach((item, index) => {
+    const marker = isOrdered ? `${index + 1}.` : '•';
     let nested = '';
     if (item.children && item.children.length > 0) {
       for (const child of item.children) nested += renderBlock(child, [], depth + 1);
     }
-    // li_p 对应 ul.nc-list_li_p：包裹文字内容
-    html += `<li style="${liStyle}"><p style="${S.li_p}">${pi(item.content)}</p>${nested}</li>`;
+    html += `<p style="${baseStyle}"><span style="${markerStyle}">${marker}</span>${pi(item.content)}</p>${nested}`;
   });
-  return `<${tag} style="${ulStyle}">${html}</${tag}>`;
+  return html;
 }
 
 // ── 图片 ──────────────────────────────────────────────────────────────────
@@ -350,16 +360,22 @@ function renderImage(block) {
 // ── 视频 ─────────────────────────────────────────────────────────────────
 
 function renderVideo(block) {
-  if (block.thumbnailUrl) {
-    return `<section style="${S.img_wrapper}"><img src="${escAttr(block.thumbnailUrl)}" style="${S.img}" alt="视频封面" /><p style="${S.img_caption}">📹 视频内容请前往原文查看</p></section>`;
+  const videoUrl = escAttr(block.url || '');
+  const thumbSrc = block.thumbnailUrl ? escAttr(block.thumbnailUrl) : '';
+  if (thumbSrc) {
+    return `<section data-video-src="${videoUrl}" data-video-thumb="${thumbSrc}" style="${S.img_wrapper}"><img src="${thumbSrc}" style="${S.img}" alt="视频封面" /><p style="${S.img_caption}">📹 视频内容请前往原文查看</p></section>`;
   }
-  return `<section style="${S.video_wrapper}"><p style="${S.video_label}">📹 视频内容请前往原文查看</p></section>`;
+  return `<section data-video-src="${videoUrl}" style="${S.video_wrapper}"><p style="${S.video_label}">📹 视频内容请前往原文查看</p></section>`;
 }
 
 // ── Toggle ────────────────────────────────────────────────────────────────
 
 function renderToggle(block, links, depth) {
-  let html = `<section style="${S.toggle_summary}">▶ ${pi(block.content)}</section>`;
+  // 嵌套 toggle（depth > 0）不再显示三角和黑色左边框，避免与外层 toggle_content 的灰线重叠
+  const summaryHtml = depth === 0
+    ? `<section style="${S.toggle_summary}">▶ ${pi(block.content)}</section>`
+    : `<p style="${S.p}">${pi(block.content)}</p>`;
+  let html = summaryHtml;
   if (block.children && block.children.length > 0) {
     html += `<section style="${S.toggle_content}">${block.children.map(b => renderBlock(b, links, depth + 1)).join('')}</section>`;
   }
@@ -398,8 +414,11 @@ function renderFootnotes(links) {
 function pi(html) {
   if (!html) return '';
   return html
-    .replace(/<strong>([\s\S]*?)<\/strong>/g,
-      `<strong style="${S.strong}">$1</strong>`)
+    .replace(/<strong>([\s\S]*?)<\/strong>/g, (_, inner) => {
+      const val = S.strong || '';
+      if (val.includes('{{content}}')) return val.replace('{{content}}', inner);
+      return `<strong style="${val}">${inner}</strong>`;
+    })
     .replace(/<em>([\s\S]*?)<\/em>/g,
       `<em style="${S.em}">$1</em>`)
     .replace(/<code>([\s\S]*?)<\/code>/g,

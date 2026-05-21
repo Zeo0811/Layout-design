@@ -8,6 +8,15 @@
   <link rel="icon" type="image/png" sizes="48x48" href="chrome-extension/icons/icon48.png" />
   <link rel="icon" type="image/png" sizes="128x128" href="chrome-extension/icons/icon128.png" />
   <style>
+    @font-face {
+      font-family: '可画大丰收SC';
+      src: url('assets/fonts/可画大丰收SC.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 300; src: url('assets/fonts/HarmonyOS_Sans_SC_Light.ttf') format('truetype'); }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 400; src: url('assets/fonts/HarmonyOS_Sans_SC_Regular.ttf') format('truetype'); }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 500; src: url('assets/fonts/HarmonyOS_Sans_SC_Medium.ttf') format('truetype'); }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 700; src: url('assets/fonts/HarmonyOS_Sans_SC_Bold.ttf') format('truetype'); }
     * { box-sizing: border-box; }
     body {
       background: #f0f0f0;
@@ -968,6 +977,8 @@ function unlockTemplate() {
 }
 </script>
 
+<script src="assets/js/green-style.js"></script>
+
 <!-- ── 样式预览数据（Tab 1） ── -->
 <script>
 const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
@@ -1493,17 +1504,29 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   // ══════════════════════════════════════════════════════════════════════════
   const BLOCK_DEFS = [
     { id: 'h1', label: 'H1 · 一级标题', keys: ['h1'],
-      render: cs => `<section style="${cs.h1}">这是一级标题 H1</section>` },
+      render: cs => cs.__headingMode === 'image'
+        ? window.GreenStyle.renderHeadingImage('这是一级标题 H1', 1)
+        : `<section style="${cs.h1}">这是一级标题 H1</section>` },
     { id: 'h2', label: 'H2 · 二级标题', keys: ['h2'],
-      render: cs => `<section style="${cs.h2}">这是二级标题 H2</section>` },
+      render: cs => cs.__headingMode === 'image'
+        ? window.GreenStyle.renderHeadingImage('这是二级标题 H2', 2)
+        : `<section style="${cs.h2}">这是二级标题 H2</section>` },
     { id: 'h3', label: 'H3 · 三级标题', keys: ['h3'],
-      render: cs => `<section style="${cs.h3}">这是三级标题 H3</section>` },
+      render: cs => cs.__headingMode === 'image'
+        ? window.GreenStyle.renderHeadingImage('这是三级标题 H3', 3)
+        : `<section style="${cs.h3}">这是三级标题 H3</section>` },
     { id: 'h4', label: 'H4 · 四级标题', keys: ['h4'],
-      render: cs => `<section style="${cs.h4}">这是四级标题 H4</section>` },
+      render: cs => cs.__headingMode === 'image'
+        ? window.GreenStyle.renderHeadingImage('这是四级标题 H4', 4)
+        : `<section style="${cs.h4}">这是四级标题 H4</section>` },
     { id: 'h5', label: 'H5 · 五级标题', keys: ['h5'],
-      render: cs => `<section style="${cs.h5}">这是五级标题 H5</section>` },
+      render: cs => cs.__headingMode === 'image'
+        ? window.GreenStyle.renderHeadingImage('这是五级标题 H5', 5)
+        : `<section style="${cs.h5}">这是五级标题 H5</section>` },
     { id: 'h6', label: 'H6 · 六级标题', keys: ['h6'],
-      render: cs => `<section style="${cs.h6}">这是六级标题 H6</section>` },
+      render: cs => cs.__headingMode === 'image'
+        ? window.GreenStyle.renderHeadingImage('这是六级标题 H6', 6)
+        : `<section style="${cs.h6}">这是六级标题 H6</section>` },
     { id: 'p', label: 'paragraph · 正文段落', keys: ['p'],
       render: cs => `<p style="${cs.p}">这是一段正文内容，展示基础段落样式。字体使用 Optima / PingFang SC，字号 15px，行高 26px，字间距 0.1em。适合大段阅读文字。</p>` },
     { id: 'inline', label: 'inline · 行内格式', keys: ['strong', 'em', 'code_inline', 's'],
@@ -1650,6 +1673,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     if (!sel) return;
     const prev = sel.value;
     sel.innerHTML = '<option value="">— 十字路口专用 —</option>' +
+      '<option value="green">— 十字路口绿（新）—</option>' +
       savedTemplates.map((t,i)=>`<option value="${i}">${t.name}</option>`).join('');
     sel.value = prev;
   }
@@ -1729,21 +1753,27 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   };
 
   function _updateEditState() {
-    const isDefault = !document.getElementById('tpl-selector').value;
-    document.getElementById('tplSaveBtn').style.display   = isDefault ? 'none' : '';
-    document.getElementById('tplDeleteBtn').style.display = isDefault ? 'none' : '';
+    const v = document.getElementById('tpl-selector').value;
+    const isBuiltin = !v || v === 'green';
+    document.getElementById('tplSaveBtn').style.display   = isBuiltin ? 'none' : '';
+    document.getElementById('tplDeleteBtn').style.display = isBuiltin ? 'none' : '';
     document.getElementById('tplNewBtn').style.display    = '';
   }
 
   window.tplLoad = function() {
     const sel = document.getElementById('tpl-selector');
-    const idx = parseInt(sel.value);
-    if (isNaN(idx)||idx<0) {
-      customS = Object.assign({}, S);
+    const v = sel.value;
+    if (v === 'green') {
+      customS = Object.assign({}, S, window.GreenStyle.GREEN_TOKENS);
     } else {
-      const tpl = savedTemplates[idx];
-      if (!tpl) return;
-      customS = Object.assign({}, S, tpl.s);
+      const idx = parseInt(v);
+      if (isNaN(idx)||idx<0) {
+        customS = Object.assign({}, S);
+      } else {
+        const tpl = savedTemplates[idx];
+        if (!tpl) return;
+        customS = Object.assign({}, S, tpl.s);
+      }
     }
     _updateEditState();
     if (selectedId) { loadPropState(selectedId); }
@@ -1843,6 +1873,15 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
           savedTemplates = Array.isArray(serverTemplates) ? serverTemplates : [];
         }
       } catch (_) { savedTemplates = []; }
+      try {
+        if (document.fonts && document.fonts.load) {
+          await Promise.all([
+            document.fonts.load('40px "可画大丰收SC"'),
+            document.fonts.load('400 15px "HarmonyOS Sans SC"'),
+          ]);
+          await document.fonts.ready;
+        }
+      } catch (_) {}
       syncSelector();
       // 有自定义模板时自动选中第一个，让保存/删除按钮可见
       if (savedTemplates.length > 0) {

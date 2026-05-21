@@ -39,7 +39,7 @@
     return stripped === '';
   }
 
-  function renderGreenBlock(block, links, depth, seq) {
+  function renderGreenBlock(block, links, depth, seq, trailingBlanks) {
     if (!block) return '';
     const W = (typeof window !== 'undefined') ? window : {};
     const G = W.GreenStyle || {};
@@ -64,9 +64,12 @@
 
       case 'paragraph': {
         const t = (block.content || '').replace(/​/g, '').trim();
-        // 空段落 = Notion 里的空行 → 渲染成占一行高度的空段（可见空行）
-        if (!t) return `<p style="margin:0;font-size:15px;line-height:24px;">&nbsp;</p>`;
-        return `<p style="${SS.p}">${P(block.content)}</p>`;
+        // 空段落（Notion 空行）由 renderGreenArticle 折叠进前一段 padding，这里直接跳过（微信会删空段）
+        if (!t) return '';
+        // trailingBlanks：本段后面跟了几个空行 → 段间距加大（合设计稿“普通段~40px”），无空行则 17px（“紧凑”）
+        const extra = Math.min(trailingBlanks || 0, 3) * 23;
+        const style = extra ? `${SS.p};padding-bottom:${17 + extra}px` : SS.p;
+        return `<p style="${style}">${P(block.content)}</p>`;
       }
 
       case 'quote':
@@ -151,8 +154,15 @@
       if (b.type === 'paragraph' && !(b.content || '').replace(/​/g, '').trim()) { start++; continue; }
       break;
     }
+    const isBlank = (b) => b && b.type === 'paragraph' && !(b.content || '').replace(/​/g, '').trim();
     let html = '';
-    for (let i = start; i < blocks.length; i++) html += renderGreenBlock(blocks[i], links, 0, seq);
+    for (let i = start; i < blocks.length; i++) {
+      if (isBlank(blocks[i])) continue;                  // 空行不单独渲染（微信会删），折叠进前一段
+      let trailingBlanks = 0;
+      let j = i + 1;
+      while (j < blocks.length && isBlank(blocks[j])) { trailingBlanks++; j++; }
+      html += renderGreenBlock(blocks[i], links, 0, seq, trailingBlanks);
+    }
     if (links.length && W.renderFootnotes) html += W.renderFootnotes(links);
     return `<section style="${SS.wrapper}">${html}</section>`;
   }

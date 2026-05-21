@@ -50,9 +50,12 @@
       }
 
       case 'quote':
-        return `<section style="margin:22px 0;">`
-          + _img(D.quote, 'width:27px;height:auto;display:block;margin-bottom:4px;', '引用')
-          + `<p style="${SS.blockquote_text}">${P(block.content)}</p></section>`;
+        // 微信安全：用 table 实现「引号在左、正文向右缩进且有间距」（避开被微信剥离的 position:absolute）
+        return `<section style="margin:22px 0;"><table style="border-collapse:collapse;width:100%;border:none;table-layout:fixed;"><tbody><tr>`
+          + `<td style="width:48px;vertical-align:top;padding:0;border:none;">`
+          + _img(D.quote, 'width:30px;height:auto;display:block;', '引用') + `</td>`
+          + `<td style="vertical-align:top;padding:6px 0 0 0;border:none;"><p style="${SS.blockquote_text}">${P(block.content)}</p></td>`
+          + `</tr></tbody></table></section>`;
 
       case 'callout':
         return `<section style="${SS.callout_wrapper}">${P(block.content)}</section>`;

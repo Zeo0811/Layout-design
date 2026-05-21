@@ -43,3 +43,28 @@ test('封顶时末行末字符为表情也不损坏（u 标志）', () => {
   assert.ok(lines[7].endsWith('…'));
   assert.strictEqual(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(lines[7]), false, '不应残留孤立高位代理');
 });
+
+const { HEADING_SPECS, GREEN_TOKENS } = require('../assets/js/green-style.js');
+
+test('HEADING_SPECS 覆盖 1-6 级且为绿色', () => {
+  for (let lv = 1; lv <= 6; lv++) {
+    assert.ok(HEADING_SPECS[lv], `缺 level ${lv}`);
+    assert.strictEqual(HEADING_SPECS[lv].color, '#327847');
+    assert.ok(HEADING_SPECS[lv].fontSize > 0);
+    assert.ok(HEADING_SPECS[lv].lineHeight >= HEADING_SPECS[lv].fontSize);
+  }
+  for (let lv = 1; lv < 6; lv++) {
+    assert.ok(HEADING_SPECS[lv].fontSize >= HEADING_SPECS[lv + 1].fontSize);
+  }
+});
+
+test('GREEN_TOKENS 为图片标题模式且关键键存在', () => {
+  assert.strictEqual(GREEN_TOKENS.__headingMode, 'image');
+  for (const k of ['wrapper', 'p', 'strong', 'blockquote_wrapper', 'blockquote_text',
+                   'callout_wrapper', 'hr', 'ul', 'ol', 'li_ul', 'li_p',
+                   'img', 'img_caption', 'footnote_num', 'embed_link']) {
+    assert.ok(typeof GREEN_TOKENS[k] === 'string', `缺 token ${k}`);
+  }
+  assert.match(GREEN_TOKENS.strong, /#327847/);
+  assert.match(GREEN_TOKENS.li_ul, /#327847/);
+});

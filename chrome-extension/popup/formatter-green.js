@@ -69,12 +69,11 @@
       case 'quote': {
         // 文章首个 quote → 引言块（箭头 + 大丰收「引言」标 + 绿字）；其余 → 普通引号样式
         if (seq.next('quote') === 1) return _intro(block.content, G, D, SS, P);
-        // 微信安全：用 table 实现「引号在左、正文向右缩进且有间距」（避开被微信剥离的 position:absolute）
-        return `<section style="margin:22px 0;"><table style="border-collapse:collapse;width:100%;border:none;table-layout:fixed;"><tbody><tr>`
-          + `<td style="width:48px;vertical-align:top;padding:0;border:none;">`
-          + _img(D.quote, 'width:30px;height:auto;display:block;', '引用') + `</td>`
-          + `<td style="vertical-align:top;padding:6px 0 0 0;border:none;"><p style="${SS.blockquote_text}">${P(block.content)}</p></td>`
-          + `</tr></tbody></table></section>`;
+        // 微信安全：挂悬缩进（padding-left + 负 text-indent + 行内引号图），引号在左、正文整段缩进对齐
+        const mark = `<img src="${D.quote}" style="width:32px;height:auto;display:inline-block;vertical-align:top;margin-right:14px;" alt="引用" />`;
+        return `<section style="margin:22px 0;">`
+          + `<p style="${SS.blockquote_text};padding-left:46px;text-indent:-46px;">${mark}${P(block.content)}</p>`
+          + `</section>`;
       }
 
       case 'callout':

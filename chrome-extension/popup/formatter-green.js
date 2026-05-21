@@ -25,6 +25,12 @@
     return `<section style="${(SS && SS[key]) || 'color:#327847;font-weight:bold;'}">${EH(text)}</section>`;
   }
 
+  // 去 HTML 标签 + 基本实体（标题走 canvas 画图，需纯文字）
+  function _plain(s) {
+    return String(s || '').replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+  }
+
   // 仅表情/符号、无实际文字 → true（Notion 里作者把单个 emoji 设成标题当装饰，不应渲染成标题）
   function _isSymbolOnly(s) {
     const t = String(s || '').trim();
@@ -43,22 +49,23 @@
     const EH = W.escHtml || (typeof escHtml !== 'undefined' ? escHtml : (x) => x || '');
     const EA = W.escAttr || (typeof escAttr !== 'undefined' ? escAttr : (x) => x || '');
 
-    // 标题但内容只是表情/符号 → 居中表情行，不走大丰收标题图
-    if (/^h[1-6]$/.test(block.type) && _isSymbolOnly(block.content)) {
-      return `<p style="text-align:center;margin:14px 0;font-size:26px;line-height:1.4;">${EH(block.content)}</p>`;
+    // 标题：取纯文字（剥 HTML 标签）；仅表情/符号 → 居中表情行，不走大丰收标题图
+    if (/^h[1-6]$/.test(block.type)) {
+      const ht = _plain(block.content);
+      if (_isSymbolOnly(ht)) {
+        return `<p style="text-align:center;margin:14px 0;font-size:26px;line-height:1.4;">${EH(ht)}</p>`;
+      }
+      const lv = +block.type[1];
+      const seqn = (lv === 2 || lv === 3) ? seq.next(block.type) : null;
+      return _heading(G, ht, lv, seqn, SS, EH);
     }
 
     switch (block.type) {
-      case 'h1': return _heading(G, block.content, 1, null, SS, EH);
-      case 'h2': return _heading(G, block.content, 2, seq.next('h2'), SS, EH);
-      case 'h3': return _heading(G, block.content, 3, seq.next('h3'), SS, EH);
-      case 'h4': return _heading(G, block.content, 4, null, SS, EH);
-      case 'h5': return _heading(G, block.content, 5, null, SS, EH);
-      case 'h6': return _heading(G, block.content, 6, null, SS, EH);
 
       case 'paragraph': {
         const t = (block.content || '').replace(/​/g, '').trim();
-        if (!t) return '<br>';
+        // 空段落 = Notion 里的空行 → 渲染成占一行高度的空段（可见空行）
+        if (!t) return `<p style="margin:0;font-size:15px;line-height:24px;">&nbsp;</p>`;
         return `<p style="${SS.p}">${P(block.content)}</p>`;
       }
 

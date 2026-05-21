@@ -45,15 +45,15 @@
   // 各级标题的画布构成（逻辑 px）。deco 决定装饰类型：
   //   none → 纯标题；part → 背景 PART 水印 + 下划线；num → 序号 + 右延横线；star → 左侧星号
   const HEADING_SPECS = {
-    1: { fontSize: 40, lineHeight: 54, color: GREEN, align: 'left',   deco: 'none', marginTop: 34, marginBottom: 18 },
-    2: { fontSize: 32, lineHeight: 46, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
-         wmSize: 58, ruleWeight: 3 },
-    3: { fontSize: 23, lineHeight: 34, color: GREEN, align: 'left',   deco: 'num',  marginTop: 32, marginBottom: 14,
-         numSize: 30, ruleWeight: 2 },
-    4: { fontSize: 19, lineHeight: 28, color: GREEN, align: 'left',   deco: 'star', marginTop: 24, marginBottom: 10,
-         starSize: 28 },
-    5: { fontSize: 16, lineHeight: 26, color: GREEN, align: 'center', deco: 'none', marginTop: 20, marginBottom: 8  },
-    6: { fontSize: 15, lineHeight: 24, color: GREEN, align: 'center', deco: 'none', marginTop: 16, marginBottom: 8  },
+    1: { fontSize: 40, lineHeight: 46, color: GREEN, align: 'left',   deco: 'none', marginTop: 34, marginBottom: 18 },
+    2: { fontSize: 32, lineHeight: 37, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
+         wmSize: 61, ruleWeight: 3 },
+    3: { fontSize: 23, lineHeight: 27, color: GREEN, align: 'left',   deco: 'num',  marginTop: 32, marginBottom: 14,
+         numSize: 27, ruleWeight: 2 },
+    4: { fontSize: 19, lineHeight: 22, color: GREEN, align: 'left',   deco: 'star', marginTop: 24, marginBottom: 10,
+         starSize: 30 },
+    5: { fontSize: 16, lineHeight: 19, color: GREEN, align: 'center', deco: 'none', marginTop: 20, marginBottom: 8  },
+    6: { fontSize: 15, lineHeight: 18, color: GREEN, align: 'center', deco: 'none', marginTop: 16, marginBottom: 8  },
   };
 
   const CONTENT_WIDTH = 560;
@@ -295,7 +295,7 @@
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
     const fontFamily = opts.bodyFont ?? "'HarmonyOS Sans SC','PingFang SC',-apple-system,sans-serif";
     const fontSize = opts.fontSize ?? 15;
-    const lineHeight = opts.lineHeight ?? 17;   // Figma 60/55≈1.09 → 紧凑
+    const lineHeight = opts.lineHeight ?? 16;   // Figma 60/55≈1.09 → 16px
     const baseLS = fontSize * 0.17;          // 引用字距 0.17em
     const indent = opts.indent ?? 42;        // 正文相对左缘缩进（Figma 155 设计px ÷3.67）
     const markW = opts.markW ?? 27;          // 引号 98 设计px ÷3.67

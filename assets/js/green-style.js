@@ -9,6 +9,7 @@
 
   // 贪心断行：中文按单字符累加，超过 maxWidth 即换行；支持 \n；行数封顶
   function wrapHeadingLines(text, maxWidth, measureFn) {
+    if (!String(text)) return [];
     const out = [];
     const paragraphs = String(text).split('\n');
     for (const para of paragraphs) {
@@ -27,7 +28,7 @@
     }
     if (out.length > MAX_LINES) {
       const kept = out.slice(0, MAX_LINES);
-      kept[MAX_LINES - 1] = kept[MAX_LINES - 1].replace(/.$/, '') + '…';
+      kept[MAX_LINES - 1] = kept[MAX_LINES - 1].replace(/.$/u, '') + '…';
       return kept;
     }
     return out;

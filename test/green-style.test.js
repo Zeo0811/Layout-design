@@ -72,13 +72,14 @@ test('GREEN_TOKENS 为图片标题模式且关键键存在', () => {
 const { renderHeadingImage } = require('../assets/js/green-style.js');
 
 function makeFakeCanvas() {
-  const calls = { fillText: [], font: [], fillStyle: [] };
+  const calls = { fillText: [], font: [], fillStyle: [], fillRect: [] };
   const ctx = {
     set font(v) { calls.font.push(v); }, get font() { return ''; },
     set fillStyle(v) { calls.fillStyle.push(v); },
     set textBaseline(v) {}, set textAlign(v) {},
     measureText(s) { return { width: s.length * 10 }; },
     fillText(s, x, y) { calls.fillText.push([s, x, y]); },
+    fillRect(x, y, w, h) { calls.fillRect.push([x, y, w, h]); },
   };
   const canvas = {
     width: 0, height: 0,
@@ -88,6 +89,8 @@ function makeFakeCanvas() {
   return { canvas, calls };
 }
 
+const drew = (calls, s) => calls.fillText.some((c) => c[0] === s);
+
 test('renderHeadingImage 返回带假 dataURL 的 img', () => {
   const fake = makeFakeCanvas();
   const html = renderHeadingImage('一级标题', 1, { canvasFactory: () => fake.canvas });
@@ -96,10 +99,59 @@ test('renderHeadingImage 返回带假 dataURL 的 img', () => {
   assert.match(html, /max-width:100%/);
 });
 
-test('单行标题只画一行', () => {
+test('单行无装饰标题（H1）只画一行', () => {
   const fake = makeFakeCanvas();
-  renderHeadingImage('短标题', 2, { canvasFactory: () => fake.canvas, contentWidth: 1000 });
+  renderHeadingImage('短标题', 1, { canvasFactory: () => fake.canvas, contentWidth: 1000 });
   assert.strictEqual(fake.calls.fillText.length, 1);
+});
+
+test('H2 画出 PART 水印与下划线', () => {
+  const fake = makeFakeCanvas();
+  renderHeadingImage('二级标题', 2, { canvasFactory: () => fake.canvas, contentWidth: 1000 });
+  assert.ok(drew(fake.calls, 'PART 01'), '应画出 PART 01 水印');
+  assert.ok(drew(fake.calls, '二级标题'), '应画出标题');
+  assert.strictEqual(fake.calls.fillRect.length, 1, '应画一条下划线');
+});
+
+test('H3 画出序号与横线', () => {
+  const fake = makeFakeCanvas();
+  renderHeadingImage('三级标题', 3, { canvasFactory: () => fake.canvas, contentWidth: 1000, seq: 1 });
+  assert.ok(drew(fake.calls, '01'), '应画出序号 01');
+  assert.ok(drew(fake.calls, '三级标题'));
+  assert.strictEqual(fake.calls.fillRect.length, 1, '应画一条横线');
+});
+
+test('H4 画出左侧星号', () => {
+  const fake = makeFakeCanvas();
+  renderHeadingImage('四级标题', 4, { canvasFactory: () => fake.canvas, contentWidth: 1000 });
+  assert.ok(drew(fake.calls, '*'), '应画出星号');
+  assert.ok(drew(fake.calls, '四级标题'));
+});
+
+test('seq 参数决定 PART / 序号编号', () => {
+  const fake = makeFakeCanvas();
+  renderHeadingImage('x', 2, { canvasFactory: () => fake.canvas, contentWidth: 1000, seq: 3 });
+  assert.ok(drew(fake.calls, 'PART 03'), 'seq=3 → PART 03');
+});
+
+const { renderTextImage } = require('../assets/js/green-style.js');
+
+test('renderTextImage 画出指定文字、返回 inline-block img', () => {
+  const fake = makeFakeCanvas();
+  const html = renderTextImage('引言', { canvasFactory: () => fake.canvas, color: '#808080' });
+  assert.match(html, /^<img\b/);
+  assert.match(html, /display:inline-block/);
+  assert.ok(drew(fake.calls, '引言'));
+  assert.ok(fake.calls.fillStyle.includes('#808080'), '应使用指定颜色');
+});
+
+test('GREEN_TOKENS 含 __variant 与引言/引用新键', () => {
+  assert.strictEqual(GREEN_TOKENS.__variant, 'green');
+  for (const k of ['blockquote_mark', 'intro_wrapper', 'intro_head', 'intro_arrow', 'intro_text']) {
+    assert.ok(typeof GREEN_TOKENS[k] === 'string', `缺 token ${k}`);
+  }
+  assert.match(GREEN_TOKENS.callout_wrapper, /#40A978/);
+  assert.match(GREEN_TOKENS.blockquote_text, /font-weight:600/);
 });
 
 test('超宽标题按内容宽换行多次绘制', () => {

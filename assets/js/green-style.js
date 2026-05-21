@@ -36,17 +36,24 @@
 
   const HEADING_FONT = "'可画大丰收SC'";
   const BODY_FONT = "'HarmonyOS Sans SC','PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif";
+  const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
   const GREEN = '#327847';
   const GREEN_DIM = '#53715C';
   const GRAY = '#808080';
+  const WATERMARK = '#B1B1B1';
 
+  // 各级标题的画布构成（逻辑 px）。deco 决定装饰类型：
+  //   none → 纯标题；part → 背景 PART 水印 + 下划线；num → 序号 + 右延横线；star → 左侧星号
   const HEADING_SPECS = {
-    1: { fontSize: 40, lineHeight: 56, color: GREEN, marginTop: 36, marginBottom: 20 },
-    2: { fontSize: 32, lineHeight: 46, color: GREEN, marginTop: 32, marginBottom: 16 },
-    3: { fontSize: 25, lineHeight: 38, color: GREEN, marginTop: 28, marginBottom: 14 },
-    4: { fontSize: 19, lineHeight: 30, color: GREEN, marginTop: 22, marginBottom: 10 },
-    5: { fontSize: 16, lineHeight: 26, color: GREEN, marginTop: 18, marginBottom: 8  },
-    6: { fontSize: 15, lineHeight: 24, color: GREEN, marginTop: 16, marginBottom: 8  },
+    1: { fontSize: 40, lineHeight: 54, color: GREEN, align: 'left',   deco: 'none', marginTop: 34, marginBottom: 18 },
+    2: { fontSize: 32, lineHeight: 46, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
+         wmSize: 58, ruleWeight: 3 },
+    3: { fontSize: 23, lineHeight: 34, color: GREEN, align: 'left',   deco: 'num',  marginTop: 32, marginBottom: 14,
+         numSize: 30, ruleWeight: 2 },
+    4: { fontSize: 19, lineHeight: 28, color: GREEN, align: 'left',   deco: 'star', marginTop: 24, marginBottom: 10,
+         starSize: 28 },
+    5: { fontSize: 16, lineHeight: 26, color: GREEN, align: 'center', deco: 'none', marginTop: 20, marginBottom: 8  },
+    6: { fontSize: 15, lineHeight: 24, color: GREEN, align: 'center', deco: 'none', marginTop: 16, marginBottom: 8  },
   };
 
   const CONTENT_WIDTH = 560;
@@ -54,50 +61,65 @@
 
   const GREEN_TOKENS = {
     __headingMode: 'image',
-    wrapper:            `font-family:${BODY_FONT};font-size:15px;color:#000000;line-height:1.6;letter-spacing:0.1em;word-wrap:break-word;`,
+    __variant: 'green',
+    wrapper:            `font-family:${BODY_FONT};font-size:15px;color:#000000;line-height:1.27;letter-spacing:0.1em;word-wrap:break-word;`,
     h1: `display:block;font-family:${HEADING_FONT};font-size:40px;font-weight:normal;color:${GREEN};text-align:left;margin:36px 0 20px 0;line-height:1.4;`,
     h2: `display:block;font-family:${HEADING_FONT};font-size:32px;font-weight:normal;color:${GREEN};text-align:left;margin:32px 0 16px 0;line-height:1.4;`,
     h3: `display:block;font-family:${HEADING_FONT};font-size:25px;font-weight:normal;color:${GREEN};text-align:left;margin:28px 0 14px 0;line-height:1.5;`,
     h4: `display:block;font-family:${HEADING_FONT};font-size:19px;font-weight:normal;color:${GREEN};text-align:left;margin:22px 0 10px 0;line-height:1.5;`,
     h5: `display:block;font-family:${HEADING_FONT};font-size:16px;font-weight:normal;color:${GREEN};text-align:left;margin:18px 0 8px 0;line-height:1.5;`,
     h6: `display:block;font-family:${HEADING_FONT};font-size:15px;font-weight:normal;color:${GREEN};text-align:left;margin:16px 0 8px 0;line-height:1.5;`,
-    p:                  `text-align:justify;line-height:1.6;font-family:${BODY_FONT};margin:0;padding-bottom:1em;letter-spacing:0.1em;white-space:pre-line;color:#000000;font-size:15px;`,
+    p:                  `text-align:justify;line-height:1.27;font-family:${BODY_FONT};margin:0;padding-bottom:1em;letter-spacing:0.1em;white-space:pre-line;color:#000000;font-size:15px;`,
     strong:             `word-break:break-all;font-weight:600;color:${GREEN};`,
     em:                 `font-style:italic;`,
     code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,
     s:                  `text-decoration:line-through;color:#888888;`,
-    blockquote_wrapper: `text-align:left;display:block;overflow:auto;padding:10px 14px;margin:20px 0;border-left:3px solid ${GREEN};background-color:#f4f7f4;font-family:${BODY_FONT};line-height:1.6;`,
-    blockquote_text:    `text-align:left;line-height:1.6;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
-    callout_wrapper:    `font-size:15px;white-space:normal;margin:20px 0;color:#000000;font-family:${BODY_FONT};line-height:1.6;letter-spacing:0.1em;background-color:#f4f9f5;border:1px solid ${GREEN};border-radius:8px;padding:16px 20px;`,
+    // 引用：左上绿色引号挂在左侧留白，正文缩进 42px、绿色加粗、两端对齐、字距 0.17em、行高 1.1
+    blockquote_wrapper: `position:relative;text-align:left;display:block;margin:22px 0;padding:4px 0 4px 42px;font-family:${BODY_FONT};`,
+    blockquote_mark:    `position:absolute;left:0;top:0;width:27px;height:auto;display:block;`,
+    blockquote_text:    `text-align:justify;line-height:1.1;font-family:${BODY_FONT};margin:0;letter-spacing:0.17em;color:${GREEN};font-size:15px;font-weight:600;`,
+    // Callout：左侧 7px #40A978 竖条 + 绿色加粗、左对齐正文、字距 0.1em、行高 1.27、缩进 22px（无底色/无描边）
+    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:22px 0;color:${GREEN};font-family:${BODY_FONT};line-height:1.27;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
     callout_content:    ``,
+    // 引言：大丰收「引言」灰标 + 绿色↘箭头（render 内 SVG）+ 绿色两端对齐正文，行高 1.27（无边框）
+    intro_wrapper:      `margin:22px 0;font-family:${BODY_FONT};`,
+    intro_head:         `display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;`,
+    intro_arrow:        `font-size:38px;line-height:1;color:${GREEN};`,
+    intro_text:         `text-align:justify;line-height:1.27;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
     code_wrapper:       `margin:20px 10px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:Consolas,Monaco,monospace;`,
     code_lang_bar:      `font-size:11px;color:${GREEN};font-family:Consolas,Monaco,monospace;padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
     code_pre:           `margin:0;padding:0;overflow-x:auto;background:transparent;`,
     code_text:          `font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.65;white-space:pre;word-break:normal;display:block;color:#333;`,
     hr:                 `border-style:solid;border-width:1px 0 0;border-color:${GREEN_DIM};margin:24px 0;`,
-    ul:                 `padding-left:1.5em;font-size:15px;line-height:1.5;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 8px;`,
-    ol:                 `padding-left:1.5em;font-size:15px;line-height:1.5;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 8px;`,
-    li_ul:              `font-size:15px;line-height:1.5;font-family:${BODY_FONT};list-style-position:outside;list-style-type:disc;color:${GREEN};`,
-    li_ol:              `font-size:15px;line-height:1.5;font-family:${BODY_FONT};list-style-position:outside;list-style-type:decimal;color:${GREEN};`,
-    li_p:               `font-family:inherit;vertical-align:baseline;margin:8px 0;color:#000000;`,
+    hr_wrapper:         `margin:18px 0;text-align:center;line-height:0;`,
+    ol_row:             `display:flex;align-items:baseline;margin:0 0 28px 0;`,
+    ol_num:             `flex:none;font-family:${LATIN_FONT};font-size:18px;font-weight:600;color:${GREEN};line-height:1.5;margin-right:12px;`,
+    ol_text:            `flex:1;font-size:15px;line-height:1.27;letter-spacing:0.1em;color:${GREEN};font-family:${BODY_FONT};margin:0;`,
+    ul:                 `padding-left:1.5em;font-size:15px;line-height:1.27;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 8px;`,
+    ol:                 `padding-left:1.5em;font-size:15px;line-height:1.27;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 8px;`,
+    li_ul:              `font-size:15px;line-height:1.27;font-family:${BODY_FONT};list-style-position:outside;list-style-type:disc;color:${GREEN};`,
+    li_ol:              `font-size:15px;line-height:1.27;font-family:${BODY_FONT};list-style-position:outside;list-style-type:decimal;color:${GREEN};`,
+    li_p:               `font-family:inherit;vertical-align:baseline;margin:0 0 6px 0;color:${GREEN};letter-spacing:0.1em;`,
+    todo_item:          `display:flex;align-items:center;column-gap:8px;color:${GREEN};font-family:${BODY_FONT};font-size:15px;line-height:1.27;letter-spacing:0.1em;margin:4px 0;`,
     img_wrapper:        `margin:15px 0;text-align:center;`,
     img:                `max-width:100%;height:auto;border-radius:8px;display:inline-block;`,
-    img_caption:        `font-size:12px;color:${GRAY};margin-top:6px;text-align:center;`,
+    img_caption:        `font-size:12px;color:${GRAY};margin-top:6px;text-align:center;letter-spacing:0.1em;line-height:1.27;`,
     video_wrapper:      `margin:1em 0;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
     video_label:        `color:rgba(255,255,255,.45);font-size:14px;`,
-    toggle_summary:     `font-size:15px;font-weight:bold;color:#000000;margin:12px 0 5px;padding-left:15px;border-left:3px solid ${GREEN};font-family:${BODY_FONT};`,
-    toggle_content:     `padding-left:15px;border-left:2px solid rgba(50,120,71,.20);margin-left:4px;`,
+    toggle_summary:     `font-size:15px;font-weight:bold;color:#000000;margin:12px 0 6px;font-family:${BODY_FONT};letter-spacing:0.1em;`,
+    toggle_content:     `padding-left:14px;border-left:2px solid ${GREEN};margin-left:2px;`,
+    toggle_text:        `text-align:left;line-height:1.27;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
     table_wrapper:      `overflow-x:auto;margin:1em 0;`,
     table:              `border-collapse:collapse;width:100%;font-size:15px;line-height:1.6;font-family:${BODY_FONT};`,
     th:                 `background:rgba(50,120,71,.08);padding:7px 13px;border:1px solid rgba(50,120,71,.25);font-weight:bold;text-align:left;color:${GREEN};`,
     td:                 `padding:7px 13px;border:1px solid rgba(50,120,71,.20);color:#000000;`,
     td_even:            `padding:7px 13px;border:1px solid rgba(50,120,71,.20);color:#000000;background:rgba(50,120,71,.03);`,
     embed_wrapper:      `margin:1em 0;border:1px solid rgba(50,120,71,.25);border-radius:8px;padding:11px 15px;`,
-    embed_label:        `font-size:12px;color:${GRAY};margin-bottom:4px;`,
-    embed_link:         `font-size:13px;text-decoration:none;color:${GREEN};word-break:break-all;`,
+    embed_label:        `font-size:14px;font-weight:600;color:${GREEN};margin-bottom:4px;letter-spacing:0.1em;`,
+    embed_link:         `font-size:13px;text-decoration:none;color:${GREEN};word-break:break-all;letter-spacing:0.1em;`,
     footnotes_wrapper:  `margin-top:30px;padding-top:15px;border-top:1px solid rgba(50,120,71,.25);`,
-    footnotes_title:    `font-size:12px;font-weight:bold;color:${GRAY};margin-bottom:.6em;text-transform:uppercase;letter-spacing:1px;`,
-    footnote_item:      `font-size:11px;color:#555555;line-height:1.7;margin:.3em 0;word-break:break-all;`,
+    footnotes_title:    `font-size:11px;font-weight:400;color:${GRAY};margin-bottom:.6em;letter-spacing:0.1em;line-height:1.94;`,
+    footnote_item:      `font-size:11px;color:${GREEN};line-height:1.94;margin:.3em 0;letter-spacing:0.1em;word-break:break-all;`,
     footnote_num:       `color:${GREEN};font-weight:bold;margin-right:4px;`,
     todo_check:         `word-break:break-all;font-weight:600;color:${GREEN};`,
     callout_default_icon: '',
@@ -123,53 +145,144 @@
                     .replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // 渲染单个标题为 <img>（PNG, retina）
+  function _twoDigit(n) { return String(n == null ? 1 : n).padStart(2, '0'); }
+
+  // 画多行标题文字（大丰收）。align: 'left' 从 xLeft 起；'center' 以 W 居中
+  function _drawTitle(c, lines, font, color, fontSize, lineHeight, yTop, align, W, xLeft) {
+    c.font = font; c.fillStyle = color; c.textBaseline = 'top';
+    lines.forEach((ln, i) => {
+      const y = yTop + i * lineHeight + (lineHeight - fontSize) / 2;
+      if (align === 'center') { c.textAlign = 'center'; c.fillText(ln, W / 2, y); }
+      else { c.textAlign = 'left'; c.fillText(ln, xLeft || 0, y); }
+    });
+  }
+
+  // 按级别构成布局。用 mctx 测量，返回 { height, draw(c) }。draw 在 canvas 重置后执行，自行设置字体。
+  function _composeHeading(mctx, spec, text, W, fontFamily, seq) {
+    const titleFont = `${spec.fontSize}px ${fontFamily}`;
+    const lh = spec.lineHeight, fs = spec.fontSize, color = spec.color, align = spec.align;
+    const padTop = Math.round(fs * 0.12);
+
+    if (spec.deco === 'part') {
+      const wm = 'PART ' + _twoDigit(seq);
+      const wmFont = `600 ${spec.wmSize}px ${LATIN_FONT}`;
+      const titleTop = Math.round(spec.wmSize * 0.5);          // 标题压在水印下半部
+      mctx.font = titleFont;
+      const lines = wrapHeadingLines(text, W, (s) => mctx.measureText(s).width);
+      const titleBottom = titleTop + lines.length * lh;
+      const ruleY = titleBottom + 12;
+      const height = ruleY + spec.ruleWeight + 8;
+      return { height, draw(c) {
+        c.font = wmFont; c.fillStyle = WATERMARK; c.textBaseline = 'top'; c.textAlign = 'left';
+        c.fillText(wm, 0, 0);
+        _drawTitle(c, lines, titleFont, color, fs, lh, titleTop, 'left', W, 0);
+        c.fillStyle = color; c.fillRect(0, ruleY, W, spec.ruleWeight);
+      } };
+    }
+
+    if (spec.deco === 'num') {
+      const numStr = _twoDigit(seq);
+      const numFont = `600 ${spec.numSize}px ${LATIN_FONT}`;
+      mctx.font = numFont;
+      const numW = Math.ceil(mctx.measureText(numStr).width);
+      const ruleX = numW + 14, ruleY = Math.round(spec.numSize * 0.5);
+      const titleTop = spec.numSize + 12;
+      mctx.font = titleFont;
+      const lines = wrapHeadingLines(text, W, (s) => mctx.measureText(s).width);
+      const height = titleTop + lines.length * lh + Math.round(fs * 0.2);
+      return { height, draw(c) {
+        c.font = numFont; c.fillStyle = color; c.textBaseline = 'top'; c.textAlign = 'left';
+        c.fillText(numStr, 0, 0);
+        c.fillRect(ruleX, ruleY, Math.max(0, W - ruleX), spec.ruleWeight);
+        _drawTitle(c, lines, titleFont, color, fs, lh, titleTop, 'left', W, 0);
+      } };
+    }
+
+    if (spec.deco === 'star') {
+      const starFont = `600 ${spec.starSize}px ${LATIN_FONT}`;
+      mctx.font = starFont;
+      const starW = Math.ceil(mctx.measureText('*').width);
+      const titleX = starW + 12;
+      mctx.font = titleFont;
+      const lines = wrapHeadingLines(text, W - titleX, (s) => mctx.measureText(s).width);
+      const height = padTop + lines.length * lh + Math.round(fs * 0.2);
+      return { height, draw(c) {
+        // 星号顶端与标题首行对齐
+        c.font = starFont; c.fillStyle = color; c.textBaseline = 'top'; c.textAlign = 'left';
+        c.fillText('*', 0, padTop - Math.round(spec.starSize * 0.06));
+        _drawTitle(c, lines, titleFont, color, fs, lh, padTop, 'left', W, titleX);
+      } };
+    }
+
+    // deco === 'none'（H1 / H5 / H6）
+    mctx.font = titleFont;
+    const lines = wrapHeadingLines(text, W, (s) => mctx.measureText(s).width);
+    const height = padTop + lines.length * lh + Math.round(fs * 0.2);
+    return { height, draw(c) {
+      _drawTitle(c, lines, titleFont, color, fs, lh, padTop, align, W, 0);
+    } };
+  }
+
+  // 渲染单个标题为 <img>（PNG, retina），整块构成（标题 + 装饰）画进一张图
   function renderHeadingImage(text, level, opts) {
     opts = opts || {};
     const spec = HEADING_SPECS[level] || HEADING_SPECS[3];
     const scale = opts.scale ?? RENDER_SCALE;
-    const contentWidth = opts.contentWidth ?? CONTENT_WIDTH;
+    const W = opts.contentWidth ?? CONTENT_WIDTH;
+    const fontFamily = opts.fontFamily ?? HEADING_FONT;
+    const factory = opts.canvasFactory ?? _defaultCanvasFactory;
+    const seq = opts.seq ?? 1;
+
+    const canvas = factory();
+    const mctx = canvas.getContext('2d');
+
+    // 注意：所有测量必须在给 canvas.width 赋值之前完成——赋值会重置上下文状态
+    const layout = _composeHeading(mctx, spec, text, W, fontFamily, seq);
+
+    canvas.width = Math.max(1, Math.round(W * scale));
+    canvas.height = Math.max(1, Math.round(layout.height * scale));
+
+    const c = canvas.getContext('2d');
+    if (typeof c.scale === 'function') c.scale(scale, scale);
+    layout.draw(c);
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:${spec.marginTop}px 0 ${spec.marginBottom}px`;
+    return `<img src="${dataUrl}" style="${style};" alt="${escapeAttr(text)}" />`;
+  }
+
+  // 渲染一段大丰收文字为 <img>（无装饰，可指定字号/颜色/对齐），用于「引言」等标签
+  function renderTextImage(text, opts) {
+    opts = opts || {};
+    const size = opts.size ?? 22;
+    const color = opts.color ?? GREEN;
+    const align = opts.align ?? 'left';
+    const lineHeight = opts.lineHeight ?? Math.round(size * 1.35);
+    const scale = opts.scale ?? RENDER_SCALE;
+    const W = opts.contentWidth ?? CONTENT_WIDTH;
     const fontFamily = opts.fontFamily ?? HEADING_FONT;
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
 
     const canvas = factory();
-    const ctx = canvas.getContext('2d');
-    const fontStr = `${spec.fontSize}px ${fontFamily}`;
-    ctx.font = fontStr;
+    const mctx = canvas.getContext('2d');
+    const font = `${size}px ${fontFamily}`;
+    mctx.font = font;
+    const lines = wrapHeadingLines(text, W, (s) => mctx.measureText(s).width);
+    let tw = 0;
+    for (const ln of lines) tw = Math.max(tw, mctx.measureText(ln).width);
+    const boxW = opts.width ?? Math.min(Math.ceil(tw) + 2, W);
+    const padTop = Math.round(size * 0.12);
+    const h = padTop + lines.length * lineHeight + Math.round(size * 0.2);
 
-    const lines = wrapHeadingLines(text, contentWidth, (s) => ctx.measureText(s).width);
-
-    // 注意：量行宽必须在给 canvas.width 赋值之前完成——赋值会重置上下文状态（含 font）
-    let logicalW = 0;
-    for (const ln of lines) logicalW = Math.max(logicalW, ctx.measureText(ln).width);
-    logicalW = Math.min(Math.ceil(logicalW) + 2, contentWidth);
-    const logicalH = lines.length * spec.lineHeight;
-
-    // 空标题：lines 为 [] → logicalW/H 为 0 → 渲染 1px 占位、<img> 宽 0，预览中不可见（预期行为）
-    canvas.width = Math.max(1, Math.round(logicalW * scale));
-    canvas.height = Math.max(1, Math.round(logicalH * scale));
-
+    canvas.width = Math.max(1, Math.round(boxW * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
     const c = canvas.getContext('2d');
     if (typeof c.scale === 'function') c.scale(scale, scale);
-    c.font = fontStr;
-    c.fillStyle = spec.color;
-    c.textBaseline = 'top';
-    c.textAlign = 'left';
-    lines.forEach((ln, i) => {
-      const y = i * spec.lineHeight + (spec.lineHeight - spec.fontSize) / 2;
-      c.fillText(ln, 0, y);
-    });
+    _drawTitle(c, lines, font, color, size, lineHeight, padTop, align, boxW, 0);
 
-    const dataUrl = canvas.toDataURL('image/png');
-    const style = [
-      'display:block',
-      `width:${logicalW}px`,
-      'max-width:100%',
-      'height:auto',
-      `margin:${spec.marginTop}px 0 ${spec.marginBottom}px`,
-    ].join(';');
-    return `<img src="${dataUrl}" style="${style};" alt="${escapeAttr(text)}" />`;
+    const style = `display:inline-block;width:${boxW}px;max-width:100%;height:auto;vertical-align:middle;`;
+    return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
   }
 
-  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, renderHeadingImage };
+  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, LATIN_FONT, renderHeadingImage, renderTextImage };
 });

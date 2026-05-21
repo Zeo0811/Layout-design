@@ -17,7 +17,7 @@ test('其他类型不影响 h2 计数', () => {
   assert.strictEqual(c.next('h2'), 2);
 });
 
-test('标题序号递增、首个quote走引言、第二个quote走引号、待办用勾图', () => {
+test('标题序号递增、quote 走引号样式、待办用勾图', () => {
   global.window = {
     GreenStyle: {
       renderHeadingImage: (t, lv, o) => `<img data-h="${lv}" data-seq="${(o && o.seq) || ''}">`,
@@ -39,8 +39,7 @@ test('标题序号递增、首个quote走引言、第二个quote走引号、待�
   assert.match(out, /data-h="2"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="2"/);
-  assert.match(out, /data:introhead/);       // 首个 quote → 引言块（头部整图）
-  assert.match(out, /data:q/);               // 第二个 quote → 引号小图 + CSS 文字
+  assert.match(out, /data:q/);               // 所有 quote → 引号小图 + CSS 文字
   assert.match(out, /data:c/);               // 待办勾选
   delete global.window;
 });

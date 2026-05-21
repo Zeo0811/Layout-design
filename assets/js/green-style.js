@@ -295,10 +295,10 @@
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
     const fontFamily = opts.bodyFont ?? "'HarmonyOS Sans SC','PingFang SC',-apple-system,sans-serif";
     const fontSize = opts.fontSize ?? 15;
-    const lineHeight = opts.lineHeight ?? 24;
+    const lineHeight = opts.lineHeight ?? 17;   // Figma 60/55≈1.09 → 紧凑
     const baseLS = fontSize * 0.17;          // 引用字距 0.17em
-    const indent = opts.indent ?? 48;        // 正文相对左缘缩进
-    const markW = opts.markW ?? 34;
+    const indent = opts.indent ?? 42;        // 正文相对左缘缩进（Figma 155 设计px ÷3.67）
+    const markW = opts.markW ?? 27;          // 引号 98 设计px ÷3.67
     const markH = markW * 80 / 98;
     const color = GREEN;
     const textW = W - indent;
@@ -310,7 +310,7 @@
     if ('letterSpacing' in mctx) mctx.letterSpacing = baseLS + 'px';
     const lines = wrapHeadingLines(text, textW, (s) => mctx.measureText(s).width);
 
-    const textTop = 10;
+    const textTop = 6;   // 首行与引号大致并齐（引号略高）
     const height = Math.ceil(Math.max(markH + 4, textTop + lines.length * lineHeight) + 6);
     canvas.width = Math.max(1, Math.round(W * scale));
     canvas.height = Math.max(1, Math.round(height * scale));
@@ -342,5 +342,69 @@
     return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
   }
 
-  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, LATIN_FONT, renderHeadingImage, renderTextImage, renderQuoteImage };
+  // 引言箭头矢量真路径（Figma node 23:277/278，viewBox 139×133）
+  const ARROW_PATH_1 = 'M131.25 125L131.25 132.5L138.75 132.5L138.75 125L131.25 125ZM131.25 0L123.75 0L123.75 125L131.25 125L138.75 125L138.75 0L131.25 0ZM131.25 125L131.25 117.5L0 117.5L0 125L0 132.5L131.25 132.5L131.25 125Z';
+  const ARROW_PATH_2 = 'M0 0L-5.23871 5.36711L113.511 121.276L118.75 115.909L123.989 110.542L5.23871 -5.36711L0 0Z';
+
+  // 整块渲染「引言」为 PNG（箭头矢量 + 大丰收「引言」灰标 + 绿色正文逐行两端对齐），保证微信与 Figma 一致
+  function renderIntroImage(text, opts) {
+    opts = opts || {};
+    const scale = opts.scale ?? RENDER_SCALE;
+    const W = opts.contentWidth ?? CONTENT_WIDTH;
+    const factory = opts.canvasFactory ?? _defaultCanvasFactory;
+    const bodyFont = opts.bodyFont ?? "'HarmonyOS Sans SC','PingFang SC',-apple-system,sans-serif";
+    const fontSize = opts.fontSize ?? 15;
+    const lineHeight = opts.lineHeight ?? 19;   // Figma 70/55≈1.27
+    const baseLS = fontSize * 0.1;
+    const arrowW = 36, arrowH = arrowW * 133 / 139;   // Figma 131 设计px ÷3.67
+    const labelSize = 33;                              // Figma 120 设计px ÷3.67
+
+    const canvas = factory();
+    const mctx = canvas.getContext('2d');
+    const bodyStr = `${fontSize}px ${bodyFont}`;
+    mctx.font = bodyStr;
+    if ('letterSpacing' in mctx) mctx.letterSpacing = baseLS + 'px';
+    const lines = wrapHeadingLines(text, W, (s) => mctx.measureText(s).width);
+
+    const headH = Math.max(arrowH, labelSize) + 4;
+    const bodyTop = headH + 14;
+    const height = Math.ceil(bodyTop + lines.length * lineHeight + 6);
+    canvas.width = Math.max(1, Math.round(W * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+
+    const c = canvas.getContext('2d');
+    if (typeof c.scale === 'function') c.scale(scale, scale);
+    // 箭头（左上，绿色）
+    if (typeof Path2D !== 'undefined') {
+      c.save(); c.scale(arrowW / 139, arrowW / 139); c.fillStyle = GREEN;
+      c.fill(new Path2D(ARROW_PATH_1));
+      c.save(); c.translate(12, 9); c.fill(new Path2D(ARROW_PATH_2)); c.restore();
+      c.restore();
+    }
+    // 大丰收「引言」灰标（右上，底对齐箭头）
+    c.font = `${labelSize}px ${HEADING_FONT}`; c.fillStyle = '#808080';
+    c.textBaseline = 'alphabetic'; c.textAlign = 'right';
+    if ('letterSpacing' in c) c.letterSpacing = '0px';
+    c.fillText('引言', W, Math.max(arrowH, labelSize));
+    // 正文（绿色，逐行两端对齐）
+    c.fillStyle = GREEN; c.textBaseline = 'top'; c.textAlign = 'left'; c.font = bodyStr;
+    lines.forEach((ln, i) => {
+      let ls = baseLS;
+      if ('letterSpacing' in c) c.letterSpacing = ls + 'px';
+      c.font = bodyStr;
+      const w = c.measureText(ln).width;
+      const isLast = i === lines.length - 1;
+      if (!isLast && ln.length > 1 && 'letterSpacing' in c) {
+        const extra = (W - w) / (ln.length - 1);
+        if (extra > 0 && extra < fontSize) { ls = baseLS + extra; c.letterSpacing = ls + 'px'; }
+      }
+      c.fillText(ln, 0, bodyTop + i * lineHeight);
+    });
+    if ('letterSpacing' in c) c.letterSpacing = '0px';
+
+    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:22px 0;`;
+    return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
+  }
+
+  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, LATIN_FONT, renderHeadingImage, renderTextImage, renderQuoteImage, renderIntroImage };
 });

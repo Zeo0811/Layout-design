@@ -15,8 +15,9 @@
     return `<img src="${dataUrl}" style="${style}" alt="${alt || ''}" />`;
   }
 
-  // 引言块（首个 quote 用）：箭头左 + 大丰收「引言」标右 + 绿色正文。微信安全 table 布局
+  // 引言块（首个 quote 用）：优先整块转图（保证微信一致）；否则退化为 table 布局
   function _intro(content, G, D, SS, P) {
+    if (G && typeof G.renderIntroImage === 'function') return G.renderIntroImage(content || '');
     const label = (G && typeof G.renderTextImage === 'function')
       ? G.renderTextImage('引言', { size: 33, color: '#808080' })
       : '<span style="font-size:24px;color:#808080;font-weight:bold;">引言</span>';

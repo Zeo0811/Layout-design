@@ -68,3 +68,48 @@ test('GREEN_TOKENS 为图片标题模式且关键键存在', () => {
   assert.match(GREEN_TOKENS.strong, /#327847/);
   assert.match(GREEN_TOKENS.li_ul, /#327847/);
 });
+
+const { renderHeadingImage } = require('../assets/js/green-style.js');
+
+function makeFakeCanvas() {
+  const calls = { fillText: [], font: [], fillStyle: [] };
+  const ctx = {
+    set font(v) { calls.font.push(v); }, get font() { return ''; },
+    set fillStyle(v) { calls.fillStyle.push(v); },
+    set textBaseline(v) {}, set textAlign(v) {},
+    measureText(s) { return { width: s.length * 10 }; },
+    fillText(s, x, y) { calls.fillText.push([s, x, y]); },
+  };
+  const canvas = {
+    width: 0, height: 0,
+    getContext() { return ctx; },
+    toDataURL() { return 'data:image/png;base64,FAKE'; },
+  };
+  return { canvas, calls };
+}
+
+test('renderHeadingImage 返回带假 dataURL 的 img', () => {
+  const fake = makeFakeCanvas();
+  const html = renderHeadingImage('一级标题', 1, { canvasFactory: () => fake.canvas });
+  assert.match(html, /^<img\b/);
+  assert.match(html, /data:image\/png;base64,FAKE/);
+  assert.match(html, /max-width:100%/);
+});
+
+test('单行标题只画一行', () => {
+  const fake = makeFakeCanvas();
+  renderHeadingImage('短标题', 2, { canvasFactory: () => fake.canvas, contentWidth: 1000 });
+  assert.strictEqual(fake.calls.fillText.length, 1);
+});
+
+test('超宽标题按内容宽换行多次绘制', () => {
+  const fake = makeFakeCanvas();
+  renderHeadingImage('一二三四五六七八九十', 1, { canvasFactory: () => fake.canvas, contentWidth: 50 });
+  assert.ok(fake.calls.fillText.length >= 2);
+});
+
+test('非法级别回退到 level 3 且不抛错', () => {
+  const fake = makeFakeCanvas();
+  const html = renderHeadingImage('x', 99, { canvasFactory: () => fake.canvas });
+  assert.match(html, /^<img\b/);
+});

@@ -112,5 +112,65 @@
     code_dot3:            '#64c856',
   };
 
-  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT };
+  function _defaultCanvasFactory() {
+    if (typeof document !== 'undefined' && document.createElement)
+      return document.createElement('canvas');
+    throw new Error('no canvas available');
+  }
+
+  function escapeAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 渲染单个标题为 <img>（PNG, retina）
+  function renderHeadingImage(text, level, opts) {
+    opts = opts || {};
+    const spec = HEADING_SPECS[level] || HEADING_SPECS[3];
+    const scale = opts.scale || RENDER_SCALE;
+    const contentWidth = opts.contentWidth || CONTENT_WIDTH;
+    const fontFamily = opts.fontFamily || HEADING_FONT;
+    const factory = opts.canvasFactory || _defaultCanvasFactory;
+
+    const canvas = factory();
+    const ctx = canvas.getContext('2d');
+    const fontStr = `${spec.fontSize}px ${fontFamily}`;
+    ctx.font = fontStr;
+
+    const lines = wrapHeadingLines(text, contentWidth, (s) => {
+      ctx.font = fontStr;
+      return ctx.measureText(s).width;
+    });
+
+    let logicalW = 0;
+    for (const ln of lines) logicalW = Math.max(logicalW, ctx.measureText(ln).width);
+    logicalW = Math.min(Math.ceil(logicalW) + 2, contentWidth);
+    const logicalH = lines.length * spec.lineHeight;
+
+    canvas.width = Math.max(1, Math.round(logicalW * scale));
+    canvas.height = Math.max(1, Math.round(logicalH * scale));
+
+    const c = canvas.getContext('2d');
+    if (typeof c.scale === 'function') c.scale(scale, scale);
+    c.font = fontStr;
+    c.fillStyle = spec.color;
+    c.textBaseline = 'top';
+    c.textAlign = 'left';
+    lines.forEach((ln, i) => {
+      const y = i * spec.lineHeight + (spec.lineHeight - spec.fontSize) / 2;
+      c.fillText(ln, 0, y);
+    });
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const style = [
+      'display:block',
+      `width:${logicalW}px`,
+      'max-width:100%',
+      'height:auto',
+      `margin:${spec.marginTop}px 0 ${spec.marginBottom}px`,
+    ].join(';');
+    return `<img src="${dataUrl}" style="${style};" alt="${escapeAttr(text)}" />`;
+  }
+
+  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, renderHeadingImage };
 });

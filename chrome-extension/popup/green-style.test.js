@@ -17,24 +17,30 @@ test('其他类型不影响 h2 计数', () => {
   assert.strictEqual(c.next('h2'), 2);
 });
 
-test('renderGreenArticle 标题走 GreenStyle、序号递增、引号用装饰图', () => {
+test('标题序号递增、首个quote走引言、第二个quote走引号、待办用勾图', () => {
   global.window = {
-    GreenStyle: { renderHeadingImage: (t, lv, o) => `<img data-h="${lv}" data-seq="${(o && o.seq) || ''}">` },
-    GREEN_DECOR: { quote: 'data:q', divider: 'data:d', todo_empty: 'data:e', todo_checked: 'data:c' },
-    S: { wrapper: '', p: '', blockquote_text: '', todo_item: '' },
+    GreenStyle: {
+      renderHeadingImage: (t, lv, o) => `<img data-h="${lv}" data-seq="${(o && o.seq) || ''}">`,
+      renderTextImage: (t) => `<img data-label="${t}">`,
+    },
+    GREEN_DECOR: { quote: 'data:q', divider: 'data:d', todo_empty: 'data:e', todo_checked: 'data:c', arrow: 'data:arrow' },
+    S: { wrapper: '', p: '', blockquote_text: '', todo_item: '', intro_text: '' },
     pi: (x) => x || '', escHtml: (x) => x || '', escAttr: (x) => x || '',
   };
   delete require.cache[require.resolve('./formatter-green.js')];
   const { renderGreenArticle } = require('./formatter-green.js');
   const out = renderGreenArticle({ blocks: [
     { type: 'h2', content: '标题A' }, { type: 'h3', content: '子1' }, { type: 'h3', content: '子2' },
-    { type: 'quote', content: '引用' }, { type: 'todo', checked: true, content: '做完了' },
+    { type: 'quote', content: '第一引用' }, { type: 'quote', content: '第二引用' },
+    { type: 'todo', checked: true, content: '做完了' },
   ], links: [] });
   assert.match(out, /data-h="2"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="2"/);
-  assert.match(out, /data:q/);
-  assert.match(out, /data:c/);
+  assert.match(out, /data-label="引言"/);   // 首个 quote → 引言块
+  assert.match(out, /data:arrow/);           // 引言箭头
+  assert.match(out, /data:q/);               // 第二个 quote → 引号图
+  assert.match(out, /data:c/);               // 待办勾选
   delete global.window;
 });
 

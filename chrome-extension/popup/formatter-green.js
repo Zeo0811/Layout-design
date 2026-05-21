@@ -15,6 +15,23 @@
     return `<img src="${dataUrl}" style="${style}" alt="${alt || ''}" />`;
   }
 
+  // 引言块（首个 quote 用）：箭头左 + 大丰收「引言」标右 + 绿色正文。微信安全 table 布局
+  function _intro(content, G, D, SS, P) {
+    const label = (G && typeof G.renderTextImage === 'function')
+      ? G.renderTextImage('引言', { size: 33, color: '#808080' })
+      : '<span style="font-size:24px;color:#808080;font-weight:bold;">引言</span>';
+    const arrow = D && D.arrow
+      ? `<img src="${D.arrow}" style="width:38px;height:auto;display:block;" alt="" />`
+      : '';
+    return `<section style="margin:22px 0;">`
+      + `<table style="width:100%;border-collapse:collapse;border:none;"><tbody><tr>`
+      + `<td style="vertical-align:bottom;padding:0;border:none;">${arrow}</td>`
+      + `<td style="vertical-align:bottom;text-align:right;padding:0;border:none;">${label}</td>`
+      + `</tr></tbody></table>`
+      + `<p style="${SS.intro_text || SS.p || ''};margin-top:12px;">${P(content)}</p>`
+      + `</section>`;
+  }
+
   function _heading(G, content, level, seq, SS, EH) {
     const text = content || '';
     if (G && typeof G.renderHeadingImage === 'function') {
@@ -49,13 +66,16 @@
         return `<p style="${SS.p}">${P(block.content)}</p>`;
       }
 
-      case 'quote':
+      case 'quote': {
+        // 文章首个 quote → 引言块（箭头 + 大丰收「引言」标 + 绿字）；其余 → 普通引号样式
+        if (seq.next('quote') === 1) return _intro(block.content, G, D, SS, P);
         // 微信安全：用 table 实现「引号在左、正文向右缩进且有间距」（避开被微信剥离的 position:absolute）
         return `<section style="margin:22px 0;"><table style="border-collapse:collapse;width:100%;border:none;table-layout:fixed;"><tbody><tr>`
           + `<td style="width:48px;vertical-align:top;padding:0;border:none;">`
           + _img(D.quote, 'width:30px;height:auto;display:block;', '引用') + `</td>`
           + `<td style="vertical-align:top;padding:6px 0 0 0;border:none;"><p style="${SS.blockquote_text}">${P(block.content)}</p></td>`
           + `</tr></tbody></table></section>`;
+      }
 
       case 'callout':
         return `<section style="${SS.callout_wrapper}">${P(block.content)}</section>`;

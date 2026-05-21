@@ -15,20 +15,13 @@
     return `<img src="${dataUrl}" style="${style}" alt="${alt || ''}" />`;
   }
 
-  // 引言块（首个 quote 用）：装饰（箭头/「引言」标）用小图，正文用 CSS（字号=正文、可选中）
+  // 引言块（首个 quote 用）：头部（↘箭头 + 大丰收「引言」）用整张导出图（全宽横幅），正文 CSS 严格按 API
   function _intro(content, G, D, SS, P) {
-    const label = (G && typeof G.renderTextImage === 'function')
-      ? G.renderTextImage('引言', { size: 33, color: '#808080' })
-      : '<span style="font-size:24px;color:#808080;font-weight:bold;">引言</span>';
-    const arrow = D && D.arrow
-      ? `<img src="${D.arrow}" style="width:38px;height:auto;display:block;" alt="" />`
+    const head = D && D.intro_head
+      ? `<img src="${D.intro_head}" style="width:100%;height:auto;display:block;margin-bottom:12px;" alt="引言" />`
       : '';
-    return `<section style="margin:22px 0;">`
-      + `<table style="width:100%;border-collapse:collapse;border:none;"><tbody><tr>`
-      + `<td style="vertical-align:bottom;padding:0;border:none;">${arrow}</td>`
-      + `<td style="vertical-align:bottom;text-align:right;padding:0;border:none;">${label}</td>`
-      + `</tr></tbody></table>`
-      + `<p style="${SS.intro_text || SS.p || ''};margin-top:12px;">${P(content)}</p>`
+    return `<section style="margin:22px 0;">${head}`
+      + `<p style="${SS.intro_text || SS.p || ''};">${P(content)}</p>`
       + `</section>`;
   }
 

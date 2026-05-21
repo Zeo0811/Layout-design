@@ -86,7 +86,7 @@
         ]);
         await document.fonts.ready;
       }
-      const names = ['quote', 'divider', 'todo_empty', 'todo_checked', 'arrow'];
+      const names = ['quote', 'divider', 'todo_empty', 'todo_checked', 'arrow', 'intro_head'];
       await Promise.all(names.map(async (n) => {
         const res = await fetch(chrome.runtime.getURL(`assets/img/${n}.png`));
         const blob = await res.blob();

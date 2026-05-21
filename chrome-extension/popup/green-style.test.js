@@ -25,7 +25,7 @@ test('标题序号递增、首个quote走引言、第二个quote走引号、待�
       renderQuoteImage: (t) => `<img data-quote-img="${t}">`,
       renderIntroImage: (t) => `<img data-intro="${t}">`,
     },
-    GREEN_DECOR: { quote: 'data:q', divider: 'data:d', todo_empty: 'data:e', todo_checked: 'data:c', arrow: 'data:arrow' },
+    GREEN_DECOR: { quote: 'data:q', divider: 'data:d', todo_empty: 'data:e', todo_checked: 'data:c', arrow: 'data:arrow', intro_head: 'data:introhead' },
     S: { wrapper: '', p: '', blockquote_text: '', todo_item: '', intro_text: '' },
     pi: (x) => x || '', escHtml: (x) => x || '', escAttr: (x) => x || '',
   };
@@ -39,8 +39,7 @@ test('标题序号递增、首个quote走引言、第二个quote走引号、待�
   assert.match(out, /data-h="2"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="2"/);
-  assert.match(out, /data-label="引言"/);   // 首个 quote → 引言块（大丰收标）
-  assert.match(out, /data:arrow/);           // 引言箭头小图
+  assert.match(out, /data:introhead/);       // 首个 quote → 引言块（头部整图）
   assert.match(out, /data:q/);               // 第二个 quote → 引号小图 + CSS 文字
   assert.match(out, /data:c/);               // 待办勾选
   delete global.window;

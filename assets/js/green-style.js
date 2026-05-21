@@ -127,26 +127,25 @@
   function renderHeadingImage(text, level, opts) {
     opts = opts || {};
     const spec = HEADING_SPECS[level] || HEADING_SPECS[3];
-    const scale = opts.scale || RENDER_SCALE;
-    const contentWidth = opts.contentWidth || CONTENT_WIDTH;
-    const fontFamily = opts.fontFamily || HEADING_FONT;
-    const factory = opts.canvasFactory || _defaultCanvasFactory;
+    const scale = opts.scale ?? RENDER_SCALE;
+    const contentWidth = opts.contentWidth ?? CONTENT_WIDTH;
+    const fontFamily = opts.fontFamily ?? HEADING_FONT;
+    const factory = opts.canvasFactory ?? _defaultCanvasFactory;
 
     const canvas = factory();
     const ctx = canvas.getContext('2d');
     const fontStr = `${spec.fontSize}px ${fontFamily}`;
     ctx.font = fontStr;
 
-    const lines = wrapHeadingLines(text, contentWidth, (s) => {
-      ctx.font = fontStr;
-      return ctx.measureText(s).width;
-    });
+    const lines = wrapHeadingLines(text, contentWidth, (s) => ctx.measureText(s).width);
 
+    // 注意：量行宽必须在给 canvas.width 赋值之前完成——赋值会重置上下文状态（含 font）
     let logicalW = 0;
     for (const ln of lines) logicalW = Math.max(logicalW, ctx.measureText(ln).width);
     logicalW = Math.min(Math.ceil(logicalW) + 2, contentWidth);
     const logicalH = lines.length * spec.lineHeight;
 
+    // 空标题：lines 为 [] → logicalW/H 为 0 → 渲染 1px 占位、<img> 宽 0，预览中不可见（预期行为）
     canvas.width = Math.max(1, Math.round(logicalW * scale));
     canvas.height = Math.max(1, Math.round(logicalH * scale));
 

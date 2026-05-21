@@ -113,3 +113,17 @@ test('非法级别回退到 level 3 且不抛错', () => {
   const html = renderHeadingImage('x', 99, { canvasFactory: () => fake.canvas });
   assert.match(html, /^<img\b/);
 });
+
+test('有 scale 方法时按倍率缩放上下文', () => {
+  const scaleCalls = [];
+  const ctx = {
+    set font(v) {}, get font() { return ''; },
+    set fillStyle(v) {}, set textBaseline(v) {}, set textAlign(v) {},
+    measureText(s) { return { width: s.length * 10 }; },
+    fillText() {},
+    scale(x, y) { scaleCalls.push([x, y]); },
+  };
+  const canvas = { width: 0, height: 0, getContext: () => ctx, toDataURL: () => 'data:image/png;base64,FAKE' };
+  renderHeadingImage('标题', 1, { canvasFactory: () => canvas, scale: 2 });
+  assert.deepStrictEqual(scaleCalls, [[2, 2]]);
+});

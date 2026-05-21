@@ -1504,27 +1504,27 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   // ══════════════════════════════════════════════════════════════════════════
   const BLOCK_DEFS = [
     { id: 'h1', label: 'H1 · 一级标题', keys: ['h1'],
-      render: cs => cs.__headingMode === 'image'
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
         ? window.GreenStyle.renderHeadingImage('这是一级标题 H1', 1)
         : `<section style="${cs.h1}">这是一级标题 H1</section>` },
     { id: 'h2', label: 'H2 · 二级标题', keys: ['h2'],
-      render: cs => cs.__headingMode === 'image'
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
         ? window.GreenStyle.renderHeadingImage('这是二级标题 H2', 2)
         : `<section style="${cs.h2}">这是二级标题 H2</section>` },
     { id: 'h3', label: 'H3 · 三级标题', keys: ['h3'],
-      render: cs => cs.__headingMode === 'image'
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
         ? window.GreenStyle.renderHeadingImage('这是三级标题 H3', 3)
         : `<section style="${cs.h3}">这是三级标题 H3</section>` },
     { id: 'h4', label: 'H4 · 四级标题', keys: ['h4'],
-      render: cs => cs.__headingMode === 'image'
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
         ? window.GreenStyle.renderHeadingImage('这是四级标题 H4', 4)
         : `<section style="${cs.h4}">这是四级标题 H4</section>` },
     { id: 'h5', label: 'H5 · 五级标题', keys: ['h5'],
-      render: cs => cs.__headingMode === 'image'
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
         ? window.GreenStyle.renderHeadingImage('这是五级标题 H5', 5)
         : `<section style="${cs.h5}">这是五级标题 H5</section>` },
     { id: 'h6', label: 'H6 · 六级标题', keys: ['h6'],
-      render: cs => cs.__headingMode === 'image'
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
         ? window.GreenStyle.renderHeadingImage('这是六级标题 H6', 6)
         : `<section style="${cs.h6}">这是六级标题 H6</section>` },
     { id: 'p', label: 'paragraph · 正文段落', keys: ['p'],
@@ -1764,7 +1764,12 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     const sel = document.getElementById('tpl-selector');
     const v = sel.value;
     if (v === 'green') {
-      customS = Object.assign({}, S, window.GreenStyle.GREEN_TOKENS);
+      if (!window.GreenStyle) {
+        console.warn('green-style.js 未加载，回退默认样式');
+        customS = Object.assign({}, S);
+      } else {
+        customS = Object.assign({}, S, window.GreenStyle.GREEN_TOKENS);
+      }
     } else {
       const idx = parseInt(v);
       if (isNaN(idx)||idx<0) {

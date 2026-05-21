@@ -15,6 +15,16 @@
     return `<img src="${dataUrl}" style="${style}" alt="${alt || ''}" />`;
   }
 
+  function _heading(G, content, level, seq, SS, EH) {
+    const text = content || '';
+    if (G && typeof G.renderHeadingImage === 'function') {
+      return G.renderHeadingImage(text, level, seq != null ? { seq } : undefined);
+    }
+    // 兜底：GreenStyle 未加载时退化为绿色文字标题
+    const key = 'h' + level;
+    return `<section style="${(SS && SS[key]) || 'color:#327847;font-weight:bold;'}">${EH(text)}</section>`;
+  }
+
   function renderGreenBlock(block, links, depth, seq) {
     if (!block) return '';
     const W = (typeof window !== 'undefined') ? window : {};
@@ -26,12 +36,12 @@
     const EA = W.escAttr || (typeof escAttr !== 'undefined' ? escAttr : (x) => x || '');
 
     switch (block.type) {
-      case 'h1': return G.renderHeadingImage(block.content || '', 1);
-      case 'h2': return G.renderHeadingImage(block.content || '', 2, { seq: seq.next('h2') });
-      case 'h3': return G.renderHeadingImage(block.content || '', 3, { seq: seq.next('h3') });
-      case 'h4': return G.renderHeadingImage(block.content || '', 4);
-      case 'h5': return G.renderHeadingImage(block.content || '', 5);
-      case 'h6': return G.renderHeadingImage(block.content || '', 6);
+      case 'h1': return _heading(G, block.content, 1, null, SS, EH);
+      case 'h2': return _heading(G, block.content, 2, seq.next('h2'), SS, EH);
+      case 'h3': return _heading(G, block.content, 3, seq.next('h3'), SS, EH);
+      case 'h4': return _heading(G, block.content, 4, null, SS, EH);
+      case 'h5': return _heading(G, block.content, 5, null, SS, EH);
+      case 'h6': return _heading(G, block.content, 6, null, SS, EH);
 
       case 'paragraph': {
         const t = (block.content || '').replace(/​/g, '').trim();
@@ -51,8 +61,8 @@
         return `<section style="margin:18px 0;text-align:center;line-height:0;">`
           + _img(D.divider, 'width:100%;display:block;', '分割线') + `</section>`;
 
-      case 'bulleted_list': return renderGreenList(block.items, false, depth, seq);
-      case 'numbered_list': return renderGreenList(block.items, true, depth, seq);
+      case 'bulleted_list': return renderGreenList(block.items, false, depth, seq, links);
+      case 'numbered_list': return renderGreenList(block.items, true, depth, seq, links);
 
       case 'todo': {
         const box = block.checked ? D.todo_checked : D.todo_empty;
@@ -85,7 +95,7 @@
     }
   }
 
-  function renderGreenList(items, isOrdered, depth, seq) {
+  function renderGreenList(items, isOrdered, depth, seq, links) {
     if (!items || !items.length) return '';
     const W = (typeof window !== 'undefined') ? window : {};
     const P = W.pi || (typeof pi !== 'undefined' ? pi : (x) => x || '');
@@ -93,7 +103,7 @@
     let html = '';
     items.forEach((item, i) => {
       let nested = '';
-      if (item.children && item.children.length) for (const c of item.children) nested += renderGreenBlock(c, [], depth + 1, seq);
+      if (item.children && item.children.length) for (const c of item.children) nested += renderGreenBlock(c, links || [], depth + 1, seq);
       if (isOrdered) {
         const num = String(i + 1).padStart(2, '0');
         html += `<section style="display:flex;align-items:baseline;margin:0 0 28px 0;${indent}">`

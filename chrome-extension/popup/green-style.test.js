@@ -37,3 +37,13 @@ test('renderGreenArticle 标题走 GreenStyle、序号递增、引号用装饰�
   assert.match(out, /data:c/);
   delete global.window;
 });
+
+test('GreenStyle 缺失时标题退化为文字不崩', () => {
+  global.window = { S: { wrapper:'', h2:'C' }, pi:x=>x||'', escHtml:x=>x||'', escAttr:x=>x||'', GREEN_DECOR:{} };
+  delete require.cache[require.resolve('./formatter-green.js')];
+  const { renderGreenArticle } = require('./formatter-green.js');
+  const out = renderGreenArticle({ blocks:[{type:'h2',content:'标题X'}], links:[] });
+  assert.match(out, /标题X/);
+  assert.doesNotMatch(out, /<img/);
+  delete global.window;
+});

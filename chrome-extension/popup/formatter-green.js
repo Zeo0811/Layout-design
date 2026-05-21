@@ -25,6 +25,14 @@
     return `<section style="${(SS && SS[key]) || 'color:#327847;font-weight:bold;'}">${EH(text)}</section>`;
   }
 
+  // 仅表情/符号、无实际文字 → true（Notion 里作者把单个 emoji 设成标题当装饰，不应渲染成标题）
+  function _isSymbolOnly(s) {
+    const t = String(s || '').trim();
+    if (!t) return false;
+    const stripped = t.replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\s]/gu, '');
+    return stripped === '';
+  }
+
   function renderGreenBlock(block, links, depth, seq) {
     if (!block) return '';
     const W = (typeof window !== 'undefined') ? window : {};
@@ -34,6 +42,11 @@
     const P = W.pi || (typeof pi !== 'undefined' ? pi : (x) => x || '');
     const EH = W.escHtml || (typeof escHtml !== 'undefined' ? escHtml : (x) => x || '');
     const EA = W.escAttr || (typeof escAttr !== 'undefined' ? escAttr : (x) => x || '');
+
+    // 标题但内容只是表情/符号 → 居中表情行，不走大丰收标题图
+    if (/^h[1-6]$/.test(block.type) && _isSymbolOnly(block.content)) {
+      return `<p style="text-align:center;margin:14px 0;font-size:26px;line-height:1.4;">${EH(block.content)}</p>`;
+    }
 
     switch (block.type) {
       case 'h1': return _heading(G, block.content, 1, null, SS, EH);

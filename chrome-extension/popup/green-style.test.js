@@ -44,6 +44,20 @@ test('标题序号递增、quote 走引号样式、待办用勾图', () => {
   delete global.window;
 });
 
+test('标题内容仅表情时不渲染成标题图（居中表情行）', () => {
+  global.window = {
+    GreenStyle: { renderHeadingImage: () => '<img data-h>' },
+    GREEN_DECOR: {}, S: { wrapper: '' }, pi: x => x || '', escHtml: x => x || '', escAttr: x => x || '',
+  };
+  delete require.cache[require.resolve('./formatter-green.js')];
+  const { renderGreenArticle } = require('./formatter-green.js');
+  const out = renderGreenArticle({ blocks: [{ type: 'h3', content: '🚥' }], links: [] });
+  assert.doesNotMatch(out, /data-h/);          // 不走标题图
+  assert.match(out, /🚥/);
+  assert.match(out, /text-align:center/);
+  delete global.window;
+});
+
 test('GreenStyle 缺失时标题退化为文字不崩', () => {
   global.window = { S: { wrapper:'', h2:'C' }, pi:x=>x||'', escHtml:x=>x||'', escAttr:x=>x||'', GREEN_DECOR:{} };
   delete require.cache[require.resolve('./formatter-green.js')];

@@ -69,7 +69,7 @@
     h4: `display:block;font-family:${HEADING_FONT};font-size:19px;font-weight:normal;color:${GREEN};text-align:left;margin:22px 0 10px 0;line-height:1.5;`,
     h5: `display:block;font-family:${HEADING_FONT};font-size:16px;font-weight:normal;color:${GREEN};text-align:left;margin:18px 0 8px 0;line-height:1.5;`,
     h6: `display:block;font-family:${HEADING_FONT};font-size:15px;font-weight:normal;color:${GREEN};text-align:left;margin:16px 0 8px 0;line-height:1.5;`,
-    p:                  `text-align:justify;line-height:1.27;font-family:${BODY_FONT};margin:0;padding-bottom:1em;letter-spacing:0.1em;white-space:pre-line;color:#000000;font-size:15px;`,
+    p:                  `text-align:justify;line-height:1.27;font-family:${BODY_FONT};margin:0;padding-bottom:16px;letter-spacing:0.1em;white-space:pre-line;color:#000000;font-size:15px;`,
     strong:             `word-break:break-all;font-weight:600;color:${GREEN};`,
     em:                 `font-style:italic;`,
     code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,

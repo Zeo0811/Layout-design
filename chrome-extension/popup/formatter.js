@@ -90,6 +90,11 @@ const S = {
 
   callout_content: ``,
 
+  // ── 公众号跳转卡片 ─────────────────────────────────────────────────────
+  wechat_card_wrapper: `margin: 20px 0; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; background: #ffffff; font-family: ${FONT};`,
+  wechat_card_label:   `font-size: 12px; color: #888888; margin-bottom: 6px; letter-spacing: 0.5px;`,
+  wechat_card_title:   `font-size: 15px; color: #576b95; line-height: 1.5; font-weight: 500; word-break: break-all; text-decoration: none; display: block;`,
+
   // ── 代码块（commonStyles.pre，tech_black 未覆盖）─────────────────────
   code_wrapper:  `margin: 20px 10px; display: block; width: calc(100% - 20px); box-sizing: border-box; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
   code_lang_bar: `font-size: 11px; color: #999; font-family: ${MONO}; padding-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;`,
@@ -393,7 +398,13 @@ function pi(html) {
     .replace(/<a\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g,
       `<a href="$1" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">$2</a>`)
     .replace(/<sup>\[(\d+)\]<\/sup>/g,
-      `<sup style="font-size:.7em;color:#222222;font-weight:bold;line-height:0;vertical-align:super;">[$1]</sup>`);
+      `<sup style="font-size:.7em;color:#222222;font-weight:bold;line-height:0;vertical-align:super;">[$1]</sup>`)
+    // 微信公众号链接卡片（放在最后，避免内部 <a> 被前面的 <a> 规则二次处理）
+    .replace(/__WX_CARD__([\s\S]+?)__WX_SEP__([\s\S]*?)__WX_END__/g, (_, eUrl, eTitle) => {
+      const url   = decodeURIComponent(eUrl);
+      const title = escHtml(decodeURIComponent(eTitle) || '查看原文');
+      return `<section style="${S.wechat_card_wrapper}"><p style="${S.wechat_card_label}">📄 公众号文章</p><a href="${escAttr(url)}" style="${S.wechat_card_title}">${title}</a></section>`;
+    });
 }
 
 // ── 工具函数 ─────────────────────────────────────────────────────────────

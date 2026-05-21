@@ -22,6 +22,7 @@ test('标题序号递增、首个quote走引言、第二个quote走引号、待�
     GreenStyle: {
       renderHeadingImage: (t, lv, o) => `<img data-h="${lv}" data-seq="${(o && o.seq) || ''}">`,
       renderTextImage: (t) => `<img data-label="${t}">`,
+      renderQuoteImage: (t) => `<img data-quote-img="${t}">`,
     },
     GREEN_DECOR: { quote: 'data:q', divider: 'data:d', todo_empty: 'data:e', todo_checked: 'data:c', arrow: 'data:arrow' },
     S: { wrapper: '', p: '', blockquote_text: '', todo_item: '', intro_text: '' },
@@ -39,7 +40,7 @@ test('标题序号递增、首个quote走引言、第二个quote走引号、待�
   assert.match(out, /data-h="3"[^>]*data-seq="2"/);
   assert.match(out, /data-label="引言"/);   // 首个 quote → 引言块
   assert.match(out, /data:arrow/);           // 引言箭头
-  assert.match(out, /data:q/);               // 第二个 quote → 引号图
+  assert.match(out, /data-quote-img="第二引用"/); // 第二个 quote → 引用整块转图
   assert.match(out, /data:c/);               // 待办勾选
   delete global.window;
 });

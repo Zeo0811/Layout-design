@@ -284,5 +284,63 @@
     return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
   }
 
-  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, LATIN_FONT, renderHeadingImage, renderTextImage };
+  // 引用引号矢量真路径（Figma node 23:185，98×80 填充）
+  const QUOTE_PATH = 'M96.3706 0L96.3706 15.5752C89.8527 17.6991 84.4988 21.4749 80.3088 27.1386C76.1188 32.3304 74.2565 37.9941 74.2565 43.6578C75.4204 42.9498 77.2827 42.7139 80.076 42.7139C84.9644 42.7139 89.1544 44.3658 92.8789 47.9056C96.1378 51.4454 98 55.9292 98 61.3569C98 66.7847 96.1378 71.2684 92.4133 74.8083C88.6889 78.1121 84.0333 80 78.4466 80C71.9287 80 66.8076 77.1681 62.6176 71.9764C58.4276 66.7847 56.5653 59.941 56.5653 51.9174C56.5653 39.174 60.057 28.3186 67.2732 19.115C74.2565 9.6755 84.0333 3.30383 96.3706 0ZM39.8052 0L39.8052 15.5752C33.2874 17.6991 28.1663 21.4749 23.9762 27.1386C19.7862 32.3304 17.6912 37.9941 17.6912 43.6578C18.8551 42.9498 20.7173 42.7139 23.5107 42.7139C28.3991 42.7139 32.5891 44.3658 36.0808 47.9056C39.5725 51.4454 41.4347 55.9292 41.4347 61.3569C41.4347 66.7847 39.5725 71.2684 36.0808 74.8083C32.3563 78.1121 27.4679 80 21.8812 80C15.3634 80 10.2423 77.1681 6.28504 71.9764C2.09501 66.7847 0 59.941 0 51.9174C0 39.174 3.49169 28.3186 10.7078 19.115C17.6912 9.6755 27.4679 3.30383 39.8052 0Z';
+
+  // 整块渲染「引用」为 PNG（引号矢量 + 绿色加粗换行文字 + 逐行两端对齐），保证微信里与 Figma 一致
+  function renderQuoteImage(text, opts) {
+    opts = opts || {};
+    const scale = opts.scale ?? RENDER_SCALE;
+    const W = opts.contentWidth ?? CONTENT_WIDTH;
+    const factory = opts.canvasFactory ?? _defaultCanvasFactory;
+    const fontFamily = opts.bodyFont ?? "'HarmonyOS Sans SC','PingFang SC',-apple-system,sans-serif";
+    const fontSize = opts.fontSize ?? 15;
+    const lineHeight = opts.lineHeight ?? 24;
+    const baseLS = fontSize * 0.17;          // 引用字距 0.17em
+    const indent = opts.indent ?? 48;        // 正文相对左缘缩进
+    const markW = opts.markW ?? 34;
+    const markH = markW * 80 / 98;
+    const color = GREEN;
+    const textW = W - indent;
+
+    const canvas = factory();
+    const mctx = canvas.getContext('2d');
+    const fontStr = `600 ${fontSize}px ${fontFamily}`;
+    mctx.font = fontStr;
+    if ('letterSpacing' in mctx) mctx.letterSpacing = baseLS + 'px';
+    const lines = wrapHeadingLines(text, textW, (s) => mctx.measureText(s).width);
+
+    const textTop = 10;
+    const height = Math.ceil(Math.max(markH + 4, textTop + lines.length * lineHeight) + 6);
+    canvas.width = Math.max(1, Math.round(W * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+
+    const c = canvas.getContext('2d');
+    if (typeof c.scale === 'function') c.scale(scale, scale);
+    // 引号矢量
+    if (typeof Path2D !== 'undefined') {
+      c.save(); c.translate(0, 2); c.scale(markW / 98, markW / 98);
+      c.fillStyle = color; c.fill(new Path2D(QUOTE_PATH)); c.restore();
+    }
+    // 文字（逐行两端对齐：非末行按需加大字距铺满 textW）
+    c.fillStyle = color; c.textBaseline = 'top'; c.textAlign = 'left';
+    lines.forEach((ln, i) => {
+      let ls = baseLS;
+      if ('letterSpacing' in c) c.letterSpacing = ls + 'px';
+      c.font = fontStr;
+      const w = c.measureText(ln).width;
+      const isLast = i === lines.length - 1;
+      if (!isLast && ln.length > 1 && 'letterSpacing' in c) {
+        const extra = (textW - w) / (ln.length - 1);
+        if (extra > 0 && extra < fontSize) { ls = baseLS + extra; c.letterSpacing = ls + 'px'; }
+      }
+      c.fillText(ln, indent, textTop + i * lineHeight);
+    });
+    if ('letterSpacing' in c) c.letterSpacing = '0px';
+
+    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:22px 0;`;
+    return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
+  }
+
+  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, LATIN_FONT, renderHeadingImage, renderTextImage, renderQuoteImage };
 });

@@ -67,9 +67,10 @@
       }
 
       case 'quote': {
-        // 文章首个 quote → 引言块（箭头 + 大丰收「引言」标 + 绿字）；其余 → 普通引号样式
+        // 文章首个 quote → 引言块（箭头 + 大丰收「引言」标 + 绿字）；其余 → 引用整块转图（保证微信一致）
         if (seq.next('quote') === 1) return _intro(block.content, G, D, SS, P);
-        // 微信最稳：引号块在上（左），正文用 padding-left 整体缩进（块级图 + padding 微信都可靠保留）
+        if (G && typeof G.renderQuoteImage === 'function') return G.renderQuoteImage(block.content || '');
+        // 兜底（GreenStyle 未加载）：块级引号图 + padding 缩进
         return `<section style="margin:22px 0;">`
           + _img(D.quote, 'width:32px;height:auto;display:block;margin:0 0 6px 0;', '引用')
           + `<p style="${SS.blockquote_text};padding-left:46px;">${P(block.content)}</p>`

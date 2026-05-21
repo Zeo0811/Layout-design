@@ -157,6 +157,10 @@ function applyS(key, content, defaultTag = 'section') {
 // ── 主入口 ───────────────────────────────────────────────────────────────
 
 function formatToWechat(parsedData) {
+  if (typeof S !== 'undefined' && S.__variant === 'green' &&
+      typeof window !== 'undefined' && window.renderGreenArticle) {
+    return window.renderGreenArticle(parsedData);
+  }
   if (!parsedData || !parsedData.blocks) {
     return '<p style="color:red">解析数据为空，请重试</p>';
   }

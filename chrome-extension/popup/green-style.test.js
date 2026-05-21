@@ -16,3 +16,24 @@ test('其他类型不影响 h2 计数', () => {
   c.next('h2');
   assert.strictEqual(c.next('h2'), 2);
 });
+
+test('renderGreenArticle 标题走 GreenStyle、序号递增、引号用装饰图', () => {
+  global.window = {
+    GreenStyle: { renderHeadingImage: (t, lv, o) => `<img data-h="${lv}" data-seq="${(o && o.seq) || ''}">` },
+    GREEN_DECOR: { quote: 'data:q', divider: 'data:d', todo_empty: 'data:e', todo_checked: 'data:c' },
+    S: { wrapper: '', p: '', blockquote_text: '', todo_item: '' },
+    pi: (x) => x || '', escHtml: (x) => x || '', escAttr: (x) => x || '',
+  };
+  delete require.cache[require.resolve('./formatter-green.js')];
+  const { renderGreenArticle } = require('./formatter-green.js');
+  const out = renderGreenArticle({ blocks: [
+    { type: 'h2', content: '标题A' }, { type: 'h3', content: '子1' }, { type: 'h3', content: '子2' },
+    { type: 'quote', content: '引用' }, { type: 'todo', checked: true, content: '做完了' },
+  ], links: [] });
+  assert.match(out, /data-h="2"[^>]*data-seq="1"/);
+  assert.match(out, /data-h="3"[^>]*data-seq="1"/);
+  assert.match(out, /data-h="3"[^>]*data-seq="2"/);
+  assert.match(out, /data:q/);
+  assert.match(out, /data:c/);
+  delete global.window;
+});

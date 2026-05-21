@@ -13,10 +13,10 @@
       src: url('assets/fonts/可画大丰收SC.ttf') format('truetype');
       font-display: swap;
     }
-    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 300; src: url('assets/fonts/HarmonyOS_Sans_SC_Light.ttf') format('truetype'); }
-    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 400; src: url('assets/fonts/HarmonyOS_Sans_SC_Regular.ttf') format('truetype'); }
-    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 500; src: url('assets/fonts/HarmonyOS_Sans_SC_Medium.ttf') format('truetype'); }
-    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 700; src: url('assets/fonts/HarmonyOS_Sans_SC_Bold.ttf') format('truetype'); }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 300; src: url('assets/fonts/HarmonyOS_Sans_SC_Light.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 400; src: url('assets/fonts/HarmonyOS_Sans_SC_Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 500; src: url('assets/fonts/HarmonyOS_Sans_SC_Medium.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 700; src: url('assets/fonts/HarmonyOS_Sans_SC_Bold.ttf') format('truetype'); font-display: swap; }
     * { box-sizing: border-box; }
     body {
       background: #f0f0f0;
@@ -1714,6 +1714,13 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     renderEditor();
   };
 
+  // 用户模板快照：剔除内置标记（如 __headingMode），只保留纯 CSS token
+  function snapshotStyles() {
+    const copy = Object.assign({}, customS);
+    delete copy.__headingMode;
+    return copy;
+  }
+
   // 新建模板：弹出输入框 → 以当前样式创建
   window.tplNew = function() {
     showDialog({
@@ -1724,7 +1731,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         if (savedTemplates.find(t => t.name === name)) {
           showDialog({ icon: 'ℹ️', title: '提示', msg: `已存在同名模板「${name}」，请换一个名称`, confirmText: '知道了', confirmClass: '', cancelText: null }); return;
         }
-        savedTemplates.push({ name, s: Object.assign({}, customS) });
+        savedTemplates.push({ name, s: snapshotStyles() });
         syncSelector();
         document.getElementById('tpl-selector').value = savedTemplates.length - 1;
         _updateEditState();
@@ -1740,7 +1747,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     const idx  = parseInt(sel.value);
     if (isNaN(idx) || idx < 0 || !savedTemplates[idx]) return;
     try {
-      savedTemplates[idx].s = Object.assign({}, customS);
+      savedTemplates[idx].s = snapshotStyles();
       const saveBtn = document.getElementById('tplSaveBtn');
       const orig = saveBtn.textContent;
       saveBtn.textContent = '✅ 已保存'; saveBtn.disabled = true;

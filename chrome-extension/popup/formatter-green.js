@@ -15,9 +15,8 @@
     return `<img src="${dataUrl}" style="${style}" alt="${alt || ''}" />`;
   }
 
-  // 引言块（首个 quote 用）：优先整块转图（保证微信一致）；否则退化为 table 布局
+  // 引言块（首个 quote 用）：装饰（箭头/「引言」标）用小图，正文用 CSS（字号=正文、可选中）
   function _intro(content, G, D, SS, P) {
-    if (G && typeof G.renderIntroImage === 'function') return G.renderIntroImage(content || '');
     const label = (G && typeof G.renderTextImage === 'function')
       ? G.renderTextImage('引言', { size: 33, color: '#808080' })
       : '<span style="font-size:24px;color:#808080;font-weight:bold;">引言</span>';
@@ -68,10 +67,8 @@
       }
 
       case 'quote': {
-        // 文章首个 quote → 引言块（箭头 + 大丰收「引言」标 + 绿字）；其余 → 引用整块转图（保证微信一致）
+        // 文章首个 quote → 引言块；其余 → 引号小图 + CSS 绿字（字号=正文、可选中）
         if (seq.next('quote') === 1) return _intro(block.content, G, D, SS, P);
-        if (G && typeof G.renderQuoteImage === 'function') return G.renderQuoteImage(block.content || '');
-        // 兜底（GreenStyle 未加载）：块级引号图 + padding 缩进
         return `<section style="margin:22px 0;">`
           + _img(D.quote, 'width:32px;height:auto;display:block;margin:0 0 6px 0;', '引用')
           + `<p style="${SS.blockquote_text};padding-left:46px;">${P(block.content)}</p>`

@@ -39,8 +39,9 @@ test('标题序号递增、首个quote走引言、第二个quote走引号、待�
   assert.match(out, /data-h="2"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="1"/);
   assert.match(out, /data-h="3"[^>]*data-seq="2"/);
-  assert.match(out, /data-intro="第一引用"/); // 首个 quote → 引言整块转图
-  assert.match(out, /data-quote-img="第二引用"/); // 第二个 quote → 引用整块转图
+  assert.match(out, /data-label="引言"/);   // 首个 quote → 引言块（大丰收标）
+  assert.match(out, /data:arrow/);           // 引言箭头小图
+  assert.match(out, /data:q/);               // 第二个 quote → 引号小图 + CSS 文字
   assert.match(out, /data:c/);               // 待办勾选
   delete global.window;
 });

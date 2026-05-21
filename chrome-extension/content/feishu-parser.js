@@ -510,6 +510,11 @@ function convertFeishuNodeToHtml(node, links) {
       const href = child.getAttribute('href') || '';
       const text = child.textContent.trim();
       if (href && !href.startsWith('#') && text) {
+        // 微信公众号链接：生成卡片占位符，不推入 links[]（底部不显示）
+        if (/^https?:\/\/mp\.weixin\.qq\.com\/s[/?]/i.test(href)) {
+          html += `__WX_CARD__${encodeURIComponent(href)}__WX_SEP__${encodeURIComponent(text)}__WX_END__`;
+          continue;
+        }
         const existing = links.findIndex(l => l.url === href);
         const idx = existing >= 0 ? existing + 1 : (links.push({ text, url: href }), links.length);
         html += `${escapeFeishuHtml(text)}<sup>[${idx}]</sup>`;

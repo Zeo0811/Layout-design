@@ -8,6 +8,15 @@
   <link rel="icon" type="image/png" sizes="48x48" href="chrome-extension/icons/icon48.png" />
   <link rel="icon" type="image/png" sizes="128x128" href="chrome-extension/icons/icon128.png" />
   <style>
+    @font-face {
+      font-family: '可画大丰收SC';
+      src: url('assets/fonts/可画大丰收SC.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 300; src: url('assets/fonts/HarmonyOS_Sans_SC_Light.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 400; src: url('assets/fonts/HarmonyOS_Sans_SC_Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 500; src: url('assets/fonts/HarmonyOS_Sans_SC_Medium.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'HarmonyOS Sans SC'; font-weight: 700; src: url('assets/fonts/HarmonyOS_Sans_SC_Bold.ttf') format('truetype'); font-display: swap; }
     * { box-sizing: border-box; }
     body {
       background: #f0f0f0;
@@ -968,6 +977,8 @@ function unlockTemplate() {
 }
 </script>
 
+<script src="assets/js/green-style.js"></script>
+
 <!-- ── 样式预览数据（Tab 1） ── -->
 <script>
 const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
@@ -1488,30 +1499,57 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     },
   };
 
+  // 引言箭头：直接采用 Figma 矢量真实路径（满高右边 + 满宽底边的直角 + 贯穿对角线）
+  const INTRO_ARROW_SVG = `<svg width="40" height="38" viewBox="0 0 139 133" style="display:block;flex:none;"><g fill="#327847"><path d="M131.25 125L131.25 132.5L138.75 132.5L138.75 125L131.25 125ZM131.25 0L123.75 0L123.75 125L131.25 125L138.75 125L138.75 0L131.25 0ZM131.25 125L131.25 117.5L0 117.5L0 125L0 132.5L131.25 132.5L131.25 125Z"/><path transform="translate(12,9)" d="M0 0L-5.23871 5.36711L113.511 121.276L118.75 115.909L123.989 110.542L5.23871 -5.36711L0 0Z"/></g></svg>`;
+
+  // 待办勾选框：绿框白底方块（Figma 74×74 描边 #327847 sw5），勾为 #40A978
+  const TODO_BOX_EMPTY   = `<svg width="18" height="18" viewBox="0 0 74 74" style="flex:none;display:block;"><rect x="2.5" y="2.5" width="69" height="69" fill="#fff" stroke="#327847" stroke-width="5"/></svg>`;
+  const TODO_BOX_CHECKED = `<svg width="18" height="18" viewBox="0 0 74 74" style="flex:none;display:block;"><rect x="2.5" y="2.5" width="69" height="69" fill="#fff" stroke="#327847" stroke-width="5"/><polyline points="15,39 30,55 59,21" fill="none" stroke="#40A978" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
   // ══════════════════════════════════════════════════════════════════════════
   // Block definitions — each maps to one or more S keys and provides a render fn
   // ══════════════════════════════════════════════════════════════════════════
   const BLOCK_DEFS = [
     { id: 'h1', label: 'H1 · 一级标题', keys: ['h1'],
-      render: cs => `<section style="${cs.h1}">这是一级标题 H1</section>` },
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
+        ? window.GreenStyle.renderHeadingImage('这是一级标题 H1', 1)
+        : `<section style="${cs.h1}">这是一级标题 H1</section>` },
     { id: 'h2', label: 'H2 · 二级标题', keys: ['h2'],
-      render: cs => `<section style="${cs.h2}">这是二级标题 H2</section>` },
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
+        ? window.GreenStyle.renderHeadingImage('这是二级标题 H2', 2)
+        : `<section style="${cs.h2}">这是二级标题 H2</section>` },
     { id: 'h3', label: 'H3 · 三级标题', keys: ['h3'],
-      render: cs => `<section style="${cs.h3}">这是三级标题 H3</section>` },
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
+        ? window.GreenStyle.renderHeadingImage('这是三级标题 H3', 3)
+        : `<section style="${cs.h3}">这是三级标题 H3</section>` },
     { id: 'h4', label: 'H4 · 四级标题', keys: ['h4'],
-      render: cs => `<section style="${cs.h4}">这是四级标题 H4</section>` },
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
+        ? window.GreenStyle.renderHeadingImage('这是四级标题 H4', 4)
+        : `<section style="${cs.h4}">这是四级标题 H4</section>` },
     { id: 'h5', label: 'H5 · 五级标题', keys: ['h5'],
-      render: cs => `<section style="${cs.h5}">这是五级标题 H5</section>` },
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
+        ? window.GreenStyle.renderHeadingImage('这是五级标题 H5', 5)
+        : `<section style="${cs.h5}">这是五级标题 H5</section>` },
     { id: 'h6', label: 'H6 · 六级标题', keys: ['h6'],
-      render: cs => `<section style="${cs.h6}">这是六级标题 H6</section>` },
+      render: cs => cs.__headingMode === 'image' && window.GreenStyle
+        ? window.GreenStyle.renderHeadingImage('这是六级标题 H6', 6)
+        : `<section style="${cs.h6}">这是六级标题 H6</section>` },
     { id: 'p', label: 'paragraph · 正文段落', keys: ['p'],
       render: cs => `<p style="${cs.p}">这是一段正文内容，展示基础段落样式。字体使用 Optima / PingFang SC，字号 15px，行高 26px，字间距 0.1em。适合大段阅读文字。</p>` },
     { id: 'inline', label: 'inline · 行内格式', keys: ['strong', 'em', 'code_inline', 's'],
       render: cs => `<p style="${cs.p}">包含 <strong style="${cs.strong}">加粗文字</strong>、<em style="${cs.em}">斜体文字</em>、<s style="${cs.s}">删除线</s>、<code style="${cs.code_inline}">行内代码</code> 的混排效果。</p>` },
-    { id: 'quote', label: 'quote · 引用块', keys: ['blockquote_wrapper', 'blockquote_text'],
-      render: cs => `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">这是一段引用内容，左侧有 3px 品牌绿色边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>` },
+    { id: 'intro', label: 'intro · 引言', keys: ['intro_wrapper', 'intro_arrow', 'intro_text'],
+      render: cs => cs.__variant === 'green'
+        ? `<section style="${cs.intro_wrapper}"><section style="${cs.intro_head}">${INTRO_ARROW_SVG}${window.GreenStyle.renderTextImage('引言', {size:33, color:'#808080'})}</section><p style="${cs.intro_text}">引言部分标题，左侧标识颜色为 #327847，右侧标题颜色为 #808080。</p></section>`
+        : `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">引言示例（当前模板未定义引言样式）。</p></section>` },
+    { id: 'quote', label: 'quote · 引用块', keys: ['blockquote_wrapper', 'blockquote_mark', 'blockquote_text'],
+      render: cs => cs.__variant === 'green'
+        ? `<section style="${cs.blockquote_wrapper}"><img src="assets/img/quote.svg" style="${cs.blockquote_mark}" alt="引用" /><p style="${cs.blockquote_text}">这是一段引用内容，字重 Bold 加粗，字体色彩使用 #327847 主题绿色，并且在左上角增加引号标识，引号色彩为 #327847。适合作为标注和引用其他人的话语。</p></section>`
+        : `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">这是一段引用内容，左侧有 3px 品牌绿色边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>` },
     { id: 'callout', label: 'callout · 高亮块', keys: ['callout_wrapper', 'callout_content'],
-      render: cs => `<section style="${cs.callout_wrapper}">这是一个 Callout 高亮块，品牌绿描边圆角矩形，简约风格，适合强调注意事项。</section>` },
+      render: cs => cs.__variant === 'green'
+        ? `<section style="${cs.callout_wrapper}">这是一段高亮文字块，字重 Bold 加粗，主题绿色 #327847，左侧竖条为 #40A978，适合强调注意事项或提示信息。</section>`
+        : `<section style="${cs.callout_wrapper}">这是一个 Callout 高亮块，品牌绿描边圆角矩形，简约风格，适合强调注意事项。</section>` },
     { id: 'code', label: 'code · 代码块', keys: ['code_wrapper', 'code_lang_bar', 'code_pre', 'code_text'],
       content_fields: [
         {key:'code_dot1', label:'● 左点颜色', placeholder:'#ed6c60', type:'color'},
@@ -1523,20 +1561,26 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         const dots = `<section style="display:flex;flex-direction:row;align-items:center;column-gap:6px;margin-bottom:4px;">${dot(cs.code_dot1||'#ed6c60')}${dot(cs.code_dot2||'#f7c151')}${dot(cs.code_dot3||'#64c856')}</section>`;
         return `<section style="${cs.code_wrapper}">${dots}<div style="${cs.code_lang_bar}">javascript</div><pre style="${cs.code_pre}"><code style="${cs.code_text}">function hello(name) {\n  console.log('Hello, ' + name);\n  return name.toUpperCase();\n}</code></pre></section>`;
       } },
-    { id: 'hr', label: 'divider · 分割线', keys: ['hr'],
-      render: cs => `<p style="${cs.p}">分割线上方的正文内容。</p><section style="${cs.hr}"></section><p style="${cs.p}">分割线下方的正文内容。</p>` },
+    { id: 'hr', label: 'divider · 分割线', keys: ['hr', 'hr_wrapper'],
+      render: cs => cs.__variant === 'green'
+        ? `<p style="${cs.p}">分割线上方的正文内容</p><section style="${cs.hr_wrapper}"><img src="assets/img/divider1.png" style="width:100%;display:block;" alt="分割线" /></section><p style="${cs.p}">分割线下方的正文内容</p>`
+        : `<p style="${cs.p}">分割线上方的正文内容。</p><section style="${cs.hr}"></section><p style="${cs.p}">分割线下方的正文内容。</p>` },
     { id: 'bulleted_list', label: 'bulleted_list · 无序列表', keys: ['ul', 'li_ul', 'li_p'],
       render: cs => `<ul style="${cs.ul}"><li style="${cs.li_ul}"><p style="${cs.li_p}">第一个列表项，圆点样式</p></li><li style="${cs.li_ul}"><p style="${cs.li_p}">第二个列表项，正文字号</p></li><li style="${cs.li_ul}"><p style="${cs.li_p}">第三个列表项</p></li></ul>` },
-    { id: 'numbered_list', label: 'numbered_list · 有序列表', keys: ['ol', 'li_ol', 'li_p'],
-      render: cs => `<ol style="${cs.ol}"><li style="${cs.li_ol}"><p style="${cs.li_p}">第一步：打开飞书文档</p></li><li style="${cs.li_ol}"><p style="${cs.li_p}">第二步：点击插件图标</p></li><li style="${cs.li_ol}"><p style="${cs.li_p}">第三步：一键转换并复制</p></li></ol>` },
+    { id: 'numbered_list', label: 'numbered_list · 有序列表', keys: ['ol', 'li_ol', 'li_p', 'ol_row', 'ol_num', 'ol_text'],
+      render: cs => cs.__variant === 'green'
+        ? `<section style="${cs.ol_row}"><span style="${cs.ol_num}">01</span><p style="${cs.ol_text}">第一个列表项，有序列表，序号位置对齐首行文字，列表项之间两倍行距</p></section><section style="${cs.ol_row}"><span style="${cs.ol_num}">02</span><p style="${cs.ol_text}">第二个列表项</p></section><section style="${cs.ol_row}"><span style="${cs.ol_num}">03</span><p style="${cs.ol_text}">第三个列表项</p></section>`
+        : `<ol style="${cs.ol}"><li style="${cs.li_ol}"><p style="${cs.li_p}">第一步：打开飞书文档</p></li><li style="${cs.li_ol}"><p style="${cs.li_p}">第二步：点击插件图标</p></li><li style="${cs.li_ol}"><p style="${cs.li_p}">第三步：一键转换并复制</p></li></ol>` },
     { id: 'image', label: 'image · 图片', keys: ['img_wrapper', 'img', 'img_caption'],
       render: cs => `<section style="${cs.img_wrapper}"><img src="https://picsum.photos/seed/demo/480/220" style="${cs.img}" alt="示例图片" /><p style="${cs.img_caption}">这是图片的说明文字（caption）</p></section>` },
     { id: 'video', label: 'video · 视频占位', keys: ['video_wrapper', 'video_label'],
       content_fields: [{key:'video_label_text', label:'占位文字', placeholder:'📹 视频内容请前往原文查看'}],
       render: cs => `<section style="${cs.video_wrapper}"><p style="${cs.video_label}">${cs.video_label_text||'📹 视频内容请前往原文查看'}</p></section>` },
-    { id: 'toggle', label: 'toggle · 折叠块', keys: ['toggle_summary', 'toggle_content'],
+    { id: 'toggle', label: 'toggle · 折叠块', keys: ['toggle_summary', 'toggle_content', 'toggle_text'],
       content_fields: [{key:'toggle_arrow_char', label:'折叠箭头', placeholder:'▶'}],
-      render: cs => `<section style="${cs.toggle_summary}">${cs.toggle_arrow_char||'▶'} 折叠块标题（点击展开）</section><section style="${cs.toggle_content}"><p style="${cs.p}">这是折叠块内部的内容，左侧有细灰线标示层级。</p></section>` },
+      render: cs => cs.__variant === 'green'
+        ? `<section style="${cs.toggle_summary}">${cs.toggle_arrow_char||'▶'} 折叠块标题，加粗（点击展开）</section><section style="${cs.toggle_content}"><p style="${cs.toggle_text}">折叠块内部的内容，正文样式，支持加粗字体，在微信公众号内展开所示，左侧有细线展现层级。</p></section>`
+        : `<section style="${cs.toggle_summary}">${cs.toggle_arrow_char||'▶'} 折叠块标题（点击展开）</section><section style="${cs.toggle_content}"><p style="${cs.p}">这是折叠块内部的内容，左侧有细灰线标示层级。</p></section>` },
     { id: 'table', label: 'table · 表格', keys: ['table_wrapper', 'table', 'th', 'td', 'td_even'],
       render: cs => `<section style="${cs.table_wrapper}"><table style="${cs.table}"><tr><td style="${cs.th}">平台</td><td style="${cs.th}">支持格式</td><td style="${cs.th}">图片处理</td></tr><tr><td style="${cs.td_even}">飞书</td><td style="${cs.td_even}">文档 / Wiki</td><td style="${cs.td_even}">Base64 转换</td></tr><tr><td style="${cs.td}">Notion</td><td style="${cs.td}">Page</td><td style="${cs.td}">CDN 直链</td></tr></table></section>` },
     { id: 'embed', label: 'embed · 嵌入链接', keys: ['embed_wrapper', 'embed_label', 'embed_link'],
@@ -1544,12 +1588,14 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       render: cs => `<section style="${cs.embed_wrapper}"><p style="${cs.embed_label}">${cs.embed_icon_char||'📎'} 嵌入内容</p><p style="${cs.embed_link}">https://github.com/Zeo0811/Layout-design</p></section>` },
     { id: 'footnotes', label: 'footnotes · 脚注', keys: ['footnotes_wrapper', 'footnotes_title', 'footnote_item', 'footnote_num'],
       render: cs => `<section style="${cs.footnotes_wrapper}"><p style="${cs.footnotes_title}">参考资料</p><p style="${cs.footnote_item}"><span style="${cs.footnote_num}">[1]</span>十字路口排版插件示例链接</p></section>` },
-    { id: 'todo', label: 'todo · 待办事项', keys: ['p'],
+    { id: 'todo', label: 'todo · 待办事项', keys: ['todo_item'],
       content_fields: [
         {key:'todo_done_icon',    label:'已完成图标', placeholder:'✅'},
         {key:'todo_pending_icon', label:'未完成图标', placeholder:'☐'},
       ],
-      render: cs => `<p style="${cs.p}">${cs.todo_done_icon||'✅'} <span style="text-decoration:line-through;color:#aaaaaa;">已完成的待办事项</span></p><p style="${cs.p}">${cs.todo_pending_icon||'☐'} 未完成的待办事项</p>` },
+      render: cs => cs.__variant === 'green'
+        ? `<p style="${cs.todo_item}">${TODO_BOX_EMPTY}未完成的待办事项</p><p style="${cs.todo_item}">${TODO_BOX_CHECKED}已完成的待办事项</p>`
+        : `<p style="${cs.p}">${cs.todo_done_icon||'✅'} <span style="text-decoration:line-through;color:#aaaaaa;">已完成的待办事项</span></p><p style="${cs.p}">${cs.todo_pending_icon||'☐'} 未完成的待办事项</p>` },
     { id: 'bookmark', label: 'bookmark · 书签链接', keys: ['p'],
       content_fields: [{key:'bookmark_icon_char', label:'书签图标', placeholder:'🔗'}],
       render: cs => `<p style="${cs.p}">${cs.bookmark_icon_char||'🔗'} <a href="#" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">书签标题示例文字</a><sup style="color:#222222;font-size:.7em;font-weight:bold;line-height:0;">[1]</sup></p>` },
@@ -1560,14 +1606,16 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     h4: '四级标题', h5: '五级标题', h6: '六级标题',
     p: '正文段落',
     strong: '加粗', em: '斜体', code_inline: '行内代码', s: '删除线',
-    blockquote_wrapper: '引用块外层', blockquote_text: '引用块文字',
+    blockquote_wrapper: '引用块外层', blockquote_mark: '引用引号', blockquote_text: '引用块文字',
+    intro_wrapper: '引言外层', intro_head: '引言头部', intro_arrow: '引言箭头', intro_text: '引言正文',
+    todo_item: '待办项',
     callout_wrapper: '高亮块外层', callout_content: '高亮块内容',
     code_wrapper: '代码块外层', code_lang_bar: '语言栏', code_pre: 'pre 元素', code_text: '代码文字',
-    hr: '分割线',
+    hr: '分割线', hr_wrapper: '分割线容器', ol_row: '有序列表行', ol_num: '有序列表序号', ol_text: '有序列表文字',
     ul: '无序列表', ol: '有序列表', li_ul: '无序列表项', li_ol: '有序列表项', li_p: '列表段落',
     img_wrapper: '图片容器', img: '图片样式', img_caption: '图片说明',
     video_wrapper: '视频容器', video_label: '视频标签',
-    toggle_summary: '折叠标题', toggle_content: '折叠内容',
+    toggle_summary: '折叠标题', toggle_content: '折叠内容', toggle_text: '折叠内容文字',
     table_wrapper: '表格容器', table: '表格', th: '表头单元格', td: '普通单元格', td_even: '隔行单元格',
     embed_wrapper: '嵌入容器', embed_label: '嵌入标签', embed_link: '嵌入链接',
     footnotes_wrapper: '脚注容器', footnotes_title: '脚注标题', footnote_item: '脚注条目', footnote_num: '脚注编号',
@@ -1650,6 +1698,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     if (!sel) return;
     const prev = sel.value;
     sel.innerHTML = '<option value="">— 十字路口专用 —</option>' +
+      '<option value="green">— 十字路口绿（新）—</option>' +
       savedTemplates.map((t,i)=>`<option value="${i}">${t.name}</option>`).join('');
     sel.value = prev;
   }
@@ -1690,6 +1739,13 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     renderEditor();
   };
 
+  // 用户模板快照：剔除所有内置标记（__headingMode / __variant 等），只保留纯 CSS token
+  function snapshotStyles() {
+    const copy = Object.assign({}, customS);
+    for (const k of Object.keys(copy)) { if (k.startsWith('__')) delete copy[k]; }
+    return copy;
+  }
+
   // 新建模板：弹出输入框 → 以当前样式创建
   window.tplNew = function() {
     showDialog({
@@ -1700,7 +1756,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         if (savedTemplates.find(t => t.name === name)) {
           showDialog({ icon: 'ℹ️', title: '提示', msg: `已存在同名模板「${name}」，请换一个名称`, confirmText: '知道了', confirmClass: '', cancelText: null }); return;
         }
-        savedTemplates.push({ name, s: Object.assign({}, customS) });
+        savedTemplates.push({ name, s: snapshotStyles() });
         syncSelector();
         document.getElementById('tpl-selector').value = savedTemplates.length - 1;
         _updateEditState();
@@ -1716,7 +1772,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     const idx  = parseInt(sel.value);
     if (isNaN(idx) || idx < 0 || !savedTemplates[idx]) return;
     try {
-      savedTemplates[idx].s = Object.assign({}, customS);
+      savedTemplates[idx].s = snapshotStyles();
       const saveBtn = document.getElementById('tplSaveBtn');
       const orig = saveBtn.textContent;
       saveBtn.textContent = '✅ 已保存'; saveBtn.disabled = true;
@@ -1729,21 +1785,32 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   };
 
   function _updateEditState() {
-    const isDefault = !document.getElementById('tpl-selector').value;
-    document.getElementById('tplSaveBtn').style.display   = isDefault ? 'none' : '';
-    document.getElementById('tplDeleteBtn').style.display = isDefault ? 'none' : '';
+    const v = document.getElementById('tpl-selector').value;
+    const isBuiltin = !v || v === 'green';
+    document.getElementById('tplSaveBtn').style.display   = isBuiltin ? 'none' : '';
+    document.getElementById('tplDeleteBtn').style.display = isBuiltin ? 'none' : '';
     document.getElementById('tplNewBtn').style.display    = '';
   }
 
   window.tplLoad = function() {
     const sel = document.getElementById('tpl-selector');
-    const idx = parseInt(sel.value);
-    if (isNaN(idx)||idx<0) {
-      customS = Object.assign({}, S);
+    const v = sel.value;
+    if (v === 'green') {
+      if (!window.GreenStyle) {
+        console.warn('green-style.js 未加载，回退默认样式');
+        customS = Object.assign({}, S);
+      } else {
+        customS = Object.assign({}, S, window.GreenStyle.GREEN_TOKENS);
+      }
     } else {
-      const tpl = savedTemplates[idx];
-      if (!tpl) return;
-      customS = Object.assign({}, S, tpl.s);
+      const idx = parseInt(v);
+      if (isNaN(idx)||idx<0) {
+        customS = Object.assign({}, S);
+      } else {
+        const tpl = savedTemplates[idx];
+        if (!tpl) return;
+        customS = Object.assign({}, S, tpl.s);
+      }
     }
     _updateEditState();
     if (selectedId) { loadPropState(selectedId); }
@@ -1843,6 +1910,15 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
           savedTemplates = Array.isArray(serverTemplates) ? serverTemplates : [];
         }
       } catch (_) { savedTemplates = []; }
+      try {
+        if (document.fonts && document.fonts.load) {
+          await Promise.all([
+            document.fonts.load('40px "可画大丰收SC"'),
+            document.fonts.load('400 15px "HarmonyOS Sans SC"'),
+          ]);
+          await document.fonts.ready;
+        }
+      } catch (_) {}
       syncSelector();
       // 有自定义模板时自动选中第一个，让保存/删除按钮可见
       if (savedTemplates.length > 0) {

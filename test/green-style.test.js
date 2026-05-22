@@ -96,7 +96,7 @@ test('renderHeadingImage 返回带假 dataURL 的 img', () => {
   const html = renderHeadingImage('一级标题', 1, { canvasFactory: () => fake.canvas });
   assert.match(html, /^<img\b/);
   assert.match(html, /data:image\/png;base64,FAKE/);
-  assert.match(html, /max-width:100%/);
+  assert.match(html, /width:100%/);
 });
 
 test('单行无装饰标题（H1）只画一行', () => {

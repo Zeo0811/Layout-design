@@ -75,8 +75,8 @@
       case 'quote':
         // 引号小图 + CSS 绿字（字号=正文、可选中）
         return `<section style="margin:22px 0;">`
-          + _img(D.quote, 'width:32px;height:auto;display:block;margin:0 0 6px 0;', '引用')
-          + `<p style="${SS.blockquote_text};padding-left:46px;">${P(block.content)}</p>`
+          + _img(D.quote, 'width:27px;height:auto;display:block;margin:0 0 6px 0;', '引用')
+          + `<p style="${SS.blockquote_text};padding-left:42px;">${P(block.content)}</p>`
           + `</section>`;
 
       case 'callout':

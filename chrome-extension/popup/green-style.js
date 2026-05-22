@@ -247,7 +247,8 @@
     layout.draw(c);
 
     const dataUrl = canvas.toDataURL('image/png');
-    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:${spec.marginTop}px 0 ${spec.marginBottom}px`;
+    // 宽度用百分比（微信对固定 px 宽处理不一致，会乱成 460px/100%）；max-width 限制不超过设计宽
+    const style = `display:block;width:100%;max-width:${W}px;height:auto;margin:${spec.marginTop}px 0 ${spec.marginBottom}px`;
     return `<img src="${dataUrl}" style="${style};" alt="${escapeAttr(text)}" />`;
   }
 

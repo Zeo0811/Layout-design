@@ -46,8 +46,8 @@
   //   none → 纯标题；part → 背景 PART 水印 + 下划线；num → 序号 + 右延横线；star → 左侧星号
   const HEADING_SPECS = {
     1: { fontSize: 40, lineHeight: 46, color: GREEN, align: 'left',   deco: 'none', marginTop: 34, marginBottom: 18 },
-    2: { fontSize: 32, lineHeight: 37, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
-         wmSize: 61, ruleWeight: 3 },
+    2: { fontSize: 33, lineHeight: 31, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
+         wmSize: 63, ruleWeight: 2 },
     3: { fontSize: 23, lineHeight: 27, color: GREEN, align: 'left',   deco: 'num',  marginTop: 32, marginBottom: 14,
          numSize: 27, ruleWeight: 2 },
     4: { fontSize: 19, lineHeight: 22, color: GREEN, align: 'left',   deco: 'star', marginTop: 24, marginBottom: 10,
@@ -77,9 +77,9 @@
     // 引用：左上绿色引号挂在左侧留白，正文缩进 42px、绿色加粗、两端对齐、字距 0.17em、行高 1.1
     blockquote_wrapper: `position:relative;text-align:left;display:block;margin:22px 0;padding:4px 0 4px 42px;font-family:${BODY_FONT};`,
     blockquote_mark:    `position:absolute;left:0;top:0;width:27px;height:auto;display:block;`,
-    blockquote_text:    `text-align:justify;line-height:1.1;font-family:${BODY_FONT};margin:0;letter-spacing:0.17em;color:${GREEN};font-size:15px;font-weight:600;`,
+    blockquote_text:    `text-align:justify;line-height:1.11;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;font-weight:600;`,
     // Callout：左侧 7px #40A978 竖条 + 绿色加粗、左对齐正文、字距 0.1em、行高 1.27、缩进 22px（无底色/无描边）
-    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:22px 0;color:${GREEN};font-family:${BODY_FONT};line-height:1.27;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
+    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:22px 0;color:${GREEN};font-family:${BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
     callout_content:    ``,
     // 引言：大丰收「引言」灰标 + 绿色↘箭头（render 内 SVG）+ 绿色两端对齐正文，行高 1.27（无边框）
     intro_wrapper:      `margin:22px 0;font-family:${BODY_FONT};`,
@@ -102,8 +102,8 @@
     li_p:               `font-family:inherit;vertical-align:baseline;margin:0 0 6px 0;color:${GREEN};letter-spacing:0.1em;`,
     todo_item:          `display:flex;align-items:center;column-gap:8px;color:${GREEN};font-family:${BODY_FONT};font-size:15px;line-height:1.27;letter-spacing:0.1em;margin:4px 0;`,
     img_wrapper:        `margin:15px 0;text-align:center;`,
-    img:                `max-width:100%;height:auto;border-radius:8px;display:inline-block;`,
-    img_caption:        `font-size:12px;color:${GRAY};margin-top:6px;text-align:center;letter-spacing:0.1em;line-height:1.27;`,
+    img:                `max-width:100%;height:auto;border-radius:5px;display:inline-block;`,
+    img_caption:        `font-size:11px;color:${GRAY};margin-top:6px;text-align:center;letter-spacing:0.1em;line-height:1.83;`,
     video_wrapper:      `margin:1em 0;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
     video_label:        `color:rgba(255,255,255,.45);font-size:14px;`,
     toggle_summary:     `font-size:15px;font-weight:bold;color:#000000;margin:12px 0 6px;font-family:${BODY_FONT};letter-spacing:0.1em;`,

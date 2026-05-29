@@ -75,6 +75,28 @@
   // 快照默认样式（formatter.js 已在此之前执行，S 已定义）
   const DEFAULT_S = Object.assign({}, S);
 
+  // 预加载大丰收字体 + 装饰 base64（供「十字路口绿」标题图/装饰用）
+  window.GREEN_DECOR = window.GREEN_DECOR || {};
+  (async function preloadGreen() {
+    try {
+      if (document.fonts && document.fonts.load) {
+        await Promise.all([
+          document.fonts.load('40px "可画大丰收SC"'),
+          document.fonts.load('400 15px "HarmonyOS Sans SC"'),
+        ]);
+        await document.fonts.ready;
+      }
+      const names = ['quote', 'divider', 'todo_empty', 'todo_checked', 'arrow', 'intro_head'];
+      await Promise.all(names.map(async (n) => {
+        const res = await fetch(chrome.runtime.getURL(`assets/img/${n}.png`));
+        const blob = await res.blob();
+        window.GREEN_DECOR[n] = await new Promise((ok) => {
+          const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(blob);
+        });
+      }));
+    } catch (e) { console.warn('green 预加载失败', e); }
+  })();
+
   let loadedTemplates   = []; // 从服务器拉取的模板列表
 
   // ── 初始化 ────────────────────────────────────────────────────
@@ -91,19 +113,21 @@
     loadedTemplates = templates || [];
     templateSelect.innerHTML =
       '<option value="">十字路口专用</option>' +
+      '<option value="__green__">十字路口绿</option>' +
       loadedTemplates.map(t =>
         `<option value="${t.name}"${t.name === activeName ? ' selected' : ''}>${t.name}</option>`
       ).join('');
   }
 
   function applyTemplate(name) {
-    // 先还原默认样式，再叠加模板（防止多次切换样式叠加污染）
     Object.assign(S, DEFAULT_S);
-    if (name) {
+    delete S.__variant; delete S.__headingMode;
+    if (name === '__green__') {
+      if (window.GreenStyle) Object.assign(S, window.GreenStyle.GREEN_TOKENS);
+    } else if (name) {
       const tpl = loadedTemplates.find(t => t.name === name);
       if (tpl && tpl.s) Object.assign(S, tpl.s);
     }
-    // 保存当前激活模板
     chrome.runtime.sendMessage({ action: 'setActiveTemplate', name });
   }
 

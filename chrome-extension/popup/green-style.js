@@ -36,6 +36,12 @@
 
   const HEADING_FONT = "'可画大丰收SC'";
   const BODY_FONT = "'HarmonyOS Sans SC','PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif";
+  // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
+  const WX_BODY_FONT = "mp-quote,'PingFang SC',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif";
+  const WX_BODY_SIZE = '17px';
+  const WX_BODY_COLOR = 'rgba(0,0,0,0.9)';
+  const WX_BODY_LS = '0.034em';
+  const WX_BODY_LH = '1.6';
   const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
   const GREEN = '#327847';
   const GREEN_DIM = '#53715C';
@@ -62,14 +68,14 @@
   const GREEN_TOKENS = {
     __headingMode: 'image',
     __variant: 'green',
-    wrapper:            `font-family:${BODY_FONT};font-size:15px;color:#000000;line-height:1.7;letter-spacing:0.1em;word-wrap:break-word;`,
+    wrapper:            `font-family:${WX_BODY_FONT};font-size:${WX_BODY_SIZE};color:${WX_BODY_COLOR};line-height:${WX_BODY_LH};letter-spacing:${WX_BODY_LS};word-wrap:break-word;`,
     h1: `display:block;font-family:${HEADING_FONT};font-size:40px;font-weight:normal;color:${GREEN};text-align:left;margin:36px 0 20px 0;line-height:1.4;`,
     h2: `display:block;font-family:${HEADING_FONT};font-size:32px;font-weight:normal;color:${GREEN};text-align:left;margin:32px 0 16px 0;line-height:1.4;`,
     h3: `display:block;font-family:${HEADING_FONT};font-size:25px;font-weight:normal;color:${GREEN};text-align:left;margin:28px 0 14px 0;line-height:1.5;`,
     h4: `display:block;font-family:${HEADING_FONT};font-size:19px;font-weight:normal;color:${GREEN};text-align:left;margin:22px 0 10px 0;line-height:1.5;`,
     h5: `display:block;font-family:${HEADING_FONT};font-size:16px;font-weight:normal;color:${GREEN};text-align:left;margin:18px 0 8px 0;line-height:1.5;`,
     h6: `display:block;font-family:${HEADING_FONT};font-size:15px;font-weight:normal;color:${GREEN};text-align:left;margin:16px 0 8px 0;line-height:1.5;`,
-    p:                  `text-align:justify;line-height:1.7;font-family:${BODY_FONT};margin:0;padding-bottom:17px;letter-spacing:0.1em;white-space:pre-line;color:#000000;font-size:15px;`,
+    p:                  `text-align:justify;line-height:${WX_BODY_LH};font-family:${WX_BODY_FONT};margin:0;padding-bottom:17px;letter-spacing:${WX_BODY_LS};white-space:pre-line;color:${WX_BODY_COLOR};font-size:${WX_BODY_SIZE};`,
     strong:             `word-break:break-all;font-weight:600;color:${GREEN};`,
     em:                 `font-style:italic;`,
     code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,

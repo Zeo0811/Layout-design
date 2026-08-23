@@ -4,6 +4,9 @@
 
 // ── 字体（与 style.js FONT_FAMILY 完全一致）──────────────────────────────
 const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
+// 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
+const WX_FONT = "mp-quote, 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
+const WX_SIZE = '17px', WX_COLOR = 'rgba(0,0,0,0.9)', WX_LS = '0.034em', WX_LH = '1.6';
 const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
 
 // ── 代码语法高亮色表（来自 codeBlockTheme.js defaultTheme，原值不改）────
@@ -48,7 +51,7 @@ const CODE_THEME = {
 const S = {
 
   // 外层 wrapper：以 commonStyles.p 基线属性为准
-  wrapper: `font-family: ${FONT}; font-size: 15px; color: rgb(63,63,63); line-height: 1.75; letter-spacing: 0.1em; word-wrap: break-word;`,
+  wrapper: `font-family: ${WX_FONT}; font-size: ${WX_SIZE}; color: ${WX_COLOR}; line-height: ${WX_LH}; letter-spacing: ${WX_LS}; word-wrap: break-word;`,
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
@@ -66,7 +69,7 @@ const S = {
   h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
-  p: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; padding-bottom: 1em; letter-spacing: 0.1em; white-space: pre-line; color: rgb(63,63,63); font-size: 15px;`,
+  p: `text-align: left; line-height: ${WX_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: 1em; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
   // 迭代：正文加粗颜色 #407600（commonStyles.span.strong word-break:break-all + font-weight）

@@ -48,9 +48,6 @@
     const P = W.pi || (typeof pi !== 'undefined' ? pi : (x) => x || '');
     const EH = W.escHtml || (typeof escHtml !== 'undefined' ? escHtml : (x) => x || '');
     const EA = W.escAttr || (typeof escAttr !== 'undefined' ? escAttr : (x) => x || '');
-    // 空行不额外增加间距：段间距一律 24px，与参考文章一致（微信编辑器本身也会删空段）。
-    // 从前这里按每空行 24px 折进下边距，隔空行的块间距会翻倍。
-    const blankGap = 0;
 
     // 标题：取纯文字（剥 HTML 标签）；仅表情/符号 → 居中表情行，不走大丰收标题图
     if (/^h[1-6]$/.test(block.type)) {
@@ -75,16 +72,16 @@
 
       case 'quote':
         // 引号小图 + CSS 绿字（字号=正文、可选中）；后接空行加大下边距
-        return `<section style="margin:22px 0 ${22 + blankGap}px;">`
+        return `<section style="margin:0 0 30px;">`
           + _img(D.quote, 'width:27px;height:auto;display:block;margin:0 0 6px 0;', '引用')
           + `<p style="${SS.blockquote_text};padding-left:42px;">${P(block.content)}</p>`
           + `</section>`;
 
       case 'callout':
-        return `<section style="${SS.callout_wrapper};margin-bottom:${22 + blankGap}px;">${P(block.content)}</section>`;
+        return `<section style="${SS.callout_wrapper}">${P(block.content)}</section>`;
 
       case 'divider':
-        return `<section style="margin:18px 0 ${18 + blankGap}px;text-align:center;line-height:0;">`
+        return `<section style="margin:0 0 30px;text-align:center;line-height:0;">`
           + _img(D.divider, 'width:100%;display:block;', '分割线') + `</section>`;
 
       case 'bulleted_list': return renderGreenList(block.items, false, depth, seq, links);

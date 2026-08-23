@@ -43,7 +43,7 @@
   const WX_BODY_LS = '0.034em';
   const WX_BODY_LH = '1.6';        // wrapper 用无单位，随后代字号缩放
   const WX_BODY_P_LH = '1.6em';    // 正文段落用 em，复刻参考文章
-  const WX_BODY_GAP = '24px';      // 段间距
+  const WX_BODY_GAP = '30px';      // 块间距：每块只给下边距，相邻两块恒为 30px
   const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
   const GREEN = '#327847';
   const GREEN_DIM = '#53715C';
@@ -83,46 +83,46 @@
     code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,
     s:                  `text-decoration:line-through;color:#888888;`,
     // 引用：左上绿色引号挂在左侧留白，正文缩进 42px、绿色加粗、两端对齐、字距 0.17em、行高 1.1
-    blockquote_wrapper: `position:relative;text-align:left;display:block;margin:22px 0;padding:4px 0 4px 42px;font-family:${BODY_FONT};`,
+    blockquote_wrapper: `position:relative;text-align:left;display:block;margin:0 0 30px;padding:4px 0 4px 42px;font-family:${BODY_FONT};`,
     blockquote_mark:    `position:absolute;left:0;top:0;width:27px;height:auto;display:block;`,
     blockquote_text:    `text-align:justify;line-height:1.11;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;font-weight:600;`,
     // Callout：左侧 7px #40A978 竖条 + 绿色加粗、左对齐正文、字距 0.1em、行高 1.27、缩进 22px（无底色/无描边）
-    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:22px 0;color:${GREEN};font-family:${BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
+    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:0 0 30px;color:${GREEN};font-family:${BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
     callout_content:    ``,
     // 引言：大丰收「引言」灰标 + 绿色↘箭头（render 内 SVG）+ 绿色两端对齐正文，行高 1.27（无边框）
-    intro_wrapper:      `margin:22px 0;font-family:${BODY_FONT};`,
+    intro_wrapper:      `margin:0 0 30px;font-family:${BODY_FONT};`,
     intro_head:         `display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;`,
     intro_arrow:        `font-size:38px;line-height:1;color:${GREEN};`,
     intro_text:         `text-align:justify;line-height:1.27;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
-    code_wrapper:       `margin:20px 10px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:Consolas,Monaco,monospace;`,
+    code_wrapper:       `margin:0 10px 30px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:Consolas,Monaco,monospace;`,
     code_lang_bar:      `font-size:11px;color:${GREEN};font-family:Consolas,Monaco,monospace;padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
     code_pre:           `margin:0;padding:0;overflow-x:auto;background:transparent;`,
     code_text:          `font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.65;white-space:pre;word-break:normal;display:block;color:#333;`,
-    hr:                 `border-style:solid;border-width:1px 0 0;border-color:${GREEN_DIM};margin:24px 0;`,
-    hr_wrapper:         `margin:18px 0;text-align:center;line-height:0;`,
-    ol_row:             `display:flex;align-items:baseline;margin:0 0 28px 0;`,
+    hr:                 `border-style:solid;border-width:1px 0 0;border-color:${GREEN_DIM};margin:0 0 30px;`,
+    hr_wrapper:         `margin:0 0 30px;text-align:center;line-height:0;`,
+    ol_row:             `display:flex;align-items:baseline;margin:0 0 30px 0;`,
     ol_num:             `flex:none;font-family:${LATIN_FONT};font-size:18px;font-weight:600;color:${GREEN};line-height:1.5;margin-right:12px;`,
     ol_text:            `flex:1;font-size:15px;line-height:1.27;letter-spacing:0.1em;color:${GREEN};font-family:${BODY_FONT};margin:0;`,
-    ul:                 `padding-left:1.5em;font-size:15px;line-height:1.27;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 8px;`,
-    ol:                 `padding-left:1.5em;font-size:15px;line-height:1.27;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 8px;`,
+    ul:                 `padding-left:1.5em;font-size:15px;line-height:1.27;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 30px;`,
+    ol:                 `padding-left:1.5em;font-size:15px;line-height:1.27;font-family:${BODY_FONT};white-space:normal;color:#000000;margin:0 0 30px;`,
     li_ul:              `font-size:15px;line-height:1.27;font-family:${BODY_FONT};list-style-position:outside;list-style-type:disc;color:${GREEN};`,
     li_ol:              `font-size:15px;line-height:1.27;font-family:${BODY_FONT};list-style-position:outside;list-style-type:decimal;color:${GREEN};`,
     li_p:               `font-family:inherit;vertical-align:baseline;margin:0 0 6px 0;color:${GREEN};letter-spacing:0.1em;`,
     todo_item:          `display:flex;align-items:center;column-gap:8px;color:${GREEN};font-family:${BODY_FONT};font-size:15px;line-height:1.27;letter-spacing:0.1em;margin:4px 0;`,
-    img_wrapper:        `margin:15px 0;text-align:center;`,
+    img_wrapper:        `margin:0 0 30px;text-align:center;`,
     img:                `max-width:100%;height:auto;border-radius:5px;display:inline-block;`,
     img_caption:        `font-size:11px;color:${GRAY};margin-top:6px;text-align:center;letter-spacing:0.1em;line-height:1.83;`,
-    video_wrapper:      `margin:1em 0;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
+    video_wrapper:      `margin:0 0 30px;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
     video_label:        `color:rgba(255,255,255,.45);font-size:14px;`,
     toggle_summary:     `font-size:15px;font-weight:bold;color:#000000;margin:12px 0 6px;font-family:${BODY_FONT};letter-spacing:0.1em;`,
     toggle_content:     `padding-left:14px;border-left:2px solid ${GREEN};margin-left:2px;`,
     toggle_text:        `text-align:left;line-height:1.27;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
-    table_wrapper:      `overflow-x:auto;margin:1em 0;`,
+    table_wrapper:      `overflow-x:auto;margin:0 0 30px;`,
     table:              `border-collapse:collapse;width:100%;font-size:15px;line-height:1.6;font-family:${BODY_FONT};`,
     th:                 `background:rgba(50,120,71,.08);padding:7px 13px;border:1px solid rgba(50,120,71,.25);font-weight:bold;text-align:left;color:${GREEN};`,
     td:                 `padding:7px 13px;border:1px solid rgba(50,120,71,.20);color:#000000;`,
     td_even:            `padding:7px 13px;border:1px solid rgba(50,120,71,.20);color:#000000;background:rgba(50,120,71,.03);`,
-    embed_wrapper:      `margin:1em 0;border:1px solid rgba(50,120,71,.25);border-radius:8px;padding:11px 15px;`,
+    embed_wrapper:      `margin:0 0 30px;border:1px solid rgba(50,120,71,.25);border-radius:8px;padding:11px 15px;`,
     embed_label:        `font-size:14px;font-weight:600;color:${GREEN};margin-bottom:4px;letter-spacing:0.1em;`,
     embed_link:         `font-size:13px;text-decoration:none;color:${GREEN};word-break:break-all;letter-spacing:0.1em;`,
     footnotes_wrapper:  `margin-top:30px;padding-top:15px;border-top:1px solid rgba(50,120,71,.25);`,
@@ -347,7 +347,7 @@
     });
     if ('letterSpacing' in c) c.letterSpacing = '0px';
 
-    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:22px 0;`;
+    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:0 0 30px;`;
     return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
   }
 
@@ -411,7 +411,7 @@
     });
     if ('letterSpacing' in c) c.letterSpacing = '0px';
 
-    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:22px 0;`;
+    const style = `display:block;width:${W}px;max-width:100%;height:auto;margin:0 0 30px;`;
     return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
   }
 

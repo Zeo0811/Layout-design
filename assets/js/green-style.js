@@ -41,7 +41,9 @@
   const WX_BODY_SIZE = '15px';
   const WX_BODY_COLOR = 'rgb(51,51,51)';
   const WX_BODY_LS = '0.034em';
-  const WX_BODY_LH = '1.6';
+  const WX_BODY_LH = '1.6';        // wrapper 用无单位，随后代字号缩放
+  const WX_BODY_P_LH = '1.6em';    // 正文段落用 em，复刻参考文章
+  const WX_BODY_GAP = '24px';      // 段间距
   const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
   const GREEN = '#327847';
   const GREEN_DIM = '#53715C';
@@ -75,7 +77,7 @@
     h4: `display:block;font-family:${HEADING_FONT};font-size:19px;font-weight:normal;color:${GREEN};text-align:left;margin:22px 0 10px 0;line-height:1.5;`,
     h5: `display:block;font-family:${HEADING_FONT};font-size:16px;font-weight:normal;color:${GREEN};text-align:left;margin:18px 0 8px 0;line-height:1.5;`,
     h6: `display:block;font-family:${HEADING_FONT};font-size:15px;font-weight:normal;color:${GREEN};text-align:left;margin:16px 0 8px 0;line-height:1.5;`,
-    p:                  `text-align:justify;line-height:${WX_BODY_LH};font-family:${WX_BODY_FONT};margin:0;padding-bottom:17px;letter-spacing:${WX_BODY_LS};white-space:pre-line;color:${WX_BODY_COLOR};font-size:${WX_BODY_SIZE};`,
+    p:                  `text-align:justify;line-height:${WX_BODY_P_LH};font-family:${WX_BODY_FONT};margin:0;padding-bottom:${WX_BODY_GAP};letter-spacing:${WX_BODY_LS};white-space:pre-line;color:${WX_BODY_COLOR};font-size:${WX_BODY_SIZE};`,
     strong:             `word-break:break-all;font-weight:600;color:${GREEN};`,
     em:                 `font-style:italic;`,
     code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,

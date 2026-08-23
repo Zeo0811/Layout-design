@@ -7,6 +7,7 @@ const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingF
 // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
 const WX_FONT = "mp-quote, 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
 const WX_SIZE = '15px', WX_COLOR = 'rgb(51,51,51)', WX_LS = '0.034em', WX_LH = '1.6';
+const WX_P_LH = '1.6em', WX_GAP = '24px';  // 正文行高用 em、段间距 24px，复刻参考文章
 const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
 
 // ── 代码语法高亮色表（来自 codeBlockTheme.js defaultTheme，原值不改）────
@@ -69,7 +70,7 @@ const S = {
   h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
-  p: `text-align: left; line-height: ${WX_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: 1em; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
+  p: `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: ${WX_GAP}; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
   // 迭代：正文加粗颜色 #407600（commonStyles.span.strong word-break:break-all + font-weight）

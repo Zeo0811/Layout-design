@@ -240,8 +240,9 @@
       currentTab = tab;
 
       const url = tab.url || '';
-      const isNotion  = url.includes('notion.so') || url.includes('notion.site');
+      // 飞书域名固定，先判；Notion 支持自建域/企业域，整个 URL 里出现 notion 即算
       const isFeishu  = url.includes('feishu.cn') || url.includes('larksuite.com');
+      const isNotion  = !isFeishu && url.includes('notion');
       const isWechat  = url.includes('mp.weixin.qq.com') && /\/s[/?]/.test(url);
 
       if (isWechat) {

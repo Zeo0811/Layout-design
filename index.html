@@ -985,7 +985,7 @@ const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingF
 const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
 // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
 const WX_FONT = "mp-quote, 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
-const WX_SIZE = '14px', WX_COLOR = 'rgb(51,51,51)', WX_LS = '0.034em', WX_LH = '1.6';
+const WX_SIZE = '15px', WX_COLOR = 'rgb(51,51,51)', WX_LS = '0.034em', WX_LH = '1.6';
 
 const S = {
   wrapper:             `font-family:${WX_FONT};font-size:${WX_SIZE};color:${WX_COLOR};line-height:${WX_LH};letter-spacing:${WX_LS};word-wrap:break-word;`,
@@ -1080,7 +1080,7 @@ const blocks = [
     `<section style="${S.h6}">这是六级标题 H6</section>`),
 
   card('paragraph · 正文段落',
-    `<p style="${S.p}">这是一段正文内容，展示基础段落样式。字体使用微信默认字体（PingFang SC），字号 14px，行高 1.6，字间距 0.034em。适合大段阅读文字。</p>`),
+    `<p style="${S.p}">这是一段正文内容，展示基础段落样式。字体使用微信默认字体（PingFang SC），字号 15px，行高 1.6，字间距 0.034em。适合大段阅读文字。</p>`),
 
   card('paragraph · 行内格式（加粗 / 斜体 / 删除线 / 行内代码）',
     `<p style="${S.p}">这句话包含 <strong style="${S.strong}">加粗文字</strong>，也有 <em style="${S.em}">斜体文字</em>，还有 <s style="${S.s}">删除线文字</s>，以及 <code style="${S.code_inline}">行内代码</code>，混排效果如上。</p>`),
@@ -1538,7 +1538,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
         ? window.GreenStyle.renderHeadingImage('这是六级标题 H6', 6)
         : `<section style="${cs.h6}">这是六级标题 H6</section>` },
     { id: 'p', label: 'paragraph · 正文段落', keys: ['p'],
-      render: cs => `<p style="${cs.p}">这是一段正文内容，展示基础段落样式。字体使用微信默认字体（PingFang SC），字号 14px，行高 1.6，字间距 0.034em。适合大段阅读文字。</p>` },
+      render: cs => `<p style="${cs.p}">这是一段正文内容，展示基础段落样式。字体使用微信默认字体（PingFang SC），字号 15px，行高 1.6，字间距 0.034em。适合大段阅读文字。</p>` },
     { id: 'inline', label: 'inline · 行内格式', keys: ['strong', 'em', 'code_inline', 's'],
       render: cs => `<p style="${cs.p}">包含 <strong style="${cs.strong}">加粗文字</strong>、<em style="${cs.em}">斜体文字</em>、<s style="${cs.s}">删除线</s>、<code style="${cs.code_inline}">行内代码</code> 的混排效果。</p>` },
     { id: 'intro', label: 'intro · 引言', keys: ['intro_wrapper', 'intro_arrow', 'intro_text'],

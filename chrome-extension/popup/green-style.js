@@ -38,7 +38,7 @@
   const BODY_FONT = "'HarmonyOS Sans SC','PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif";
   // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
   const WX_BODY_FONT = "mp-quote,'PingFang SC',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif";
-  const WX_BODY_SIZE = '14px';
+  const WX_BODY_SIZE = '15px';
   const WX_BODY_COLOR = 'rgb(51,51,51)';
   const WX_BODY_LS = '0.034em';
   const WX_BODY_LH = '1.6';

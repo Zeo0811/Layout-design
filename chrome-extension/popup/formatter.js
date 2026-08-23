@@ -85,9 +85,7 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT};`,
-  // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
-  blockquote_text: `text-align: left; line-height: 26px; font-family: ${WX_FONT}; margin: 0; letter-spacing: 0.1em; color: #327848; font-size: 15px;`,
+  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT}; letter-spacing: 0.1em; color: #327848; font-size: 15px;`,
 
   // ── Callout ───────────────────────────────────────────────────────────
   callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #327848; padding: 16px 20px;`,
@@ -210,8 +208,9 @@ function renderBlock(block, links, depth) {
 
     case 'quote': {
       const bwVal = S.blockquote_wrapper || '';
-      if (bwVal.includes('{{content}}')) return bwVal.replace('{{content}}', pi(block.content));
-      return `<section style="${bwVal}"><p style="${S.blockquote_text}">${pi(block.content)}</p></section>`;
+      const content = pi(block.content).replace(/^(<br\s*\/?>)+|(<br\s*\/?>)+$/g, '');
+      if (bwVal.includes('{{content}}')) return bwVal.replace('{{content}}', content);
+      return `<section style="${bwVal}">${content}</section>`;
     }
 
     case 'callout':

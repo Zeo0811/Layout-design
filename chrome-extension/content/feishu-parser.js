@@ -153,7 +153,7 @@ function getFeishuTitle() {
   for (const el of candidates) {
     if (el && el.textContent.trim()) return el.textContent.trim();
   }
-  return document.title.replace(/- 飞书.*/g, '').replace(/\| 飞书.*/g, '').trim();
+  return document.title.replace(/\s*[-|｜]\s*(飞书|Feishu|Lark).*/gi, '').trim();
 }
 
 // ── 核心：找"块父 === 容器"的块，避免嵌套块被重复处理 ─────────────────────
@@ -317,8 +317,14 @@ function parseFeishuBlock(el, blockType, links) {
     case 'paragraph':
       return { type: 'paragraph', content: extractFeishuText(el, links) };
 
-    case 'quote':
-      return { type: 'quote', content: extractFeishuText(el, links) };
+    case 'quote': {
+      const raw = extractFeishuText(el, links);
+      const content = raw
+        .replace(/\u200b/g, '')
+        .replace(/^(\s*<br\s*\/?>)+\s*/i, '')
+        .replace(/\s*(<br\s*\/?>[\s]*)+$/i, '');
+      return { type: 'quote', content };
+    }
 
     case 'code': {
       const language = el.getAttribute('data-language') ||
@@ -500,6 +506,7 @@ function convertFeishuNodeToHtml(node, links) {
 
     // 飞书行尾自动插入的 enter 标记（含零宽空格），直接跳过
     if (child.getAttribute('data-enter') === 'true') continue;
+    if (child.getAttribute('data-zero-space') === 'true') continue;
 
     if (tag === 'code' || cls.includes('code')) {
       html += `<code>${escapeFeishuHtml(child.textContent)}</code>`;

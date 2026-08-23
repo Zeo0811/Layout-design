@@ -1,6 +1,6 @@
 // WeChat 公众号 HTML 格式化器
 // 样式直接从 style.js tech_black 主题（+ commonStyles）原值复用，零修改
-// 迭代：正文加粗颜色改为 #407600
+// 迭代：正文加粗颜色改为 #327848
 
 // ── 字体（与 style.js FONT_FAMILY 完全一致）──────────────────────────────
 const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
@@ -56,7 +56,7 @@ const S = {
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
-  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${WX_FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
+  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${WX_FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #327848; text-align: center; padding: 0 1em; border-bottom: 8px solid #327848;`,
 
   // commonStyles.h2 + tech_black.h2
   h2: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
@@ -73,8 +73,8 @@ const S = {
   p: `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: ${WX_GAP}; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
-  // 迭代：正文加粗颜色 #407600（commonStyles.span.strong word-break:break-all + font-weight）
-  strong: `word-break: break-all; font-weight: 600; color: #407600;`,
+  // 迭代：正文加粗颜色 #327848（commonStyles.span.strong word-break:break-all + font-weight）
+  strong: `word-break: break-all; font-weight: 600; color: #327848;`,
   em:     `font-style: italic;`,
 
   // span.inlineCode = commonStyles.span.inlineCode + tech_black.span.inlineCode（color: #222222）
@@ -85,12 +85,12 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 3px solid #407600; background-color: #f5f5f5; font-family: ${WX_FONT};`,
+  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT};`,
   // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
-  blockquote_text: `text-align: left; line-height: 26px; font-family: ${WX_FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
+  blockquote_text: `text-align: left; line-height: 26px; font-family: ${WX_FONT}; margin: 0; letter-spacing: 0.1em; color: #327848; font-size: 15px;`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #407600; padding: 16px 20px;`,
+  callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #327848; padding: 16px 20px;`,
 
   callout_content: ``,
 

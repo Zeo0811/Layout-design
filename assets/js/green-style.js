@@ -46,7 +46,7 @@
   const WX_BODY_P_LH = '1.6em';    // 正文段落用 em，复刻参考文章
   const WX_BODY_GAP = '30px';      // 块间距：每块只给下边距，相邻两块恒为 30px
   const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
-  const GREEN = '#327847';
+  const GREEN = '#327848';
   const GREEN_DIM = '#53715C';
   const GRAY = '#808080';
   const WATERMARK = '#B1B1B1';
@@ -87,8 +87,8 @@
     blockquote_wrapper: `position:relative;text-align:left;display:block;margin:0 0 30px;padding:4px 0 4px 42px;font-family:${WX_BODY_FONT};`,
     blockquote_mark:    `position:absolute;left:0;top:0;width:27px;height:auto;display:block;`,
     blockquote_text:    `text-align:justify;line-height:1.11;font-family:${WX_BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;font-weight:600;`,
-    // Callout：左侧 7px #40A978 竖条 + 绿色加粗、左对齐正文、字距 0.1em、行高 1.27、缩进 22px（无底色/无描边）
-    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:0 0 30px;color:${GREEN};font-family:${WX_BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
+    // Callout：左侧 7px #327848 竖条 + 绿色加粗、左对齐正文、字距 0.1em、行高 1.27、缩进 22px（无底色/无描边）
+    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:0 0 30px;color:${GREEN};font-family:${WX_BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #327848;padding:2px 0 2px 22px;`,
     callout_content:    ``,
     // 引言：大丰收「引言」灰标 + 绿色↘箭头（render 内 SVG）+ 绿色两端对齐正文，行高 1.27（无边框）
     intro_wrapper:      `margin:0 0 30px;font-family:${WX_BODY_FONT};`,

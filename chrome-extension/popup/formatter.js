@@ -56,18 +56,18 @@ const S = {
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
-  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
+  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${WX_FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
 
   // commonStyles.h2 + tech_black.h2
-  h2: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
+  h2: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
 
   // commonStyles.h3 + tech_black.h3
-  h3: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; width: fit-content; color: #222222; text-align: left;`,
+  h3: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; width: fit-content; color: #222222; text-align: left;`,
 
   // h4~h6：参考未定义，合理延伸
-  h4: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 16px; font-weight: bold; margin: 1em 0 .5em; color: #222222;`,
-  h5: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 15px; font-weight: bold; margin: .8em 0 .4em; color: #222222;`,
-  h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
+  h4: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 16px; font-weight: bold; margin: 1em 0 .5em; color: #222222;`,
+  h5: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 15px; font-weight: bold; margin: .8em 0 .4em; color: #222222;`,
+  h6: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
   p: `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: ${WX_GAP}; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
@@ -85,12 +85,12 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 3px solid #407600; background-color: #f5f5f5; font-family: ${FONT};`,
+  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 3px solid #407600; background-color: #f5f5f5; font-family: ${WX_FONT};`,
   // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
-  blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
+  blockquote_text: `text-align: left; line-height: 26px; font-family: ${WX_FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #407600; border-radius: 8px; padding: 16px 20px;`,
+  callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #407600; padding: 16px 20px;`,
 
   callout_content: ``,
 
@@ -116,9 +116,9 @@ const S = {
   // ul.nc-list_li_p / ol.nc-list_li_p
   li_p:  `font-family: inherit; vertical-align: baseline; margin: 10px 0;`,
 
-  // ── 图片（figure.figure_img: border-radius: 10px）────────────────────
+  // ── 图片（无圆角）────────────────────
   img_wrapper: `margin: 0 0 30px; text-align: center;`,
-  img:         `max-width: 100%; height: auto; border-radius: 10px; display: inline-block;`,
+  img:         `max-width: 100%; height: auto; display: inline-block;`,
   img_caption: `font-size: 12px; color: #888888; margin-top: 5px; text-align: center;`,
 
   // ── 视频 ─────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ const S = {
   video_label:   `color: rgba(255,255,255,.45); font-size: 14px;`,
 
   // ── Toggle（参考未定义，合理实现）────────────────────────────────────
-  toggle_summary: `display:block;font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${FONT};`,
+  toggle_summary: `display:block;font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${WX_FONT};`,
   toggle_content: `display:block;padding-left:15px;border-left:2px solid rgba(0,0,0,.15);margin-left:4px;`,
 
   // ── 表格 ─────────────────────────────────────────────────────────────

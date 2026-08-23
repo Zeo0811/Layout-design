@@ -34,7 +34,8 @@
     return out;
   }
 
-  const HEADING_FONT = "'可画大丰收SC'";
+  // 标题字体已与正文统一；「可画大丰收SC」保留给「引言」灰标等装饰性文字
+  const DISPLAY_FONT = "'可画大丰收SC'";
   const BODY_FONT = "'HarmonyOS Sans SC','PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif";
   // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
   const WX_BODY_FONT = "mp-quote,'PingFang SC',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif";
@@ -71,29 +72,29 @@
     __headingMode: 'image',
     __variant: 'green',
     wrapper:            `font-family:${WX_BODY_FONT};font-size:${WX_BODY_SIZE};color:${WX_BODY_COLOR};line-height:${WX_BODY_LH};letter-spacing:${WX_BODY_LS};word-wrap:break-word;`,
-    h1: `display:block;font-family:${HEADING_FONT};font-size:40px;font-weight:normal;color:${GREEN};text-align:left;margin:36px 0 20px 0;line-height:1.4;`,
-    h2: `display:block;font-family:${HEADING_FONT};font-size:32px;font-weight:normal;color:${GREEN};text-align:left;margin:32px 0 16px 0;line-height:1.4;`,
-    h3: `display:block;font-family:${HEADING_FONT};font-size:25px;font-weight:normal;color:${GREEN};text-align:left;margin:28px 0 14px 0;line-height:1.5;`,
-    h4: `display:block;font-family:${HEADING_FONT};font-size:19px;font-weight:normal;color:${GREEN};text-align:left;margin:22px 0 10px 0;line-height:1.5;`,
-    h5: `display:block;font-family:${HEADING_FONT};font-size:16px;font-weight:normal;color:${GREEN};text-align:left;margin:18px 0 8px 0;line-height:1.5;`,
-    h6: `display:block;font-family:${HEADING_FONT};font-size:15px;font-weight:normal;color:${GREEN};text-align:left;margin:16px 0 8px 0;line-height:1.5;`,
+    h1: `display:block;font-family:${WX_BODY_FONT};font-size:40px;font-weight:normal;color:${GREEN};text-align:left;margin:36px 0 20px 0;line-height:1.4;`,
+    h2: `display:block;font-family:${WX_BODY_FONT};font-size:32px;font-weight:normal;color:${GREEN};text-align:left;margin:32px 0 16px 0;line-height:1.4;`,
+    h3: `display:block;font-family:${WX_BODY_FONT};font-size:25px;font-weight:normal;color:${GREEN};text-align:left;margin:28px 0 14px 0;line-height:1.5;`,
+    h4: `display:block;font-family:${WX_BODY_FONT};font-size:19px;font-weight:normal;color:${GREEN};text-align:left;margin:22px 0 10px 0;line-height:1.5;`,
+    h5: `display:block;font-family:${WX_BODY_FONT};font-size:16px;font-weight:normal;color:${GREEN};text-align:left;margin:18px 0 8px 0;line-height:1.5;`,
+    h6: `display:block;font-family:${WX_BODY_FONT};font-size:15px;font-weight:normal;color:${GREEN};text-align:left;margin:16px 0 8px 0;line-height:1.5;`,
     p:                  `text-align:justify;line-height:${WX_BODY_P_LH};font-family:${WX_BODY_FONT};margin:0;padding-bottom:${WX_BODY_GAP};letter-spacing:${WX_BODY_LS};white-space:pre-line;color:${WX_BODY_COLOR};font-size:${WX_BODY_SIZE};`,
     strong:             `word-break:break-all;font-weight:600;color:${GREEN};`,
     em:                 `font-style:italic;`,
     code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,
     s:                  `text-decoration:line-through;color:#888888;`,
     // 引用：左上绿色引号挂在左侧留白，正文缩进 42px、绿色加粗、两端对齐、字距 0.17em、行高 1.1
-    blockquote_wrapper: `position:relative;text-align:left;display:block;margin:0 0 30px;padding:4px 0 4px 42px;font-family:${BODY_FONT};`,
+    blockquote_wrapper: `position:relative;text-align:left;display:block;margin:0 0 30px;padding:4px 0 4px 42px;font-family:${WX_BODY_FONT};`,
     blockquote_mark:    `position:absolute;left:0;top:0;width:27px;height:auto;display:block;`,
-    blockquote_text:    `text-align:justify;line-height:1.11;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;font-weight:600;`,
+    blockquote_text:    `text-align:justify;line-height:1.11;font-family:${WX_BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;font-weight:600;`,
     // Callout：左侧 7px #40A978 竖条 + 绿色加粗、左对齐正文、字距 0.1em、行高 1.27、缩进 22px（无底色/无描边）
-    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:0 0 30px;color:${GREEN};font-family:${BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
+    callout_wrapper:    `text-align:left;font-size:15px;white-space:normal;margin:0 0 30px;color:${GREEN};font-family:${WX_BODY_FONT};line-height:1.35;letter-spacing:0.1em;font-weight:600;border-left:7px solid #40A978;padding:2px 0 2px 22px;`,
     callout_content:    ``,
     // 引言：大丰收「引言」灰标 + 绿色↘箭头（render 内 SVG）+ 绿色两端对齐正文，行高 1.27（无边框）
-    intro_wrapper:      `margin:0 0 30px;font-family:${BODY_FONT};`,
+    intro_wrapper:      `margin:0 0 30px;font-family:${WX_BODY_FONT};`,
     intro_head:         `display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;`,
     intro_arrow:        `font-size:38px;line-height:1;color:${GREEN};`,
-    intro_text:         `text-align:justify;line-height:1.27;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
+    intro_text:         `text-align:justify;line-height:1.27;font-family:${WX_BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
     code_wrapper:       `margin:0 10px 30px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:Consolas,Monaco,monospace;`,
     code_lang_bar:      `font-size:11px;color:${GREEN};font-family:Consolas,Monaco,monospace;padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
     code_pre:           `margin:0;padding:0;overflow-x:auto;background:transparent;`,
@@ -110,7 +111,7 @@
     li_p:               `font-family:inherit;vertical-align:baseline;margin:0 0 6px 0;color:${GREEN};letter-spacing:0.1em;`,
     todo_item:          `display:flex;align-items:center;column-gap:8px;color:${GREEN};font-family:${BODY_FONT};font-size:15px;line-height:1.27;letter-spacing:0.1em;margin:4px 0;`,
     img_wrapper:        `margin:0 0 30px;text-align:center;`,
-    img:                `max-width:100%;height:auto;border-radius:5px;display:inline-block;`,
+    img:                `max-width:100%;height:auto;display:inline-block;`,
     img_caption:        `font-size:11px;color:${GRAY};margin-top:6px;text-align:center;letter-spacing:0.1em;line-height:1.83;`,
     video_wrapper:      `margin:0 0 30px;background:#111;border-radius:8px;padding:28px 20px;text-align:center;`,
     video_label:        `color:rgba(255,255,255,.45);font-size:14px;`,
@@ -237,7 +238,7 @@
     const spec = HEADING_SPECS[level] || HEADING_SPECS[3];
     const scale = opts.scale ?? RENDER_SCALE;
     const W = opts.contentWidth ?? CONTENT_WIDTH;
-    const fontFamily = opts.fontFamily ?? HEADING_FONT;
+    const fontFamily = opts.fontFamily ?? WX_BODY_FONT;
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
     const seq = opts.seq ?? 1;
 
@@ -269,7 +270,7 @@
     const lineHeight = opts.lineHeight ?? Math.round(size * 1.35);
     const scale = opts.scale ?? RENDER_SCALE;
     const W = opts.contentWidth ?? CONTENT_WIDTH;
-    const fontFamily = opts.fontFamily ?? HEADING_FONT;
+    const fontFamily = opts.fontFamily ?? DISPLAY_FONT;
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
 
     const canvas = factory();
@@ -302,7 +303,7 @@
     const scale = opts.scale ?? RENDER_SCALE;
     const W = opts.contentWidth ?? CONTENT_WIDTH;
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
-    const fontFamily = opts.bodyFont ?? "'HarmonyOS Sans SC','PingFang SC',-apple-system,sans-serif";
+    const fontFamily = opts.bodyFont ?? WX_BODY_FONT;
     const fontSize = opts.fontSize ?? 15;
     const lineHeight = opts.lineHeight ?? 16;   // Figma 60/55≈1.09 → 16px
     const baseLS = fontSize * 0.17;          // 引用字距 0.17em
@@ -361,7 +362,7 @@
     const scale = opts.scale ?? RENDER_SCALE;
     const W = opts.contentWidth ?? CONTENT_WIDTH;
     const factory = opts.canvasFactory ?? _defaultCanvasFactory;
-    const bodyFont = opts.bodyFont ?? "'HarmonyOS Sans SC','PingFang SC',-apple-system,sans-serif";
+    const bodyFont = opts.bodyFont ?? WX_BODY_FONT;
     const fontSize = opts.fontSize ?? 15;
     const lineHeight = opts.lineHeight ?? 19;   // Figma 70/55≈1.27
     const baseLS = fontSize * 0.1;
@@ -391,7 +392,7 @@
       c.restore();
     }
     // 大丰收「引言」灰标（右上，底对齐箭头）
-    c.font = `${labelSize}px ${HEADING_FONT}`; c.fillStyle = '#808080';
+    c.font = `${labelSize}px ${DISPLAY_FONT}`; c.fillStyle = '#808080';
     c.textBaseline = 'alphabetic'; c.textAlign = 'right';
     if ('letterSpacing' in c) c.letterSpacing = '0px';
     c.fillText('引言', W, Math.max(arrowH, labelSize));
@@ -415,5 +416,5 @@
     return `<img src="${canvas.toDataURL('image/png')}" style="${style}" alt="${escapeAttr(text)}" />`;
   }
 
-  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT, LATIN_FONT, renderHeadingImage, renderTextImage, renderQuoteImage, renderIntroImage };
+  return { wrapHeadingLines, MAX_LINES, HEADING_SPECS, GREEN_TOKENS, CONTENT_WIDTH, RENDER_SCALE, HEADING_FONT: WX_BODY_FONT, DISPLAY_FONT, LATIN_FONT, renderHeadingImage, renderTextImage, renderQuoteImage, renderIntroImage };
 });

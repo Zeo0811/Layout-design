@@ -5,8 +5,8 @@
 // ── 字体（与 style.js FONT_FAMILY 完全一致）──────────────────────────────
 const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
 // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
-const WX_FONT = "system-ui, -apple-system, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
-const WX_SIZE = '16px', WX_COLOR = 'rgb(48,48,48)', WX_LS = '0.034em', WX_LH = '2';
+const WX_FONT = "mp-quote, 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
+const WX_SIZE = '14px', WX_COLOR = 'rgb(51,51,51)', WX_LS = '0.034em', WX_LH = '1.6';
 const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
 
 // ── 代码语法高亮色表（来自 codeBlockTheme.js defaultTheme，原值不改）────

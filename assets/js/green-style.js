@@ -37,11 +37,11 @@
   const HEADING_FONT = "'可画大丰收SC'";
   const BODY_FONT = "'HarmonyOS Sans SC','PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif";
   // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
-  const WX_BODY_FONT = "system-ui,-apple-system,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif";
-  const WX_BODY_SIZE = '16px';
-  const WX_BODY_COLOR = 'rgb(48,48,48)';
+  const WX_BODY_FONT = "mp-quote,'PingFang SC',system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Sans GB','Microsoft YaHei UI','Microsoft YaHei',Arial,sans-serif";
+  const WX_BODY_SIZE = '14px';
+  const WX_BODY_COLOR = 'rgb(51,51,51)';
   const WX_BODY_LS = '0.034em';
-  const WX_BODY_LH = '2';
+  const WX_BODY_LH = '1.6';
   const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
   const GREEN = '#327847';
   const GREEN_DIM = '#53715C';

@@ -202,7 +202,9 @@ function renderBlock(block, links, depth) {
     case 'paragraph': {
       // \u200b 是飞书空行末尾自动插入的零宽空格，需视为空行
       const text = (block.content || '').replace(/\u200b/g, '').trim();
-      if (!text) return '<br>';
+      // 空行直接丢弃：段间距一律由 p 的 padding-bottom(24px) 决定，与参考文章一致。
+      // 从前这里返回 <br>，会额外撑出一个行框，隔空行的两段间距变成 ~48px。
+      if (!text) return '';
       return applyS('p', pi(block.content), 'p');
     }
 

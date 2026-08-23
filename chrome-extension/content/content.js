@@ -7,8 +7,10 @@
 
   function detectPageType() {
     const url = window.location.href;
-    if (url.includes('notion.so') || url.includes('notion.site')) return 'notion';
+    // 飞书域名固定，先判；否则 URL 里凑巧带 notion 的飞书文档会被认成 Notion
     if (url.includes('feishu.cn') || url.includes('larksuite.com')) return 'feishu';
+    // Notion 支持自建域/企业域：整个 URL 里出现 notion 即视为 Notion 页面
+    if (url.includes('notion')) return 'notion';
     return 'unknown';
   }
 

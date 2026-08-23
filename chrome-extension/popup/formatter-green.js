@@ -48,8 +48,6 @@
     const P = W.pi || (typeof pi !== 'undefined' ? pi : (x) => x || '');
     const EH = W.escHtml || (typeof escHtml !== 'undefined' ? escHtml : (x) => x || '');
     const EA = W.escAttr || (typeof escAttr !== 'undefined' ? escAttr : (x) => x || '');
-    // 本块后面跟的空行 → 折进本块的下边距（微信删空段，靠 margin 保留间距）。每空行 ~23px
-    const blankGap = Math.min(trailingBlanks || 0, 3) * 23;
 
     // 标题：取纯文字（剥 HTML 标签）；仅表情/符号 → 居中表情行，不走大丰收标题图
     if (/^h[1-6]$/.test(block.type)) {
@@ -68,24 +66,22 @@
         const t = (block.content || '').replace(/​/g, '').trim();
         // 空段落（Notion 空行）由 renderGreenArticle 折叠进前一段 padding，这里直接跳过（微信会删空段）
         if (!t) return '';
-        // trailingBlanks：本段后面跟了几个空行 → 段间距加大（合设计稿“普通段~40px”），无空行则 17px（“紧凑”）
-        const extra = Math.min(trailingBlanks || 0, 3) * 23;
-        const style = extra ? `${SS.p};padding-bottom:${17 + extra}px` : SS.p;
-        return `<p style="${style}">${P(block.content)}</p>`;
+        // 段间距一律取 SS.p 的 padding-bottom(24px)，空行不再加宽
+        return `<p style="${SS.p}">${P(block.content)}</p>`;
       }
 
       case 'quote':
         // 引号小图 + CSS 绿字（字号=正文、可选中）；后接空行加大下边距
-        return `<section style="margin:22px 0 ${22 + blankGap}px;">`
+        return `<section style="margin:0 0 30px;">`
           + _img(D.quote, 'width:27px;height:auto;display:block;margin:0 0 6px 0;', '引用')
           + `<p style="${SS.blockquote_text};padding-left:42px;">${P(block.content)}</p>`
           + `</section>`;
 
       case 'callout':
-        return `<section style="${SS.callout_wrapper};margin-bottom:${22 + blankGap}px;">${P(block.content)}</section>`;
+        return `<section style="${SS.callout_wrapper}">${P(block.content)}</section>`;
 
       case 'divider':
-        return `<section style="margin:18px 0 ${18 + blankGap}px;text-align:center;line-height:0;">`
+        return `<section style="margin:0 0 30px;text-align:center;line-height:0;">`
           + _img(D.divider, 'width:100%;display:block;', '分割线') + `</section>`;
 
       case 'bulleted_list': return renderGreenList(block.items, false, depth, seq, links);

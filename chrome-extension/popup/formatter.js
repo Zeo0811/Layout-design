@@ -1,12 +1,13 @@
 // WeChat 公众号 HTML 格式化器
 // 样式直接从 style.js tech_black 主题（+ commonStyles）原值复用，零修改
-// 迭代：正文加粗颜色改为 #407600
+// 迭代：正文加粗颜色改为 #327848
 
 // ── 字体（与 style.js FONT_FAMILY 完全一致）──────────────────────────────
 const FONT = "Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif";
 // 微信公众号「默认」正文样式（取自 mp.weixin.qq.com 阅读页与编辑器默认字体 span 的实际取值）
-const WX_FONT = "system-ui, -apple-system, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
-const WX_SIZE = '16px', WX_COLOR = 'rgb(48,48,48)', WX_LS = '0.034em', WX_LH = '2';
+const WX_FONT = "mp-quote, 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif";
+const WX_SIZE = '15px', WX_COLOR = 'rgb(51,51,51)', WX_LS = '0.034em', WX_LH = '1.6';
+const WX_P_LH = '1.6em', WX_GAP = '30px';  // 正文行高用 em、段间距 24px，复刻参考文章
 const MONO = 'Operator Mono, Consolas, Monaco, Menlo, monospace';
 
 // ── 代码语法高亮色表（来自 codeBlockTheme.js defaultTheme，原值不改）────
@@ -55,25 +56,25 @@ const S = {
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
-  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #407600; text-align: center; padding: 0 1em; border-bottom: 8px solid #407600;`,
+  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${WX_FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #327848; text-align: center; padding: 0 1em; border-bottom: 8px solid #327848;`,
 
   // commonStyles.h2 + tech_black.h2
-  h2: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
+  h2: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
 
   // commonStyles.h3 + tech_black.h3
-  h3: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; width: fit-content; color: #222222; text-align: left;`,
+  h3: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; width: fit-content; color: #222222; text-align: left;`,
 
   // h4~h6：参考未定义，合理延伸
-  h4: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 16px; font-weight: bold; margin: 1em 0 .5em; color: #222222;`,
-  h5: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 15px; font-weight: bold; margin: .8em 0 .4em; color: #222222;`,
-  h6: `display: block; line-height: 1.5; font-family: ${FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
+  h4: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 16px; font-weight: bold; margin: 1em 0 .5em; color: #222222;`,
+  h5: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 15px; font-weight: bold; margin: .8em 0 .4em; color: #222222;`,
+  h6: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 14px; font-weight: bold; margin: .7em 0 .35em; color: #555555;`,
 
   // ── 段落（commonStyles.p，tech_black 未覆盖）─────────────────────────
-  p: `text-align: left; line-height: ${WX_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: 1em; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
+  p: `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 0; padding-bottom: ${WX_GAP}; letter-spacing: ${WX_LS}; white-space: pre-line; color: ${WX_COLOR}; font-size: ${WX_SIZE};`,
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
-  // 迭代：正文加粗颜色 #407600（commonStyles.span.strong word-break:break-all + font-weight）
-  strong: `word-break: break-all; font-weight: 600; color: #407600;`,
+  // 迭代：正文加粗颜色 #327848（commonStyles.span.strong word-break:break-all + font-weight）
+  strong: `word-break: break-all; font-weight: 600; color: #327848;`,
   em:     `font-style: italic;`,
 
   // span.inlineCode = commonStyles.span.inlineCode + tech_black.span.inlineCode（color: #222222）
@@ -84,52 +85,52 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 20px 0; border-left: 3px solid #407600; background-color: #f5f5f5; font-family: ${FONT};`,
+  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT};`,
   // tech_black blockquote_digest_p：未覆盖（空对象），沿用段落样式
-  blockquote_text: `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 0; letter-spacing: 0.1em; color: #407600; font-size: 15px;`,
+  blockquote_text: `text-align: left; line-height: 26px; font-family: ${WX_FONT}; margin: 0; letter-spacing: 0.1em; color: #327848; font-size: 15px;`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  callout_wrapper: `font-size: 15px; white-space: normal; margin: 20px 0; color: #3f3f3f; font-family: ${FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #407600; border-radius: 8px; padding: 16px 20px;`,
+  callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #327848; padding: 16px 20px;`,
 
   callout_content: ``,
 
   // ── 公众号跳转卡片 ─────────────────────────────────────────────────────
-  wechat_card_wrapper: `margin: 20px 0; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; background: #ffffff; font-family: ${FONT};`,
+  wechat_card_wrapper: `margin: 0 0 30px; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; background: #ffffff; font-family: ${FONT};`,
   wechat_card_label:   `font-size: 12px; color: #888888; margin-bottom: 6px; letter-spacing: 0.5px;`,
   wechat_card_title:   `font-size: 15px; color: #576b95; line-height: 1.5; font-weight: 500; word-break: break-all; text-decoration: none; display: block;`,
 
   // ── 代码块（commonStyles.pre，tech_black 未覆盖）─────────────────────
-  code_wrapper:  `margin: 20px 10px; display: block; width: calc(100% - 20px); box-sizing: border-box; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
+  code_wrapper:  `margin: 0 10px 30px; display: block; width: calc(100% - 20px); box-sizing: border-box; font-size: 15px; padding: 10px; color: #333; position: relative; background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 5px; white-space: pre; box-shadow: rgba(0,0,0,.3) 0px 2px 10px; overflow-x: auto; text-align: left; font-family: ${MONO};`,
   code_lang_bar: `font-size: 11px; color: #999; font-family: ${MONO}; padding-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;`,
   code_pre:      `margin: 0; padding: 0; overflow-x: auto; background: transparent;`,
   code_text:     `font-family: ${MONO}; font-size: 14px; line-height: 1.65; white-space: pre; word-break: normal; display: block; color: #333;`,
 
   // ── 分割线 ────────────────────────────────────────────────────────────
-  hr: `border-style: solid; border-width: 1px 0 0; border-color: #797979; margin: 15px 0;`,
+  hr: `border-style: solid; border-width: 1px 0 0; border-color: #797979; margin: 0 0 30px;`,
 
   // ── 列表（commonStyles ul.nc-list / ul.nc-list_li / ol.nc-list / ol.nc-list_li）
-  ul: `padding-left: 1.5em; font-size: 15px; line-height: 1.75; font-family: ${FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 8px; margin-top: 0;`,
-  ol: `padding-left: 1.5em; font-size: 15px; line-height: 26px; font-family: ${FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 8px; margin-top: 0;`,
+  ul: `padding-left: 1.5em; font-size: 15px; line-height: 1.75; font-family: ${FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
+  ol: `padding-left: 1.5em; font-size: 15px; line-height: 26px; font-family: ${FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
   li_ul: `font-size: 15px; line-height: 26px; font-family: ${FONT}; list-style-position: outside; list-style-type: disc;`,
   li_ol: `font-size: 15px; line-height: 1.75; font-family: ${FONT}; list-style-position: outside; list-style-type: decimal;`,
   // ul.nc-list_li_p / ol.nc-list_li_p
   li_p:  `font-family: inherit; vertical-align: baseline; margin: 10px 0;`,
 
-  // ── 图片（figure.figure_img: border-radius: 10px）────────────────────
-  img_wrapper: `margin: 15px 0; text-align: center;`,
-  img:         `max-width: 100%; height: auto; border-radius: 10px; display: inline-block;`,
+  // ── 图片（无圆角）────────────────────
+  img_wrapper: `margin: 0 0 30px; text-align: center;`,
+  img:         `max-width: 100%; height: auto; display: inline-block;`,
   img_caption: `font-size: 12px; color: #888888; margin-top: 5px; text-align: center;`,
 
   // ── 视频 ─────────────────────────────────────────────────────────────
-  video_wrapper: `margin: 1em 0; background: #111; border-radius: 8px; padding: 28px 20px; text-align: center;`,
+  video_wrapper: `margin: 0 0 30px; background: #111; border-radius: 8px; padding: 28px 20px; text-align: center;`,
   video_label:   `color: rgba(255,255,255,.45); font-size: 14px;`,
 
   // ── Toggle（参考未定义，合理实现）────────────────────────────────────
-  toggle_summary: `display:block;font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${FONT};`,
+  toggle_summary: `display:block;font-size:15px;font-weight:bold;color:#222222;margin:12px 0 5px;padding-left:15px;border-left:3px solid #222222;font-family:${WX_FONT};`,
   toggle_content: `display:block;padding-left:15px;border-left:2px solid rgba(0,0,0,.15);margin-left:4px;`,
 
   // ── 表格 ─────────────────────────────────────────────────────────────
-  table_wrapper: `overflow-x: auto; margin: 1em 0;`,
+  table_wrapper: `overflow-x: auto; margin: 0 0 30px;`,
   table:         `border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.6; font-family: ${FONT};`,
   th:            `background: rgba(0,0,0,.05); padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); font-weight: bold; text-align: left; color: #222222;`,
   td:            `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: #222222;`,
@@ -137,7 +138,7 @@ const S = {
 
   // ── 嵌入链接 ──────────────────────────────────────────────────────────
   // a（tech_black.a）：text-decoration:none; color:#222222; border-bottom:1px solid #222222
-  embed_wrapper: `margin: 1em 0; border: 1px solid rgba(0,0,0,.1); padding: 11px 15px;`,
+  embed_wrapper: `margin: 0 0 30px; border: 1px solid rgba(0,0,0,.1); padding: 11px 15px;`,
   embed_label:   `font-size: 12px; color: #888888; margin-bottom: 4px;`,
   embed_link:    `font-size: 13px; text-decoration: none; color: #222222; border-bottom: 1px solid #222222; word-break: break-all;`,
 
@@ -201,7 +202,9 @@ function renderBlock(block, links, depth) {
     case 'paragraph': {
       // \u200b 是飞书空行末尾自动插入的零宽空格，需视为空行
       const text = (block.content || '').replace(/\u200b/g, '').trim();
-      if (!text) return '<br>';
+      // 空行直接丢弃：段间距一律由 p 的 padding-bottom(24px) 决定，与参考文章一致。
+      // 从前这里返回 <br>，会额外撑出一个行框，隔空行的两段间距变成 ~48px。
+      if (!text) return '';
       return applyS('p', pi(block.content), 'p');
     }
 

@@ -641,12 +641,12 @@
     // ── 浮动高亮层（借鉴 Chrome DevTools 选择器：不修改目标元素样式）──
     const hlBox = document.createElement('div');
     hlBox.id = '__wzx_hlbox__';
-    hlBox.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;box-sizing:border-box;border:2px solid #07a11d;background:rgba(7,161,29,0.08);border-radius:2px;display:none;';
+    hlBox.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;box-sizing:border-box;border:2px solid #327848;background:rgba(50,120,72,0.08);border-radius:2px;display:none;';
     document.body.appendChild(hlBox);
 
     const hlBadge = document.createElement('div');
     hlBadge.id = '__wzx_hlbadge__';
-    hlBadge.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483646;background:#07a11d;color:#fff;font:bold 11px/18px monospace;padding:1px 8px;border-radius:0 0 3px 3px;display:none;white-space:nowrap;';
+    hlBadge.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483646;background:#327848;color:#fff;font:bold 11px/18px monospace;padding:1px 8px;border-radius:0 0 3px 3px;display:none;white-space:nowrap;';
     document.body.appendChild(hlBadge);
 
     let currentEl = null;
@@ -986,7 +986,7 @@
         return ancestors.map((a, i) => {
           const tag  = a.tagName.toLowerCase();
           const isSel = a === selectedEl;
-          const bg   = isSel ? '#07a11d' : '#f0f0f0';
+          const bg   = isSel ? '#327848' : '#f0f0f0';
           const col  = isSel ? '#fff'    : '#444';
           return `<span data-idx="${i}" style="cursor:pointer;background:${bg};color:${col};padding:2px 6px;border-radius:3px;font:bold 11px monospace;white-space:nowrap;">${tag}</span>`;
         }).join('<span style="color:#bbb;margin:0 1px;font-size:11px;">›</span>');
@@ -1018,7 +1018,7 @@
               </div>
               <div style="width:1px;background:#e0e0e0;"></div>
               <div style="flex:1;min-width:0;">
-                <div style="background:#e8f5e9;padding:3px 6px;font-size:10px;color:#2a6b2a;text-align:center;border-bottom:1px solid #c8e6c9;">提取效果</div>
+                <div style="background:#edf3ef;padding:3px 6px;font-size:10px;color:#327848;text-align:center;border-bottom:1px solid #d2e2d7;">提取效果</div>
                 <div id="__wzx_right__" style="padding:6px;overflow:auto;max-height:150px;background:#fff;"></div>
               </div>
             </div>
@@ -1083,7 +1083,7 @@
           }
           previewArea.style.display = 'block';
           confirmBtn.disabled = false;
-          confirmBtn.style.background = '#07a11d';
+          confirmBtn.style.background = '#327848';
           confirmBtn.style.cursor = 'pointer';
         });
 

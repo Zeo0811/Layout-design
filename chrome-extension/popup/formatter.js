@@ -85,15 +85,15 @@ const S = {
 
   // ── 引用块 ────────────────────────────────────────────────────────────
   // commonStyles['blockquote.js-blockquote-wrap'] + tech_black 覆盖
-  blockquote_wrapper: `line-height: 26px; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT}; letter-spacing: 0.1em; color: #327848; font-size: 15px;`,
+  blockquote_wrapper: `line-height: ${WX_P_LH}; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT}; letter-spacing: ${WX_LS}; color: #327848; font-size: ${WX_SIZE};`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  callout_wrapper: `font-size: 15px; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #f9fdf5; border: 1px solid #327848; padding: 16px 20px;`,
+  callout_wrapper: `font-size: ${WX_SIZE}; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #fafcfb; border: 1px solid #327848; padding: 16px 20px;`,
 
   callout_content: ``,
 
   // ── 公众号跳转卡片 ─────────────────────────────────────────────────────
-  wechat_card_wrapper: `margin: 0 0 30px; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; background: #ffffff; font-family: ${FONT};`,
+  wechat_card_wrapper: `margin: 0 0 30px; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; background: #ffffff; font-family: ${WX_FONT};`,
   wechat_card_label:   `font-size: 12px; color: #888888; margin-bottom: 6px; letter-spacing: 0.5px;`,
   wechat_card_title:   `font-size: 15px; color: #576b95; line-height: 1.5; font-weight: 500; word-break: break-all; text-decoration: none; display: block;`,
 
@@ -107,10 +107,10 @@ const S = {
   hr: `border-style: solid; border-width: 1px 0 0; border-color: #797979; margin: 0 0 30px;`,
 
   // ── 列表（commonStyles ul.nc-list / ul.nc-list_li / ol.nc-list / ol.nc-list_li）
-  ul: `padding-left: 1.5em; font-size: 15px; line-height: 1.75; font-family: ${FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
-  ol: `padding-left: 1.5em; font-size: 15px; line-height: 26px; font-family: ${FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
-  li_ul: `font-size: 15px; line-height: 26px; font-family: ${FONT}; list-style-position: outside; list-style-type: disc;`,
-  li_ol: `font-size: 15px; line-height: 1.75; font-family: ${FONT}; list-style-position: outside; list-style-type: decimal;`,
+  ul: `padding-left: 1.5em; font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
+  ol: `padding-left: 1.5em; font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
+  li_ul: `font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; list-style-position: outside; list-style-type: disc;`,
+  li_ol: `font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; list-style-position: outside; list-style-type: decimal;`,
   // ul.nc-list_li_p / ol.nc-list_li_p
   li_p:  `font-family: inherit; vertical-align: baseline; margin: 10px 0;`,
 
@@ -129,7 +129,7 @@ const S = {
 
   // ── 表格 ─────────────────────────────────────────────────────────────
   table_wrapper: `overflow-x: auto; margin: 0 0 30px;`,
-  table:         `border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.6; font-family: ${FONT};`,
+  table:         `border-collapse: collapse; width: 100%; font-size: ${WX_SIZE}; line-height: ${WX_LH}; letter-spacing: ${WX_LS}; font-family: ${WX_FONT};`,
   th:            `background: rgba(0,0,0,.05); padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); font-weight: bold; text-align: left; color: #222222;`,
   td:            `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: #222222;`,
   td_even:       `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: #222222; background: rgba(0,0,0,.02);`,
@@ -312,7 +312,7 @@ function renderCodeBlock(block) {
 function renderList(items, isOrdered, depth) {
   if (!items || items.length === 0) return '';
   const indent = depth > 0 ? `padding-left: ${depth * 1.5}em;` : '';
-  const baseStyle = `text-align: left; line-height: 26px; font-family: ${FONT}; margin: 5px 0; letter-spacing: 0.1em; color: rgb(63,63,63); font-size: 15px; ${indent}`;
+  const baseStyle = `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 5px 0; letter-spacing: ${WX_LS}; color: ${WX_COLOR}; font-size: ${WX_SIZE}; ${indent}`;
   const markerStyle = `display: inline-block; min-width: 1.5em; margin-right: 0.3em;`;
 
   let html = '';

@@ -41,7 +41,7 @@
     .tab-nav .brand {
       font-size: 15px;
       font-weight: bold;
-      color: #407600;
+      color: #327848;
       margin-right: 32px;
       white-space: nowrap;
       letter-spacing: .02em;
@@ -58,10 +58,10 @@
       white-space: nowrap;
       outline: none;
     }
-    .tab-btn:hover { color: #407600; }
+    .tab-btn:hover { color: #327848; }
     .tab-btn.active {
-      color: #407600;
-      border-bottom-color: #407600;
+      color: #327848;
+      border-bottom-color: #327848;
       font-weight: 600;
     }
 
@@ -157,9 +157,9 @@
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
-      background: #f0f6e8;
-      color: #407600;
-      border: 1px solid #c8e09b;
+      background: #f0f5f2;
+      color: #327848;
+      border: 1px solid #c8dbce;
     }
 
     /* 章节标题 */
@@ -169,7 +169,7 @@
       color: #222;
       margin: 48px 0 20px;
       padding-bottom: 10px;
-      border-bottom: 2px solid #407600;
+      border-bottom: 2px solid #327848;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -177,7 +177,7 @@
     .guide-section-title .num {
       width: 28px;
       height: 28px;
-      background: #407600;
+      background: #327848;
       color: #fff;
       border-radius: 50%;
       display: flex;
@@ -202,10 +202,10 @@
       width: 32px;
       height: 32px;
       min-width: 32px;
-      background: #f0f6e8;
-      border: 2px solid #407600;
+      background: #f0f5f2;
+      border: 2px solid #327848;
       border-radius: 50%;
-      color: #407600;
+      color: #327848;
       font-weight: bold;
       font-size: 14px;
       display: flex;
@@ -227,11 +227,11 @@
     }
     .step-card .step-body .tip {
       margin-top: 8px;
-      background: #f0f6e8;
+      background: #f0f5f2;
       border-radius: 6px;
       padding: 8px 12px;
       font-size: 13px;
-      color: #407600;
+      color: #327848;
     }
     .step-card .step-body .code-path {
       display: inline-block;
@@ -253,7 +253,7 @@
       border: 1px solid #e8e8e8;
     }
     .step-img-inner {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e8f0d8 100%);
+      background: linear-gradient(135deg, #f8f9fa 0%, #e6efe9 100%);
       padding: 24px;
       text-align: center;
       font-size: 13px;
@@ -299,9 +299,9 @@
       color: #7c5600;
     }
     .alert.info {
-      background: #f0f6e8;
-      border: 1px solid #b7d87c;
-      color: #3d6300;
+      background: #f0f5f2;
+      border: 1px solid #b9d1c0;
+      color: #255935;
     }
     .alert .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 
@@ -321,7 +321,7 @@
       display: flex;
       gap: 8px;
     }
-    .faq-q .q-icon { color: #407600; flex-shrink: 0; }
+    .faq-q .q-icon { color: #327848; flex-shrink: 0; }
     .faq-a {
       font-size: 14px;
       color: #555;
@@ -334,7 +334,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #407600;
+      background: #327848;
       color: #fff;
       padding: 12px 24px;
       border-radius: 8px;
@@ -344,7 +344,7 @@
       margin-top: 8px;
       transition: background .2s;
     }
-    .dl-btn:hover { background: #336000; }
+    .dl-btn:hover { background: #255935; }
 
     /* ────────────────────────────────
        Tab 3  自定义模板
@@ -362,7 +362,7 @@
       position: absolute; inset: 0; z-index: 100;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      background: #f5f7f2;
+      background: #f3f7f5;
     }
     #tpl-gate.hidden { display: none; }
 
@@ -402,17 +402,17 @@
       letter-spacing: 2px; text-align: center;
       transition: border-color .15s;
     }
-    .gate-input:focus { border-color: #407600; box-shadow: 0 0 0 3px rgba(64,118,0,.1); }
+    .gate-input:focus { border-color: #327848; box-shadow: 0 0 0 3px rgba(50,120,72,.1); }
     .gate-input.shake {
       animation: gate-shake .3s ease;
       border-color: #ff4d4f; box-shadow: 0 0 0 3px rgba(255,77,79,.1);
     }
     .gate-btn {
-      width: 100%; height: 40px; background: #407600; color: #fff;
+      width: 100%; height: 40px; background: #327848; color: #fff;
       border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
       cursor: pointer; transition: background .15s;
     }
-    .gate-btn:hover { background: #336000; }
+    .gate-btn:hover { background: #255935; }
     .gate-err { font-size: 12px; color: #ff4d4f; min-height: 16px; }
     @keyframes gate-shake {
       0%,100%{ transform:translateX(0); }
@@ -443,8 +443,8 @@
     .tpl-sel { min-width: 130px; cursor: pointer; }
     .tpl-input { min-width: 160px; }
     .tpl-sel:focus, .tpl-input:focus {
-      border-color: #407600;
-      box-shadow: 0 0 0 2px rgba(64,118,0,.15);
+      border-color: #327848;
+      box-shadow: 0 0 0 2px rgba(50,120,72,.15);
     }
     .tpl-btn {
       height: 32px;
@@ -458,8 +458,8 @@
       transition: background .15s, border-color .15s;
     }
     .tpl-btn:hover { background: #f5f5f5; }
-    .tpl-btn.primary { background: #407600; color: #fff; border-color: #407600; }
-    .tpl-btn.primary:hover { background: #336000; border-color: #336000; }
+    .tpl-btn.primary { background: #327848; color: #fff; border-color: #327848; }
+    .tpl-btn.primary:hover { background: #255935; border-color: #255935; }
     .tpl-btn.danger { color: #cf1322; border-color: #ffa39e; }
     .tpl-btn.danger:hover { background: #fff1f0; }
     .tpl-topbar-sep { width: 1px; height: 20px; background: #e0e0e0; flex-shrink: 0; }
@@ -488,12 +488,12 @@
       white-space: nowrap;
       border: 1px solid transparent;
     }
-    .tpl-sidebar-item:hover { background: #e8f0d8; color: #407600; }
+    .tpl-sidebar-item:hover { background: #e6efe9; color: #327848; }
     .tpl-sidebar-item.active {
-      background: #f0f6e8;
-      color: #407600;
+      background: #f0f5f2;
+      color: #327848;
       font-weight: 600;
-      border-color: #c8e09b;
+      border-color: #c8dbce;
     }
 
     .tpl-preview-pane {
@@ -549,7 +549,7 @@
     }
     .tpl-field { display: flex; flex-direction: column; gap: 5px; }
     .tpl-field-lbl { font-size: 11px; color: #888; font-family: monospace; }
-    .tpl-field-lbl strong { color: #407600; }
+    .tpl-field-lbl strong { color: #327848; }
     .tpl-field textarea {
       width: 100%;
       min-height: 96px;
@@ -566,8 +566,8 @@
       box-sizing: border-box;
     }
     .tpl-field textarea:focus {
-      border-color: #407600;
-      box-shadow: 0 0 0 2px rgba(64,118,0,.12);
+      border-color: #327848;
+      box-shadow: 0 0 0 2px rgba(50,120,72,.12);
     }
     .tpl-editor-hint { font-size: 13px; color: #bbb; text-align: center; padding-top: 40px; }
 
@@ -575,8 +575,8 @@
     .prop-editor-section { margin-bottom: 12px; }
     .prop-section-hdr {
       font-size: 11px; font-family: monospace; font-weight: 700;
-      color: #407600; padding: 4px 0 6px; margin-bottom: 4px;
-      border-bottom: 1px solid #f0f6e8; letter-spacing: 0.3px;
+      color: #327848; padding: 4px 0 6px; margin-bottom: 4px;
+      border-bottom: 1px solid #f0f5f2; letter-spacing: 0.3px;
     }
     .prop-row {
       display: flex; align-items: center; gap: 4px;
@@ -608,12 +608,12 @@
       color: #333; outline: none; -moz-appearance: textfield;
     }
     .prop-num::-webkit-inner-spin-button { opacity: 0.5; }
-    .prop-num:focus { border-color: #407600; }
+    .prop-num:focus { border-color: #327848; }
     .prop-unit, .prop-sel {
       border: 1px solid #e0e0e0; border-radius: 4px; padding: 2px 4px;
       font-size: 11px; color: #333; background: #fff; outline: none; cursor: pointer;
     }
-    .prop-unit:focus, .prop-sel:focus { border-color: #407600; }
+    .prop-unit:focus, .prop-sel:focus { border-color: #327848; }
     .prop-del {
       width: 18px; height: 18px; border: none; background: none;
       color: #ddd; font-size: 11px; cursor: pointer; border-radius: 3px;
@@ -626,7 +626,7 @@
       border-radius: 5px; background: none; padding: 4px 8px;
       cursor: pointer; margin-top: 6px; transition: all .12s;
     }
-    .prop-add:hover { color: #407600; border-color: #c8e09b; background: #f9fdf5; }
+    .prop-add:hover { color: #327848; border-color: #c8dbce; background: #fafcfb; }
     /* ── 内容字段（emoji / 标签文字编辑）─────────────────── */
     .content-fields-section {
       background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px;
@@ -663,7 +663,7 @@
       font-size: 11px; color: #aaa; text-align: center;
       flex-shrink: 0; /* must not be squeezed by .tpl-main */
     }
-    .tpl-sync-bar.ok  { color: #407600; background: #f9fdf5; }
+    .tpl-sync-bar.ok  { color: #327848; background: #fafcfb; }
     .tpl-sync-bar.err { color: #ff4d4f; background: #fff2f0; }
   </style>
 </head>
@@ -850,53 +850,53 @@
       <tbody>
         <tr style="border-bottom:1px solid #f5f5f5;">
           <td style="padding:10px 12px;color:#333;">标题 H1–H6</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
           <td style="padding:10px 12px;color:#333;">正文段落（加粗 / 斜体 / 删除线 / 行内代码）</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;">
           <td style="padding:10px 12px;color:#333;">有序 / 无序列表</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
           <td style="padding:10px 12px;color:#333;">待办事项（Todo）</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;">
           <td style="padding:10px 12px;color:#333;">引用块 / 高亮块（Callout）</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
           <td style="padding:10px 12px;color:#333;">代码块（带语言标识）</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;">
           <td style="padding:10px 12px;color:#333;">表格</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;background:#fafafa;">
           <td style="padding:10px 12px;color:#333;">图片</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="border-bottom:1px solid #f5f5f5;">
           <td style="padding:10px 12px;color:#333;">折叠块（Toggle）</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
         <tr style="background:#fafafa;">
           <td style="padding:10px 12px;color:#333;">分割线 / 脚注 / 嵌入链接</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
-          <td style="text-align:center;padding:10px 12px;color:#407600;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
+          <td style="text-align:center;padding:10px 12px;color:#327848;font-size:16px;">✓</td>
         </tr>
       </tbody>
     </table>
@@ -1003,7 +1003,7 @@ const S = {
   s:                   `text-decoration:line-through;color:#888888;`,
   blockquote_wrapper:  `line-height:26px;word-spacing:normal;hyphens:auto;text-align:left;outline:0;max-width:100%;border-top:none;border-right:none;border-bottom:none;display:block;overflow:auto;padding:10px;margin:0 0 30px;border-left:2px solid #327848;background-color:#f5f5f5;font-family:${WX_FONT};`,
   blockquote_text:     `text-align:left;line-height:26px;font-family:${WX_FONT};margin:0;letter-spacing:0.1em;color:#327848;font-size:15px;`,
-  callout_wrapper:     `font-size:15px;white-space:normal;margin:0 0 30px;color:#3f3f3f;font-family:${WX_FONT};line-height:26px;letter-spacing:0.1em;background-color:#f9fdf5;border:1px solid #327848;padding:16px 20px;`,
+  callout_wrapper:     `font-size:15px;white-space:normal;margin:0 0 30px;color:#3f3f3f;font-family:${WX_FONT};line-height:26px;letter-spacing:0.1em;background-color:#fafcfb;border:1px solid #327848;padding:16px 20px;`,
   callout_content:     ``,
   code_wrapper:        `margin:0 10px 30px;display:block;font-size:15px;padding:10px;color:#333;position:relative;background-color:#fafafa;border:1px solid #f0f0f0;border-radius:5px;white-space:pre;box-shadow:rgba(0,0,0,.3) 0px 2px 10px;overflow:auto;font-family:${MONO};`,
   code_lang_bar:       `font-size:11px;color:#999;font-family:${MONO};padding-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;margin-bottom:8px;`,
@@ -1302,7 +1302,7 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
     p:  [{prop:'text-indent', val:'0'},{prop:'background-color', val:'transparent'}],
     strong: [{prop:'background-color', val:'transparent'}],
     blockquote_wrapper: [{prop:'border-left-color', val:'#327848'},{prop:'border-left-width', val:'2px'},{prop:'border-left-style', val:'solid'}],
-    callout_wrapper:    [{prop:'background-color', val:'#f9fdf5'},{prop:'border-color', val:'#327848'},{prop:'border-radius', val:'0'}],
+    callout_wrapper:    [{prop:'background-color', val:'#fafcfb'},{prop:'border-color', val:'#327848'},{prop:'border-radius', val:'0'}],
     hr: [{prop:'border-top-color', val:'#797979'},{prop:'border-top-width', val:'1px'},{prop:'border-top-style', val:'solid'}],
     img: [{prop:'border-radius', val:'0'}],
     toggle_summary: [{prop:'background-color', val:'transparent'},{prop:'border-left-color', val:'#222222'}],
@@ -1504,11 +1504,11 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
   };
 
   // 引言箭头：直接采用 Figma 矢量真实路径（满高右边 + 满宽底边的直角 + 贯穿对角线）
-  const INTRO_ARROW_SVG = `<svg width="40" height="38" viewBox="0 0 139 133" style="display:block;flex:none;"><g fill="#327847"><path d="M131.25 125L131.25 132.5L138.75 132.5L138.75 125L131.25 125ZM131.25 0L123.75 0L123.75 125L131.25 125L138.75 125L138.75 0L131.25 0ZM131.25 125L131.25 117.5L0 117.5L0 125L0 132.5L131.25 132.5L131.25 125Z"/><path transform="translate(12,9)" d="M0 0L-5.23871 5.36711L113.511 121.276L118.75 115.909L123.989 110.542L5.23871 -5.36711L0 0Z"/></g></svg>`;
+  const INTRO_ARROW_SVG = `<svg width="40" height="38" viewBox="0 0 139 133" style="display:block;flex:none;"><g fill="#327848"><path d="M131.25 125L131.25 132.5L138.75 132.5L138.75 125L131.25 125ZM131.25 0L123.75 0L123.75 125L131.25 125L138.75 125L138.75 0L131.25 0ZM131.25 125L131.25 117.5L0 117.5L0 125L0 132.5L131.25 132.5L131.25 125Z"/><path transform="translate(12,9)" d="M0 0L-5.23871 5.36711L113.511 121.276L118.75 115.909L123.989 110.542L5.23871 -5.36711L0 0Z"/></g></svg>`;
 
-  // 待办勾选框：绿框白底方块（Figma 74×74 描边 #327847 sw5），勾为 #40A978
-  const TODO_BOX_EMPTY   = `<svg width="18" height="18" viewBox="0 0 74 74" style="flex:none;display:block;"><rect x="2.5" y="2.5" width="69" height="69" fill="#fff" stroke="#327847" stroke-width="5"/></svg>`;
-  const TODO_BOX_CHECKED = `<svg width="18" height="18" viewBox="0 0 74 74" style="flex:none;display:block;"><rect x="2.5" y="2.5" width="69" height="69" fill="#fff" stroke="#327847" stroke-width="5"/><polyline points="15,39 30,55 59,21" fill="none" stroke="#40A978" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // 待办勾选框：绿框白底方块（Figma 74×74 描边 #327848 sw5），勾为 #327848
+  const TODO_BOX_EMPTY   = `<svg width="18" height="18" viewBox="0 0 74 74" style="flex:none;display:block;"><rect x="2.5" y="2.5" width="69" height="69" fill="#fff" stroke="#327848" stroke-width="5"/></svg>`;
+  const TODO_BOX_CHECKED = `<svg width="18" height="18" viewBox="0 0 74 74" style="flex:none;display:block;"><rect x="2.5" y="2.5" width="69" height="69" fill="#fff" stroke="#327848" stroke-width="5"/><polyline points="15,39 30,55 59,21" fill="none" stroke="#327848" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
   // ══════════════════════════════════════════════════════════════════════════
   // Block definitions — each maps to one or more S keys and provides a render fn
@@ -1544,15 +1544,15 @@ document.getElementById('preview-grid').innerHTML = blocks.join('');
       render: cs => `<p style="${cs.p}">包含 <strong style="${cs.strong}">加粗文字</strong>、<em style="${cs.em}">斜体文字</em>、<s style="${cs.s}">删除线</s>、<code style="${cs.code_inline}">行内代码</code> 的混排效果。</p>` },
     { id: 'intro', label: 'intro · 引言', keys: ['intro_wrapper', 'intro_arrow', 'intro_text'],
       render: cs => cs.__variant === 'green'
-        ? `<section style="${cs.intro_wrapper}"><section style="${cs.intro_head}">${INTRO_ARROW_SVG}${window.GreenStyle.renderTextImage('引言', {size:33, color:'#808080'})}</section><p style="${cs.intro_text}">引言部分标题，左侧标识颜色为 #327847，右侧标题颜色为 #808080。</p></section>`
+        ? `<section style="${cs.intro_wrapper}"><section style="${cs.intro_head}">${INTRO_ARROW_SVG}${window.GreenStyle.renderTextImage('引言', {size:33, color:'#808080'})}</section><p style="${cs.intro_text}">引言部分标题，左侧标识颜色为 #327848，右侧标题颜色为 #808080。</p></section>`
         : `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">引言示例（当前模板未定义引言样式）。</p></section>` },
     { id: 'quote', label: 'quote · 引用块', keys: ['blockquote_wrapper', 'blockquote_mark', 'blockquote_text'],
       render: cs => cs.__variant === 'green'
-        ? `<section style="${cs.blockquote_wrapper}"><img src="assets/img/quote.svg" style="${cs.blockquote_mark}" alt="引用" /><p style="${cs.blockquote_text}">这是一段引用内容，字重 Bold 加粗，字体色彩使用 #327847 主题绿色，并且在左上角增加引号标识，引号色彩为 #327847。适合作为标注和引用其他人的话语。</p></section>`
+        ? `<section style="${cs.blockquote_wrapper}"><img src="assets/img/quote.svg" style="${cs.blockquote_mark}" alt="引用" /><p style="${cs.blockquote_text}">这是一段引用内容，字重 Bold 加粗，字体色彩使用 #327848 主题绿色，并且在左上角增加引号标识，引号色彩为 #327848。适合作为标注和引用其他人的话语。</p></section>`
         : `<section style="${cs.blockquote_wrapper}"><p style="${cs.blockquote_text}">这是一段引用内容，左侧有 3px 品牌绿色边框，背景为浅灰色。适合标注重要观点或引用他人话语。</p></section>` },
     { id: 'callout', label: 'callout · 高亮块', keys: ['callout_wrapper', 'callout_content'],
       render: cs => cs.__variant === 'green'
-        ? `<section style="${cs.callout_wrapper}">这是一段高亮文字块，字重 Bold 加粗，主题绿色 #327847，左侧竖条为 #40A978，适合强调注意事项或提示信息。</section>`
+        ? `<section style="${cs.callout_wrapper}">这是一段高亮文字块，字重 Bold 加粗，主题绿色 #327848，左侧竖条为 #327848，适合强调注意事项或提示信息。</section>`
         : `<section style="${cs.callout_wrapper}">这是一个 Callout 高亮块，品牌绿描边圆角矩形，简约风格，适合强调注意事项。</section>` },
     { id: 'code', label: 'code · 代码块', keys: ['code_wrapper', 'code_lang_bar', 'code_pre', 'code_text'],
       content_fields: [

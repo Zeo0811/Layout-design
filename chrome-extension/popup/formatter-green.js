@@ -22,7 +22,7 @@
     }
     // 兜底：GreenStyle 未加载时退化为绿色文字标题
     const key = 'h' + level;
-    return `<section style="${(SS && SS[key]) || 'color:#327847;font-weight:bold;'}">${EH(text)}</section>`;
+    return `<section style="${(SS && SS[key]) || 'color:#327848;font-weight:bold;'}">${EH(text)}</section>`;
   }
 
   // 去 HTML 标签 + 基本实体（标题走 canvas 画图，需纯文字）
@@ -130,11 +130,11 @@
       if (isOrdered) {
         const num = String(i + 1).padStart(2, '0');
         html += `<section style="display:flex;align-items:baseline;margin:0 0 28px 0;${indent}">`
-          + `<span style="flex:none;font-family:'PingFang SC',sans-serif;font-size:18px;font-weight:600;color:#327847;margin-right:12px;">${num}</span>`
-          + `<p style="flex:1;font-size:15px;line-height:1.27;letter-spacing:0.1em;color:#327847;margin:0;">${P(item.content)}</p></section>${nested}`;
+          + `<span style="flex:none;font-family:'PingFang SC',sans-serif;font-size:18px;font-weight:600;color:#327848;margin-right:12px;">${num}</span>`
+          + `<p style="flex:1;font-size:15px;line-height:1.27;letter-spacing:0.1em;color:#327848;margin:0;">${P(item.content)}</p></section>${nested}`;
       } else {
-        html += `<p style="font-size:15px;line-height:1.27;letter-spacing:0.1em;color:#327847;margin:0 0 6px 0;${indent}">`
-          + `<span style="color:#327847;margin-right:0.5em;">•</span>${P(item.content)}</p>${nested}`;
+        html += `<p style="font-size:15px;line-height:1.27;letter-spacing:0.1em;color:#327848;margin:0 0 6px 0;${indent}">`
+          + `<span style="color:#327848;margin-right:0.5em;">•</span>${P(item.content)}</p>${nested}`;
       }
     });
     return html;

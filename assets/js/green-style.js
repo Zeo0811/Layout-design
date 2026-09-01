@@ -47,7 +47,7 @@
   const WX_BODY_GAP = '30px';      // 块间距：每块只给下边距，相邻两块恒为 30px
   const LATIN_FONT = "'PingFang SC',-apple-system,BlinkMacSystemFont,sans-serif"; // PART 水印 / 序号 / 星号
   const GREEN = '#327848';
-  const GREEN_DIM = '#53715C';
+  const GREEN_DIM = '#327848';
   const GRAY = '#808080';
   const WATERMARK = '#B1B1B1';
 
@@ -81,7 +81,7 @@
     p:                  `text-align:justify;line-height:${WX_BODY_P_LH};font-family:${WX_BODY_FONT};margin:0;padding-bottom:${WX_BODY_GAP};letter-spacing:${WX_BODY_LS};white-space:pre-line;color:${WX_BODY_COLOR};font-size:${WX_BODY_SIZE};`,
     strong:             `word-break:break-all;font-weight:600;color:${GREEN};`,
     em:                 `font-style:italic;`,
-    code_inline:        `background:rgba(50,120,71,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,
+    code_inline:        `background:rgba(50,120,72,.10);border-radius:4px;font-size:85%;padding:0.2em 0.4em;color:${GREEN};font-family:Consolas,Monaco,monospace;`,
     s:                  `text-decoration:line-through;color:#888888;`,
     // 引用：左上绿色引号挂在左侧留白，正文缩进 42px、绿色加粗、两端对齐、字距 0.17em、行高 1.1
     blockquote_wrapper: `position:relative;text-align:left;display:block;margin:0 0 30px;padding:4px 0 4px 42px;font-family:${WX_BODY_FONT};`,
@@ -120,13 +120,13 @@
     toggle_text:        `text-align:left;line-height:1.27;font-family:${BODY_FONT};margin:0;letter-spacing:0.1em;color:${GREEN};font-size:15px;`,
     table_wrapper:      `overflow-x:auto;margin:0 0 30px;`,
     table:              `border-collapse:collapse;width:100%;font-size:15px;line-height:1.6;font-family:${BODY_FONT};`,
-    th:                 `background:rgba(50,120,71,.08);padding:7px 13px;border:1px solid rgba(50,120,71,.25);font-weight:bold;text-align:left;color:${GREEN};`,
-    td:                 `padding:7px 13px;border:1px solid rgba(50,120,71,.20);color:#000000;`,
-    td_even:            `padding:7px 13px;border:1px solid rgba(50,120,71,.20);color:#000000;background:rgba(50,120,71,.03);`,
-    embed_wrapper:      `margin:0 0 30px;border:1px solid rgba(50,120,71,.25);border-radius:8px;padding:11px 15px;`,
+    th:                 `background:rgba(50,120,72,.08);padding:7px 13px;border:1px solid rgba(50,120,72,.25);font-weight:bold;text-align:left;color:${GREEN};`,
+    td:                 `padding:7px 13px;border:1px solid rgba(50,120,72,.20);color:#000000;`,
+    td_even:            `padding:7px 13px;border:1px solid rgba(50,120,72,.20);color:#000000;background:rgba(50,120,72,.03);`,
+    embed_wrapper:      `margin:0 0 30px;border:1px solid rgba(50,120,72,.25);border-radius:8px;padding:11px 15px;`,
     embed_label:        `font-size:14px;font-weight:600;color:${GREEN};margin-bottom:4px;letter-spacing:0.1em;`,
     embed_link:         `font-size:13px;text-decoration:none;color:${GREEN};word-break:break-all;letter-spacing:0.1em;`,
-    footnotes_wrapper:  `margin-top:30px;padding-top:15px;border-top:1px solid rgba(50,120,71,.25);`,
+    footnotes_wrapper:  `margin-top:30px;padding-top:15px;border-top:1px solid rgba(50,120,72,.25);`,
     footnotes_title:    `font-size:11px;font-weight:400;color:${GRAY};margin-bottom:.6em;letter-spacing:0.1em;line-height:1.94;`,
     footnote_item:      `font-size:11px;color:${GREEN};line-height:1.94;margin:.3em 0;letter-spacing:0.1em;word-break:break-all;`,
     footnote_num:       `color:${GREEN};font-weight:bold;margin-right:4px;`,

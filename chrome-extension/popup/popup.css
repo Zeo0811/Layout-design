@@ -50,9 +50,9 @@ html, body {
   padding: 4px 12px; border-radius: 20px;
   letter-spacing: .2px; white-space: nowrap;
 }
-.badge--notion      { background: #f0f6e8; color: #407600; border: 1px solid #b7d87c; }
+.badge--notion      { background: #f0f5f2; color: #327848; border: 1px solid #b9d1c0; }
 .badge--feishu      { background: #fff2e8; color: #d46b08; border: 1px solid #ffd591; }
-.badge--wechat      { background: #e6f7e6; color: #07a11d; border: 1px solid #95d097; }
+.badge--wechat      { background: #eef4f0; color: #327848; border: 1px solid #aac7b3; }
 .badge--unknown     { background: #f5f5f5; color: #888;    border: 1px solid #e0e0e0; }
 .badge--unsupported { background: #f5f5f5; color: #888;    border: 1px solid #e0e0e0; }
 
@@ -95,7 +95,7 @@ html, body {
 .target-btn + .target-btn { border-left: 1px solid #d9d9d9; }
 .target-btn:hover { background: #f5f5f5; }
 .target-btn--active[data-target="wechat"] {
-  background: #07a11d;
+  background: #327848;
   color: #fff;
   font-weight: 600;
 }
@@ -111,8 +111,8 @@ html, body {
   align-items: center;
   gap: 8px;
   padding: 7px 14px;
-  background: #f9fdf5;
-  border-bottom: 1px solid #e0eecc;
+  background: #fafcfb;
+  border-bottom: 1px solid #e1ebe4;
   flex-shrink: 0;
 }
 .template-label {
@@ -124,7 +124,7 @@ html, body {
 .template-select {
   flex: 1;
   height: 28px;
-  border: 1px solid #c8e09b;
+  border: 1px solid #c8dbce;
   border-radius: 6px;
   padding: 0 8px;
   font-size: 12px;
@@ -134,15 +134,15 @@ html, body {
   cursor: pointer;
   transition: border-color .15s;
 }
-.template-select:focus { border-color: #407600; box-shadow: 0 0 0 2px rgba(64,118,0,.12); }
-.template-select.applied { border-color: #407600; background: #f0f6e8; }
+.template-select:focus { border-color: #327848; box-shadow: 0 0 0 2px rgba(50,120,72,.12); }
+.template-select.applied { border-color: #327848; background: #f0f5f2; }
 
 .btn-sync {
   height: 28px;
   padding: 0 10px;
-  border: 1px solid #c8e09b;
+  border: 1px solid #c8dbce;
   border-radius: 6px;
-  background: #407600;
+  background: #327848;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
@@ -152,7 +152,7 @@ html, body {
   transition: all .15s;
   white-space: nowrap;
 }
-.btn-sync:hover { background: #336000; }
+.btn-sync:hover { background: #255935; }
 .btn-sync:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── 操作按钮区 ──────────────────────────────────────────────── */
@@ -173,15 +173,15 @@ html, body {
 }
 .btn:active:not(:disabled) { transform: scale(.97); }
 
-.btn--primary { background: #407600; color: #fff; flex: 1; justify-content: center; }
-.btn--primary:hover:not(:disabled) { background: #336000; }
-.btn--primary:disabled { background: #a0c060; cursor: not-allowed; opacity: .7; }
+.btn--primary { background: #327848; color: #fff; flex: 1; justify-content: center; }
+.btn--primary:hover:not(:disabled) { background: #255935; }
+.btn--primary:disabled { background: #98bba3; cursor: not-allowed; opacity: .7; }
 
 .btn--secondary { background: #fff; color: #333; flex: 1; justify-content: center; border: 1.5px solid #e0e0e0; }
 .btn--secondary:hover:not(:disabled) { background: #f5f5f5; border-color: #ccc; }
 .btn--secondary:disabled { opacity: .5; cursor: not-allowed; }
 
-.btn--copied { background: #f0f6e8 !important; color: #407600 !important; border-color: #b7d87c !important; }
+.btn--copied { background: #f0f5f2 !important; color: #327848 !important; border-color: #b9d1c0 !important; }
 .btn-icon { font-size: 14px; }
 
 /* ── 分段复制行 ───────────────────────────────────────────────── */
@@ -203,8 +203,8 @@ html, body {
   cursor: pointer; white-space: nowrap;
   transition: all .15s;
 }
-.btn--seg:hover  { background: #f0f6e8; border-color: #b7d87c; color: #407600; }
-.btn--seg--ok    { background: #f0f6e8 !important; color: #407600 !important; border-color: #b7d87c !important; }
+.btn--seg:hover  { background: #f0f5f2; border-color: #b9d1c0; color: #327848; }
+.btn--seg--ok    { background: #f0f5f2 !important; color: #327848 !important; border-color: #b9d1c0 !important; }
 
 /* ── 状态栏 ──────────────────────────────────────────────────── */
 .status-bar {
@@ -214,7 +214,7 @@ html, body {
 }
 .status-bar--hidden  { display: none; }
 .status-bar--loading { background: #fffbe6; color: #7c5600; border-bottom: 1px solid #ffe58f; }
-.status-bar--success { background: #f0f6e8; color: #3d6300; border-bottom: 1px solid #b7d87c; }
+.status-bar--success { background: #f0f5f2; color: #255935; border-bottom: 1px solid #b9d1c0; }
 .status-bar--error   { background: #fff1f0; color: #c0392b; border-bottom: 1px solid #f5c4c1; }
 .status-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
 
@@ -234,7 +234,7 @@ html, body {
 .preview-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 14px;
-  background: #407600;
+  background: #327848;
   flex-shrink: 0;
 }
 .preview-title  { font-size: 11px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: .8px; }
@@ -280,8 +280,8 @@ html, body {
 /* ── 图片提示 ─────────────────────────────────────────────────── */
 .image-note {
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; font-size: 11px; color: #3d6300;
-  background: #f0f6e8; border-top: 1px solid #c8e09b;
+  padding: 8px 16px; font-size: 11px; color: #255935;
+  background: #f0f5f2; border-top: 1px solid #c8dbce;
   flex-shrink: 0;
 }
 .image-note-icon { font-size: 13px; }
@@ -304,8 +304,8 @@ html, body {
 .preview-body ul,
 .preview-body ol     { padding-left: 1.5em; margin: 8px 0; }
 .preview-body li     { line-height: 1.75; margin: 2px 0; }
-.preview-body a      { color: #407600; border-bottom: 1px solid #407600; text-decoration: none; }
-.preview-body blockquote { border-left: 6px solid #407600; background: #f0f6e8; padding: 10px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+.preview-body a      { color: #327848; border-bottom: 1px solid #327848; text-decoration: none; }
+.preview-body blockquote { border-left: 6px solid #327848; background: #f0f5f2; padding: 10px; margin: 10px 0; border-radius: 0 6px 6px 0; }
 .preview-body pre    { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px; box-shadow: rgba(0,0,0,.08) 0 2px 8px; padding: 10px; margin: 10px 0; overflow-x: auto; }
 .preview-body pre code { background: none; padding: 0; font-size: 13px; color: #333; border-radius: 0; }
 
@@ -346,13 +346,13 @@ html, body {
   text-align: center;
   gap: 8px;
   padding: 24px 16px 20px;
-  background: linear-gradient(135deg, #e6f7e6 0%, #f0faf0 100%);
+  background: linear-gradient(135deg, #eef4f0 0%, #f5f8f6 100%);
   border-radius: 12px;
-  border: 1px solid #95d097;
+  border: 1px solid #aac7b3;
 }
 .wechat-hero-icon  { font-size: 40px; line-height: 1; }
-.wechat-hero-title { font-size: 15px; font-weight: 700; color: #1a7a1a; letter-spacing: .02em; margin-top: 4px; }
-.wechat-hero-desc  { font-size: 12px; color: #4a9a4a; line-height: 1.7; }
+.wechat-hero-title { font-size: 15px; font-weight: 700; color: #327848; letter-spacing: .02em; margin-top: 4px; }
+.wechat-hero-desc  { font-size: 12px; color: #327848; line-height: 1.7; }
 
 .btn--extract {
   display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -361,12 +361,12 @@ html, body {
   border-radius: 8px;
   font-size: 14px; font-weight: 700;
   cursor: pointer; border: none;
-  background: #07a11d; color: #fff;
+  background: #327848; color: #fff;
   transition: all .15s;
   letter-spacing: .02em;
   flex-shrink: 0;
 }
-.btn--extract:hover:not(:disabled) { background: #059018; }
+.btn--extract:hover:not(:disabled) { background: #387c4d; }
 .btn--extract:active:not(:disabled) { transform: scale(.98); }
 .btn--extract:disabled { opacity: .5; cursor: not-allowed; }
 
@@ -413,14 +413,14 @@ html, body {
   font-size: 12px;
   line-height: 1.4;
 }
-.result-ok      { background: #f0f9f0; border: 1px solid #b8e0b8; }
+.result-ok      { background: #f4f7f5; border: 1px solid #c6dacc; }
 .result-missing { background: #fafafa; border: 1px solid #ebebeb; }
 
 .result-icon  { font-size: 13px; flex-shrink: 0; }
 .result-label { flex: 1; color: #222; font-weight: 500; }
 .result-label.dim { color: #aaa; font-weight: 400; }
 .result-hint  { font-size: 11px; color: #bbb; white-space: nowrap; }
-.result-count { font-size: 11px; color: #5a9a5a; white-space: nowrap; }
+.result-count { font-size: 11px; color: #327848; white-space: nowrap; }
 
 .wechat-save-form {
   display: flex;
@@ -434,7 +434,7 @@ html, body {
   width: 100%;
   height: 36px;
   padding: 0 12px;
-  border: 1.5px solid #c8e0c8;
+  border: 1.5px solid #ccded2;
   border-radius: 8px;
   font-size: 13px;
   color: #222;
@@ -442,7 +442,7 @@ html, body {
   transition: border-color .15s;
   box-sizing: border-box;
 }
-.wechat-name-input:focus { border-color: #07a11d; box-shadow: 0 0 0 2px rgba(7,161,29,.1); }
+.wechat-name-input:focus { border-color: #327848; box-shadow: 0 0 0 2px rgba(50,120,72,.1); }
 .wechat-name-input::placeholder { color: #bbb; }
 
 /* ── 手动选择模式：已选块列表 ─────────────────────────────── */
@@ -456,15 +456,15 @@ html, body {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: #f0f9f0;
-  border: 1px solid #b8e0b8;
+  background: #f4f7f5;
+  border: 1px solid #c6dacc;
   border-radius: 7px;
   font-size: 12px;
 }
 .mini-block-type {
   font-family: monospace;
   font-weight: 700;
-  color: #1a7a1a;
+  color: #327848;
   min-width: 52px;
 }
 .mini-block-label { flex: 1; color: #555; }

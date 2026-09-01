@@ -88,7 +88,7 @@ const S = {
   blockquote_wrapper: `line-height: ${WX_P_LH}; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f5f5f5; font-family: ${WX_FONT}; letter-spacing: ${WX_LS}; color: #327848; font-size: ${WX_SIZE};`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  callout_wrapper: `font-size: ${WX_SIZE}; white-space: normal; margin: 0 0 30px; color: #3f3f3f; font-family: ${WX_FONT}; line-height: 26px; letter-spacing: 0.1em; background-color: #fafcfb; border: 1px solid #327848; padding: 16px 20px;`,
+  callout_wrapper: `font-size: ${WX_SIZE}; white-space: normal; margin: 0 0 30px; color: ${WX_COLOR}; font-family: ${WX_FONT}; line-height: ${WX_P_LH}; letter-spacing: ${WX_LS}; background-color: #fafcfb; border: 1px solid #327848; padding: 16px 20px;`,
 
   callout_content: ``,
 

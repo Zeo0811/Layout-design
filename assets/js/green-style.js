@@ -55,7 +55,7 @@
   //   none → 纯标题；part → 背景 PART 水印 + 下划线；num → 序号 + 右延横线；star → 左侧星号
   const HEADING_SPECS = {
     1: { fontSize: 40, lineHeight: 46, color: GREEN, align: 'left',   deco: 'none', marginTop: 34, marginBottom: 18 },
-    2: { fontSize: 33, lineHeight: 31, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
+    2: { fontSize: 33, lineHeight: 38, color: GREEN, align: 'left',   deco: 'part', marginTop: 40, marginBottom: 18,
          wmSize: 63, ruleWeight: 2 },
     3: { fontSize: 23, lineHeight: 27, color: GREEN, align: 'left',   deco: 'num',  marginTop: 32, marginBottom: 14,
          numSize: 27, ruleWeight: 2 },

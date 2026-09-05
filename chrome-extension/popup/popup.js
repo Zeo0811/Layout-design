@@ -333,6 +333,7 @@
     copyBtn.disabled = true;
     segmentRow.classList.add('hidden');
     imageNote.classList.add('hidden');
+    hideReco();
     showStatus('loading', '正在解析文档...');
     setPreviewLoading();
 
@@ -355,8 +356,9 @@
         ? formatToFeishu(resp.data)
         : formatToWechat(resp.data);
       renderPreview(formattedHtml, resp.data);
-      copyBtn.disabled = false;
       convertBtn.disabled = false;
+      // 复制先锁住，等推荐阅读那步定了再解锁（见 updateCopyGate）
+      copyBtn.disabled = true;
 
       // 4. 分段切割（自动按块数决定段数）
       const nSeg = segCount(resp.data);
@@ -365,7 +367,12 @@
         : splitFormatToWechat(resp.data, nSeg);
       renderSegmentButtons(formattedSegments);
 
-      // 5. 图片提示
+      // 5. 推荐阅读：拉候选。没配密钥、拉失败、无候选都会直接放行，
+      //    不挡着人复制。
+      await loadRecommendations(resp.data);
+      updateCopyGate();
+
+      // 6. 图片提示
       const blocks = resp.data.blocks;
       const hasImages = flatBlocks(blocks).some(b => b.type === 'image');
       const hasBase64 = flatBlocks(blocks).some(b => b.type === 'image' && b.base64);
@@ -381,7 +388,9 @@
       }
 
       const targetName = isFeishuTarget ? '飞书文档' : '微信编辑器';
-      showStatus('success', `转换成功 — 可完整复制或分段复制到${targetName}`);
+      showStatus('success', recoResolved
+        ? `转换成功 — 可完整复制或分段复制到${targetName}`
+        : '转换成功 — 请先选择推荐阅读，再复制');
     } catch (err) {
       convertBtn.disabled = false;
       showStatus('error', err.message);
@@ -389,11 +398,239 @@
     }
   });
 
+  // ── 推荐阅读 ─────────────────────────────────────────────────
+  //
+  // 候选和卡片都由 zeooo.cc 出：插件里没有 chromium、没有内嵌字体，
+  // 封面在 mmbiz 上还有防盗链（canvas.toDataURL 会因画布污染直接抛异常）。
+  // 插件只负责让人勾选，然后把服务端返回的 HTML 拼到正文末尾。
+
+  const RECO_API = 'https://zeooo.cc';
+  const recoPanel   = document.getElementById('recoPanel');
+  const recoHint    = document.getElementById('recoHint');
+  const recoList    = document.getElementById('recoList');
+  const recoFoot    = document.getElementById('recoFoot');
+  const recoToggle  = document.getElementById('recoToggleAll');
+  const recoSkip    = document.getElementById('recoSkipBtn');
+  const recoConfirm = document.getElementById('recoConfirmBtn');
+
+  let recoCandidates = [];
+  let recoAccount    = '';
+  let recoResolved   = false;   // 本轮推荐是否已定（选完 / 跳过 / 无候选）
+
+  async function recoFetch(path, body) {
+    const key = await new Promise(r =>
+      chrome.storage.local.get('recoKey', d => r(d.recoKey || ''))
+    );
+    if (!key) throw new Error('未配置推荐服务密钥');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 90000);
+    try {
+      const res = await fetch(`${RECO_API}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Extension-Key': key },
+        body: JSON.stringify(body),
+        signal: ctrl.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    } finally { clearTimeout(timer); }
+  }
+
+  // 从解析结果里抽正文纯文本，喂给推荐算法
+  function plainTextOf(parsed) {
+    const TEXT = new Set(['h1','h2','h3','h4','h5','h6','paragraph','quote',
+                          'callout','bulleted_list_item','numbered_list_item','toggle']);
+    const out = [];
+    (function walk(blocks) {
+      for (const b of blocks || []) {
+        if (!b) continue;
+        if (TEXT.has(b.type) && b.content) out.push(String(b.content).trim());
+        if (b.children) walk(b.children);
+        if (b.items)    walk(b.items);
+      }
+    })(parsed.blocks);
+    return out.join('\n').slice(0, 4000);
+  }
+
+  function hideReco() {
+    recoPanel.classList.add('hidden');
+    recoList.innerHTML = '';
+    recoFoot.classList.add('hidden');
+    recoToggle.classList.add('hidden');
+  }
+
+  // 拉候选。失败或无候选都直接放行，不挡着人复制。
+  async function loadRecommendations(parsed) {
+    recoResolved  = false;
+    recoCandidates = [];
+    if (outputTarget === 'feishu') { recoResolved = true; return; }  // 飞书不加推荐
+
+    const key = await new Promise(r => chrome.storage.local.get('recoKey', d => r(d.recoKey || '')));
+    if (!key) { recoResolved = true; return; }   // 没配密钥就当这功能没开
+
+    recoPanel.classList.remove('hidden');
+    recoHint.textContent = '正在查找相关文章…';
+    recoList.innerHTML = '';
+
+    try {
+      if (!recoAccount) {
+        const res = await fetch(`${RECO_API}/api/accounts`, { headers: { 'X-Extension-Key': key } });
+        const d = await res.json();
+        recoAccount = (d.accounts && d.accounts[0] && d.accounts[0].name) || '';
+      }
+      if (!recoAccount) throw new Error('服务端没有配置公众号');
+
+      const { candidates } = await recoFetch('/api/recommend', {
+        accountName: recoAccount,
+        title: parsed.title || '',
+        bodyText: plainTextOf(parsed),
+      });
+      recoCandidates = candidates || [];
+
+      if (recoCandidates.length === 0) {
+        recoResolved = true;
+        hideReco();
+        return;
+      }
+      renderRecoList();
+    } catch (e) {
+      // 推荐挂了不该挡住排版这件正事
+      console.warn('[Reco] 拉取失败:', e.message);
+      recoResolved = true;
+      hideReco();
+    }
+  }
+
+  function renderRecoList() {
+    recoHint.textContent = `找到 ${recoCandidates.length} 篇相关文章，勾选后合成到文末`;
+    recoToggle.classList.remove('hidden');
+    recoToggle.textContent = '全选';
+    recoFoot.classList.remove('hidden');
+    recoList.innerHTML = recoCandidates.map(c => `
+      <label class="reco-item">
+        <input type="checkbox" class="reco-check" value="${c.id}">
+        <img src="${esc(c.thumbUrl || '')}" alt="" referrerpolicy="no-referrer" loading="lazy">
+        <div style="flex:1;min-width:0">
+          <div class="reco-title">${esc(c.title)}</div>
+          <div class="reco-meta">${esc((c.publishedAt || '').slice(0, 10))} · ${esc((c.sharedEntities || []).slice(0, 3).join('、'))}</div>
+        </div>
+      </label>`).join('');
+  }
+
+  recoToggle.addEventListener('click', () => {
+    const boxes = [...recoList.querySelectorAll('.reco-check')];
+    const target = !boxes.every(b => b.checked);
+    boxes.forEach(b => { b.checked = target; });
+    recoToggle.textContent = target ? '全不选' : '全选';
+  });
+
+  recoSkip.addEventListener('click', () => {
+    recoResolved = true;
+    hideReco();
+    updateCopyGate();
+    showStatus('success', '已跳过推荐阅读，可以复制了');
+  });
+
+  recoConfirm.addEventListener('click', async () => {
+    const ids = [...recoList.querySelectorAll('.reco-check:checked')].map(b => Number(b.value));
+    if (ids.length === 0) { recoSkip.click(); return; }
+
+    recoConfirm.disabled = true;
+    recoSkip.disabled = true;
+    recoHint.textContent = `正在合成 ${ids.length} 张卡片…`;
+    try {
+      const { html, count, skipped } = await recoFetch('/api/recommend-html', {
+        accountName: recoAccount, selectedIds: ids,
+      });
+      if (html) appendRecommendBlock(html);
+      recoResolved = true;
+      hideReco();
+      updateCopyGate();
+      showStatus('success', skipped
+        ? `已加入 ${count} 篇推荐（${skipped} 篇封面取不到被跳过）`
+        : `已加入 ${count} 篇推荐阅读，可以复制了`);
+    } catch (e) {
+      recoHint.textContent = '合成失败：' + e.message;
+      showStatus('error', '推荐卡片合成失败：' + e.message);
+    } finally {
+      recoConfirm.disabled = false;
+      recoSkip.disabled = false;
+    }
+  });
+
+  // 把推荐块拼进正文。整篇和分段都要处理 —— 分段时只进最后一段。
+  function appendRecommendBlock(html) {
+    formattedHtml = insertBeforeLastSection(formattedHtml, html);
+    if (formattedSegments && formattedSegments.length) {
+      const last = formattedSegments.length - 1;
+      formattedSegments[last] = insertBeforeLastSection(formattedSegments[last], html);
+    }
+    renderPreview(formattedHtml, lastParsedData);
+  }
+
+  // 排版结果最外层是一个 <section>，推荐块必须落在它里面，
+  // 否则丢掉基础字体和字色。
+  function insertBeforeLastSection(wrapped, html) {
+    const at = String(wrapped || '').lastIndexOf('</section>');
+    return at < 0 ? (wrapped || '') + html
+                  : wrapped.slice(0, at) + html + wrapped.slice(at);
+  }
+
+  // 复制门禁：推荐没定完之前不让复制，避免复制到一半的版本
+  function updateCopyGate() {
+    const ready = !!formattedHtml && recoResolved;
+    copyBtn.disabled = !ready;
+    [...segmentBtns.querySelectorAll('button')].forEach(b => { b.disabled = !ready; });
+  }
+
+  // ── 推荐服务配置 ─────────────────────────────────────────────
+  const recoSetup     = document.getElementById('recoSetup');
+  const recoKeyInput  = document.getElementById('recoKeyInput');
+  const recoSetupMsg  = document.getElementById('recoSetupMsg');
+
+  document.getElementById('recoSetupBtn').addEventListener('click', async () => {
+    const key = await new Promise(r => chrome.storage.local.get('recoKey', d => r(d.recoKey || '')));
+    recoKeyInput.value = key;
+    recoSetupMsg.textContent = key ? '已配置' : '未配置，推荐阅读功能关闭';
+    recoSetup.classList.toggle('hidden');
+  });
+
+  document.getElementById('recoKeySave').addEventListener('click', async () => {
+    const key = recoKeyInput.value.trim();
+    if (!key) { recoSetupMsg.textContent = '请填入密钥'; return; }
+    recoSetupMsg.textContent = '正在验证…';
+    try {
+      const res = await fetch(`${RECO_API}/api/accounts`, { headers: { 'X-Extension-Key': key } });
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error || `HTTP ${res.status}`);
+      chrome.storage.local.set({ recoKey: key });
+      recoAccount = (d.accounts && d.accounts[0] && d.accounts[0].name) || '';
+      recoSetupMsg.textContent = recoAccount
+        ? `已保存，公众号：${recoAccount}`
+        : '已保存，但服务端没有配置公众号';
+    } catch (e) {
+      recoSetupMsg.textContent = '验证失败：' + e.message;
+    }
+  });
+
+  document.getElementById('recoKeyClear').addEventListener('click', () => {
+    chrome.storage.local.remove('recoKey');
+    recoKeyInput.value = '';
+    recoAccount = '';
+    recoSetupMsg.textContent = '已清除，推荐阅读功能关闭';
+  });
+
+  document.getElementById('recoKeyClose').addEventListener('click', () => {
+    recoSetup.classList.add('hidden');
+  });
+
   // ── 分段按钮渲染 ──────────────────────────────────────────────
 
   function renderSegmentButtons(segments) {
     segmentBtns.innerHTML = '';
     if (segments.length < 2) { segmentRow.classList.add('hidden'); return; }
+    // 按钮建好后由 updateCopyGate 统一决定禁用与否
 
     segments.forEach((seg, i) => {
       const btn = document.createElement('button');
@@ -578,6 +815,13 @@
   }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  // 候选标题来自服务端，进 innerHTML 前必须转义
+  function esc(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function stripTags(html) {
     const d = document.createElement('div');
     d.innerHTML = html;

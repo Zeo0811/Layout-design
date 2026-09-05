@@ -142,8 +142,8 @@ const S = {
 
   // ── 脚注 ─────────────────────────────────────────────────────────────
   footnotes_wrapper: `margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,.15);`,
-  footnotes_title:   `font-size: 12px; font-weight: bold; color: #888888; margin-bottom: .6em; text-transform: uppercase; letter-spacing: 1px;`,
-  footnote_item:     `font-size: 12px; color: #555555; line-height: 1.7; margin: .3em 0; word-break: break-all;`,
+  footnotes_title:   `font-size: 12px; font-weight: bold; color: #888888; margin-bottom: .6em; text-transform: uppercase; letter-spacing: 1px; text-align: left;`,
+  footnote_item:     `font-size: 12px; color: #555555; line-height: 1.7; margin: .3em 0; word-break: break-all; text-align: left;`,
   footnote_num:      `color: #222222; font-weight: bold; margin-right: 4px;`,
 };
 

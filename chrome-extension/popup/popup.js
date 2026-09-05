@@ -405,6 +405,21 @@
   // 插件只负责让人勾选，然后把服务端返回的 HTML 拼到正文末尾。
 
   const RECO_API = 'https://zeooo.cc';
+
+  // 密钥内置，装上即用，不需要配置。
+  // 这是一枚只读凭证：只能调 /api/recommend、/api/recommend-html、
+  // /api/accounts，发布、建草稿、账号管理全都调不到。
+  // 拿到插件包的人能看到文章库，但改不了任何东西。
+  // ⚙ 里可以覆盖它 —— 换 key 时不必重新打包。
+  const DEFAULT_RECO_KEY = '636204a12941cb6390403f04c7c4c32ff88c1bdf2f284b1a4ca518c4dab32f79';
+
+  async function getRecoKey() {
+    const saved = await new Promise(r =>
+      chrome.storage.local.get('recoKey', d => r(d.recoKey))
+    );
+    // 空字符串表示用户主动清除过，此时不回落到内置 key
+    return saved === undefined ? DEFAULT_RECO_KEY : saved;
+  }
   const recoPanel   = document.getElementById('recoPanel');
   const recoHint    = document.getElementById('recoHint');
   const recoList    = document.getElementById('recoList');
@@ -418,10 +433,8 @@
   let recoResolved   = false;   // 本轮推荐是否已定（选完 / 跳过 / 无候选）
 
   async function recoFetch(path, body) {
-    const key = await new Promise(r =>
-      chrome.storage.local.get('recoKey', d => r(d.recoKey || ''))
-    );
-    if (!key) throw new Error('未配置推荐服务密钥');
+    const key = await getRecoKey();
+    if (!key) throw new Error('推荐服务密钥已被清除，可在 ⚙ 里重新填入');
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 90000);
     try {
@@ -466,8 +479,8 @@
     recoCandidates = [];
     if (outputTarget === 'feishu') { recoResolved = true; return; }  // 飞书不加推荐
 
-    const key = await new Promise(r => chrome.storage.local.get('recoKey', d => r(d.recoKey || '')));
-    if (!key) { recoResolved = true; return; }   // 没配密钥就当这功能没开
+    const key = await getRecoKey();
+    if (!key) { recoResolved = true; return; }   // 密钥被清除过就当这功能关了
 
     recoPanel.classList.remove('hidden');
     recoHint.textContent = '正在查找相关文章…';
@@ -590,9 +603,11 @@
   const recoSetupMsg  = document.getElementById('recoSetupMsg');
 
   document.getElementById('recoSetupBtn').addEventListener('click', async () => {
-    const key = await new Promise(r => chrome.storage.local.get('recoKey', d => r(d.recoKey || '')));
+    const key = await getRecoKey();
     recoKeyInput.value = key;
-    recoSetupMsg.textContent = key ? '已配置' : '未配置，推荐阅读功能关闭';
+    recoSetupMsg.textContent = key
+      ? (key === DEFAULT_RECO_KEY ? '使用内置密钥，无需配置' : '使用自定义密钥')
+      : '密钥已清除，推荐阅读功能关闭';
     recoSetup.classList.toggle('hidden');
   });
 
@@ -615,10 +630,10 @@
   });
 
   document.getElementById('recoKeyClear').addEventListener('click', () => {
-    chrome.storage.local.remove('recoKey');
+    chrome.storage.local.set({ recoKey: '' });   // 空串 = 主动关闭，不回落到内置 key
     recoKeyInput.value = '';
     recoAccount = '';
-    recoSetupMsg.textContent = '已清除，推荐阅读功能关闭';
+    recoSetupMsg.textContent = '已关闭推荐阅读。要恢复请重新填入密钥';
   });
 
   document.getElementById('recoKeyClose').addEventListener('click', () => {

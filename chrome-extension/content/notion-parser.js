@@ -366,9 +366,16 @@ function parseNotionImage(el) {
 
   if (!src) return null;
 
-  const captionEl =
-    el.querySelector('[placeholder="Add a caption"]') ||
-    el.querySelector('[class*="caption"]');
+  // 图注定位。Notion 改过这段文案，也改过 DOM：
+  //   - 现在的占位符是「Write a caption…」，结尾是省略号字符 U+2026
+  //   - 「Add a caption」是旧版，只在编辑态出现，分享页永远匹配不到
+  //   - class 里没有 caption 字样，靠 class 找是空的
+  // 实测：真实页面 6 张图里 4 张有图注，都在图片块内部，
+  // 剩下 2 张是作者本来就没写，块内只有一个空 div。
+  const captionEl = el.querySelector(
+    '[placeholder="Write a caption\u2026"], [placeholder="Add a caption"], ' +
+    '[placeholder*="caption" i], figcaption, [class*="caption"]'
+  );
   const caption = captionEl ? captionEl.textContent.trim() : '';
 
   return { type: 'image', url: src, caption };

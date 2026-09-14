@@ -450,6 +450,32 @@
     } finally { clearTimeout(timer); }
   }
 
+  // 文末固定板块（「加入会员群」）。跳过推荐、拉取失败、没配密钥、
+  // 无候选这几条路径都不会调 recommend-html，所以单独取一次，
+  // 保证任何情况下文末都有它。
+  async function fetchTailBlock() {
+    const key = await getRecoKey();
+    if (!key) return '';
+    try {
+      const res = await fetch(`${RECO_API}/api/tail-block`, { headers: { 'X-Extension-Key': key } });
+      const d = await res.json();
+      return d.ok ? (d.html || '') : '';
+    } catch (e) {
+      console.warn('[Reco] 取文末板块失败:', e.message);
+      return '';
+    }
+  }
+
+  // 推荐已定、准备解锁复制时调用：把文末板块补上（只补一次）
+  let tailAppended = false;
+  async function appendTailBlock() {
+    if (tailAppended || !formattedHtml) return;
+    const html = await fetchTailBlock();
+    if (!html) return;
+    tailAppended = true;
+    appendRecommendBlock(html);
+  }
+
   // 从解析结果里抽正文纯文本，喂给推荐算法
   function plainTextOf(parsed) {
     const TEXT = new Set(['h1','h2','h3','h4','h5','h6','paragraph','quote',
@@ -477,10 +503,11 @@
   async function loadRecommendations(parsed) {
     recoResolved  = false;
     recoCandidates = [];
-    if (outputTarget === 'feishu') { recoResolved = true; return; }  // 飞书不加推荐
+    tailAppended  = false;
+    if (outputTarget === 'feishu') { recoResolved = true; return; }  // 飞书不加推荐与会员群
 
     const key = await getRecoKey();
-    if (!key) { recoResolved = true; return; }   // 密钥被清除过就当这功能关了
+    if (!key) { recoResolved = true; return; }   // 密钥被清除过就当这功能整个关了
 
     recoPanel.classList.remove('hidden');
     recoHint.textContent = '正在查找相关文章…';
@@ -504,6 +531,7 @@
       if (recoCandidates.length === 0) {
         recoResolved = true;
         hideReco();
+        await appendTailBlock();   // 没有推荐，但会员群还是要有
         return;
       }
       renderRecoList();
@@ -512,6 +540,7 @@
       console.warn('[Reco] 拉取失败:', e.message);
       recoResolved = true;
       hideReco();
+      await appendTailBlock();   // 推荐挂了，会员群还是要有
     }
   }
 
@@ -538,9 +567,10 @@
     recoToggle.textContent = target ? '全不选' : '全选';
   });
 
-  recoSkip.addEventListener('click', () => {
+  recoSkip.addEventListener('click', async () => {
     recoResolved = true;
     hideReco();
+    await appendTailBlock();
     updateCopyGate();
     showStatus('success', '已跳过推荐阅读，可以复制了');
   });
@@ -556,7 +586,7 @@
       const { html, count, skipped } = await recoFetch('/api/recommend-html', {
         accountName: recoAccount, selectedIds: ids,
       });
-      if (html) appendRecommendBlock(html);
+      if (html) { appendRecommendBlock(html); tailAppended = true; }  // 该接口已带上文末板块
       recoResolved = true;
       hideReco();
       updateCopyGate();

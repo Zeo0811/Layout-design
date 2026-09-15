@@ -56,10 +56,10 @@ const S = {
 
   // ── 标题 ─────────────────────────────────────────────────────────────
   // commonStyles.h1 + tech_black.h1
-  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${WX_FONT}; font-weight: bold; margin: 80px auto 40px auto; width: fit-content; color: #327848; text-align: center; padding: 0 1em; border-bottom: 8px solid #327848;`,
+  h1: `display: block; line-height: 1.5; font-size: 24px; font-family: ${WX_FONT}; font-weight: bold; margin: 80px auto 40px auto; max-width: 100%; width: fit-content; color: #327848; text-align: center; padding: 0 0.25em; border-bottom: 8px solid #327848; word-break: normal; overflow-wrap: normal;`,
 
   // commonStyles.h2 + tech_black.h2
-  h2: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em;`,
+  h2: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 20px; font-weight: bold; margin: 40px auto; max-width: 100%; width: fit-content; color: #222222; text-align: center; padding: 0 0.2em; word-break: normal; overflow-wrap: normal;`,
 
   // commonStyles.h3 + tech_black.h3
   h3: `display: block; line-height: 1.5; font-family: ${WX_FONT}; font-size: 17px; font-weight: bold; margin: 40px 0; width: fit-content; color: #222222; text-align: left;`,
@@ -74,7 +74,7 @@ const S = {
 
   // ── 行内格式 ──────────────────────────────────────────────────────────
   // 迭代：正文加粗颜色 #327848（commonStyles.span.strong word-break:break-all + font-weight）
-  strong: `word-break: break-all; font-weight: 600; color: #327848;`,
+  strong: `word-break: normal; overflow-wrap: break-word; font-weight: 600; color: #327848;`,
   em:     `font-style: italic;`,
 
   // span.inlineCode = commonStyles.span.inlineCode + tech_black.span.inlineCode（color: #222222）
@@ -88,7 +88,7 @@ const S = {
   blockquote_wrapper: `line-height: ${WX_P_LH}; word-spacing: normal; hyphens: auto; text-align: left; outline: 0; max-width: 100%; border-top: none; border-right: none; border-bottom: none; display: block; overflow: auto; padding: 10px; margin: 0 0 30px; border-left: 2px solid #327848; background-color: #f7faf8; font-family: ${WX_FONT}; letter-spacing: ${WX_LS}; color: #327848; font-size: ${WX_SIZE};`,
 
   // ── Callout ───────────────────────────────────────────────────────────
-  callout_wrapper: `font-size: ${WX_SIZE}; white-space: normal; margin: 0 0 30px; color: ${WX_COLOR}; font-family: ${WX_FONT}; line-height: ${WX_P_LH}; letter-spacing: ${WX_LS}; background-color: #fafcfb; border: 1px solid #327848; padding: 16px 20px;`,
+  callout_wrapper: `font-size: ${WX_SIZE}; white-space: normal; margin: 0 0 30px; color: ${WX_COLOR}; font-family: ${WX_FONT}; line-height: ${WX_P_LH}; letter-spacing: ${WX_LS}; background-color: #f7faf8; border: 1px solid #327848; padding: 16px 20px;`,
 
   callout_content: ``,
 
@@ -107,8 +107,8 @@ const S = {
   hr: `border-style: solid; border-width: 1px 0 0; border-color: #797979; margin: 0 0 30px;`,
 
   // ── 列表（commonStyles ul.nc-list / ul.nc-list_li / ol.nc-list / ol.nc-list_li）
-  ul: `padding-left: 1.5em; font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
-  ol: `padding-left: 1.5em; font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; vertical-align: baseline; white-space: normal; color: rgb(63,63,63); margin-bottom: 30px; margin-top: 0;`,
+  ul: `padding-left: 1.5em; font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; vertical-align: baseline; white-space: normal; color: ${WX_COLOR}; margin-bottom: 30px; margin-top: 0;`,
+  ol: `padding-left: 1.5em; font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; vertical-align: baseline; white-space: normal; color: ${WX_COLOR}; margin-bottom: 30px; margin-top: 0;`,
   li_ul: `font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; list-style-position: outside; list-style-type: disc;`,
   li_ol: `font-size: ${WX_SIZE}; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; list-style-position: outside; list-style-type: decimal;`,
   // ul.nc-list_li_p / ol.nc-list_li_p
@@ -130,20 +130,20 @@ const S = {
   // ── 表格 ─────────────────────────────────────────────────────────────
   table_wrapper: `overflow-x: auto; margin: 0 0 30px;`,
   table:         `border-collapse: collapse; width: 100%; font-size: ${WX_SIZE}; line-height: ${WX_LH}; letter-spacing: ${WX_LS}; font-family: ${WX_FONT};`,
-  th:            `background: rgba(0,0,0,.05); padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); font-weight: bold; text-align: left; color: #222222;`,
-  td:            `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: #222222;`,
-  td_even:       `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: #222222; background: rgba(0,0,0,.02);`,
+  th:            `background: rgba(0,0,0,.05); padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); font-weight: bold; text-align: left; color: ${WX_COLOR};`,
+  td:            `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: ${WX_COLOR};`,
+  td_even:       `padding: 7px 13px; border: 1px solid rgba(0,0,0,.15); color: ${WX_COLOR}; background: rgba(0,0,0,.02);`,
 
   // ── 嵌入链接 ──────────────────────────────────────────────────────────
   // a（tech_black.a）：text-decoration:none; color:#222222; border-bottom:1px solid #222222
   embed_wrapper: `margin: 0 0 30px; border: 1px solid rgba(0,0,0,.1); padding: 11px 15px;`,
   embed_label:   `font-size: 12px; color: #888888; margin-bottom: 4px;`,
-  embed_link:    `font-size: 13px; text-decoration: none; color: #222222; border-bottom: 1px solid #222222; word-break: break-all;`,
+  embed_link:    `font-size: 13px; text-decoration: none; color: #222222; border-bottom: 1px solid #222222; word-break: normal; overflow-wrap: break-word;`,
 
   // ── 脚注 ─────────────────────────────────────────────────────────────
   footnotes_wrapper: `margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,.15);`,
   footnotes_title:   `font-size: 12px; font-weight: bold; color: #888888; margin-bottom: .6em; text-transform: uppercase; letter-spacing: 1px; text-align: left;`,
-  footnote_item:     `font-size: 12px; color: #555555; line-height: 1.7; margin: .3em 0; word-break: break-all; text-align: left;`,
+  footnote_item:     `font-size: 12px; color: #555555; line-height: 1.7; margin: .3em 0; word-break: normal; overflow-wrap: break-word; text-align: left;`,
   footnote_num:      `color: #222222; font-weight: bold; margin-right: 4px;`,
 };
 

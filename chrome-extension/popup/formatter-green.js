@@ -131,13 +131,15 @@
         const num = String(i + 1).padStart(2, '0');
         html += `<section style="display:flex;align-items:baseline;margin:0 0 28px 0;${indent}">`
           + `<span style="flex:none;font-family:'PingFang SC',sans-serif;font-size:18px;font-weight:600;color:#327848;margin-right:12px;">${num}</span>`
-          + `<p style="flex:1;font-size:15px;line-height:1.27;letter-spacing:0.1em;color:#327848;margin:0;">${P(item.content)}</p></section>${nested}`;
+          + `<p style="flex:1;font-size:15px;line-height:1.6;letter-spacing:0.1em;color:#327848;margin:0;">${P(item.content)}</p></section>${nested}`;
       } else {
-        html += `<p style="font-size:15px;line-height:1.27;letter-spacing:0.1em;color:#327848;margin:0 0 6px 0;${indent}">`
-          + `<span style="color:#327848;margin-right:0.5em;">•</span>${P(item.content)}</p>${nested}`;
+        // 悬挂缩进 1em：折行、软换行对齐第一行文字。行高与正文一致 1.6
+        html += `<p style="font-size:15px;line-height:1.6;letter-spacing:0.1em;color:#327848;margin:0 0 6px 0;padding-left:${depth * 1.5 + 1}em;text-indent:-1em;">`
+          + `<span style="display:inline-block;width:1em;text-indent:0;color:#327848;">•</span>${P(item.content)}</p>${nested}`;
       }
     });
-    return html;
+    // 无序列表收尾：最后一项 6px + 24px = 30px，与段落间距一致；有序列表每项自带 28px
+    return (depth === 0 && !isOrdered) ? `<section style="padding-bottom:24px;">${html}</section>` : html;
   }
 
   function renderGreenArticle(parsedData) {

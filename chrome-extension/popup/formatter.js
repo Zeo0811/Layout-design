@@ -407,7 +407,7 @@ function pi(html) {
     .replace(/<a\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g,
       `<a href="$1" style="text-decoration:none;color:#222222;border-bottom:1px solid #222222;word-break:break-all;">$2</a>`)
     .replace(/<sup>\[(\d+)\]<\/sup>/g,
-      `<sup style="display:inline-block;text-decoration:none;font-size:.7em;color:#222222;font-weight:bold;line-height:0;vertical-align:super;">[$1]</sup>`)
+      `<sup style="display:inline-block;text-decoration:none;text-indent:0;font-size:.7em;color:#222222;font-weight:bold;line-height:0;vertical-align:super;">[$1]</sup>`)
     // 微信公众号文章链接（放在最后，避免被前面的 <a> 规则二次处理）。
     // 句内一个不带样式的 <a>：粘进微信编辑器后由微信套上自带的文章链接样式（小图标 + 蓝字），
     // 自己加样式反而会盖掉它。

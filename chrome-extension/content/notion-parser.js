@@ -254,6 +254,9 @@ function convertNodeToHtml(node, links) {
     if (tag === 'a') {
       const href = child.getAttribute('href') || '';
       const text = child.textContent.trim();
+      // Notion 把链接的加粗直接写在 <a> 自己的 style 上（font-weight:600），不是包在里面的 span 上
+      const linkBold = /font-weight:\s*(600|700|bold)/.test(style);
+      const shown = linkBold ? `<strong>${innerHtml.trim()}</strong>` : innerHtml.trim();
       if (href && !href.startsWith('#') && text) {
         // 微信公众号链接：生成卡片占位符，不推入 links[]（底部不显示）
         if (/^https?:\/\/mp\.weixin\.qq\.com\/s[/?]/i.test(href)) {
@@ -264,9 +267,9 @@ function convertNodeToHtml(node, links) {
         const idx = existing >= 0 ? existing + 1 : (links.push({ text, url: href }), links.length);
         // 显示用转换过的内部 HTML，不用 textContent：链接里的加粗等格式要保留
         // （Notion「先加链接再加粗」时 DOM 是 <a><span 加粗>…</span></a>）。参考资料里仍记纯文本。
-        html += `${innerHtml.trim()}<sup>[${idx}]</sup>`;
+        html += `${shown}<sup>[${idx}]</sup>`;
       } else {
-        html += innerHtml;
+        html += shown;
       }
       continue;
     }
@@ -282,9 +285,11 @@ function convertNodeToHtml(node, links) {
         child.classList.contains('notion-italic');
       const isStrike =
         style.includes('line-through') || child.classList.contains('notion-strikethrough');
-      const isUnder =
+      // link-annotation-* 是 Notion 给每个链接都套的下划线装饰层，不是作者手动加的下划线
+      const isLinkDecor = (child.getAttribute('class') || '').includes('link-annotation-');
+      const isUnder = !isLinkDecor && (
         (style.includes('underline') && !style.includes('line-through')) ||
-        child.classList.contains('notion-underline');
+        child.classList.contains('notion-underline'));
 
       let result = innerHtml;
       if (isBold) result = `<strong>${result}</strong>`;

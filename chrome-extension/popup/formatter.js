@@ -309,11 +309,14 @@ function renderCodeBlock(block) {
 
 // ── 列表（微信公众号不支持 ul/ol/li 及 list-style-type，改用 p + 手动标记）────
 
+// 悬挂缩进：标记占固定宽度 M，整段 padding-left 让出 M、text-indent 再拉回 -M，
+// 自动折行和软换行（<br>）的后续行都对齐第一行文字，而不是顶到 bullet 下面。
+// 圆点 1em（与微信/Notion/飞书默认相近），「1.」「2.」更宽，用 1.3em。
 function renderList(items, isOrdered, depth) {
   if (!items || items.length === 0) return '';
-  const indent = depth > 0 ? `padding-left: ${depth * 1.5}em;` : '';
-  const baseStyle = `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 5px 0; letter-spacing: ${WX_LS}; color: ${WX_COLOR}; font-size: ${WX_SIZE}; ${indent}`;
-  const markerStyle = `display: inline-block; min-width: 1.5em; margin-right: 0.3em;`;
+  const M = isOrdered ? 1.3 : 1;
+  const baseStyle = `text-align: left; line-height: ${WX_P_LH}; font-family: ${WX_FONT}; margin: 0 0 5px; letter-spacing: ${WX_LS}; color: ${WX_COLOR}; font-size: ${WX_SIZE}; padding-left: ${depth * 1.5 + M}em; text-indent: -${M}em;`;
+  const markerStyle = `display: inline-block; width: ${M}em; text-indent: 0;`;
 
   let html = '';
   items.forEach((item, index) => {
@@ -324,7 +327,9 @@ function renderList(items, isOrdered, depth) {
     }
     html += `<p style="${baseStyle}"><span style="${markerStyle}">${marker}</span>${pi(item.content)}</p>${nested}`;
   });
-  return html;
+  // 顶层列表收尾：最后一项 5px + 25px = 30px，与段落间距（WX_GAP）一致。
+  // 用 padding 不用 margin，免得和最后一项的下边距折叠。
+  return depth === 0 ? `<section style="padding-bottom: 25px;">${html}</section>` : html;
 }
 
 // ── 图片 ──────────────────────────────────────────────────────────────────

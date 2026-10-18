@@ -262,9 +262,11 @@ function convertNodeToHtml(node, links) {
         }
         const existing = links.findIndex(l => l.url === href);
         const idx = existing >= 0 ? existing + 1 : (links.push({ text, url: href }), links.length);
-        html += `${escapeHtml(text)}<sup>[${idx}]</sup>`;
+        // 显示用转换过的内部 HTML，不用 textContent：链接里的加粗等格式要保留
+        // （Notion「先加链接再加粗」时 DOM 是 <a><span 加粗>…</span></a>）。参考资料里仍记纯文本。
+        html += `${innerHtml.trim()}<sup>[${idx}]</sup>`;
       } else {
-        html += escapeHtml(text);
+        html += innerHtml;
       }
       continue;
     }

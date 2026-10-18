@@ -524,9 +524,11 @@ function convertFeishuNodeToHtml(node, links) {
         }
         const existing = links.findIndex(l => l.url === href);
         const idx = existing >= 0 ? existing + 1 : (links.push({ text, url: href }), links.length);
-        html += `${escapeFeishuHtml(text)}<sup>[${idx}]</sup>`;
+        // 显示用转换过的内部 HTML，不用 textContent：链接里的加粗等格式要保留
+        // （加粗写在 <a> 里面时）。参考资料里仍记纯文本。
+        html += `${inner.trim()}<sup>[${idx}]</sup>`;
       } else {
-        html += escapeFeishuHtml(text);
+        html += inner;
       }
       continue;
     }

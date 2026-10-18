@@ -56,3 +56,26 @@ for (const [file, fn] of [['notion-parser.js', 'convertNodeToHtml'], ['feishu-pa
     assert.strictEqual(convert(root(a('https://e.example', text('<x>'))), []), '&lt;x&gt;<sup>[1]</sup>');
   });
 }
+
+// 角标不能带下划线：Notion 里给带链接的文字加下划线时，解析结果是 <u>文字<sup>[1]</sup></u>，
+// 下划线会一路画到角标上。inline-block 能截断父级 text-decoration 的传递。
+test('formatter: 角标是 inline-block 且无下划线，挡住外层 <u>', () => {
+  const ctx = vm.createContext({ console });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'chrome-extension', 'popup', 'formatter.js'), 'utf8'), ctx);
+  const h = ctx.pi('<u>Claude Code<sup>[1]</sup></u>');
+  const sup = h.match(/<sup style="([^"]+)">\[1\]<\/sup>/)[1];
+  assert.ok(sup.includes('display:inline-block'), sup);
+  assert.ok(sup.includes('text-decoration:none'), sup);
+  assert.ok(h.startsWith('<u>'), '文字本身的下划线保留');
+});
+
+// 公众号文章链接：不再渲染成「📄 公众号文章」卡片，就是句子里一个不带样式的 <a>，
+// 粘进微信编辑器后由微信套上它自带的文章链接样式（小图标 + 蓝字）。
+test('formatter: 公众号链接渲染成句内裸 <a>，不再是卡片', () => {
+  const ctx = vm.createContext({ console });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'chrome-extension', 'popup', 'formatter.js'), 'utf8'), ctx);
+  const url = 'https://mp.weixin.qq.com/s/abc?x=1&y=2';
+  const ph = `__WX_CARD__${encodeURIComponent(url)}__WX_SEP__${encodeURIComponent('十字路口 × Table for Six')}__WX_END__`;
+  const h = ctx.pi(`在${ph}联名活动`);
+  assert.strictEqual(h, '在<a href="https://mp.weixin.qq.com/s/abc?x=1&y=2">十字路口 × Table for Six</a>联名活动');
+});

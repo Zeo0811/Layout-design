@@ -342,7 +342,7 @@
       await syncFromServer().catch(() => {});
 
       // 1. 解析文档
-      const resp = await sendMessage(currentTab.id, { action: 'parse' });
+      const resp = await sendMessage(currentTab.id, { action: 'parse' }, 60000);
       if (!resp.success) throw new Error(resp.error || '解析失败');
 
       // 2. 图片转 Base64（默认开启）

@@ -2,7 +2,7 @@
 // 将 Notion DOM 结构转换为中间 JSON 表示
 // 支持旧版 class 检测 + 新版 data-block-type 检测
 
-function parseNotion() {
+function parseNotion(elements) {
   const title = getNotionTitle();
   const links = [];
 
@@ -19,8 +19,69 @@ function parseNotion() {
     throw new Error('无法找到Notion页面内容，请确保页面已完全加载，并在文章页面使用本插件');
   }
 
-  const blocks = parseNotionBlocks(Array.from(contentArea.children), links, 0);
+  const blocks = parseNotionBlocks(elements || topLevelNotionBlocks(contentArea), links, 0);
   return { type: 'notion', title, blocks, links };
+}
+
+// Walk through layout wrappers, but never flatten a recognized block's children.
+function topLevelNotionBlocks(area) {
+  const blocks = [];
+  function visit(parent) {
+    for (const child of parent.children) {
+      if (getNotionBlockType(child)) blocks.push(child);
+      else visit(child);
+    }
+  }
+  visit(area);
+  return blocks;
+}
+
+// The logged-in Notion app virtualizes long documents. Collect snapshots while
+// scrolling, since earlier blocks disappear from the DOM as later ones mount.
+async function collectNotionPage() {
+  const area = document.querySelector('.notion-page-content');
+  if (!area || !area.querySelector('[data-virtual-item-slot]')) return parseNotion();
+  let scroller = area.parentElement;
+  while (scroller && !(scroller.scrollHeight > scroller.clientHeight &&
+    /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+  if (!scroller) throw new Error('无法定位 Notion 正文滚动区域，请刷新页面后重试');
+  const original = scroller.scrollTop;
+  const collected = new Map();
+  const settle = () => new Promise(resolve => setTimeout(resolve, 120));
+  try {
+    scroller.scrollTop = 0;
+    await settle();
+    let bottomPasses = 0;
+    for (let step = 0; step < 250; step++) {
+      for (const el of topLevelNotionBlocks(area)) {
+        const id = el.getAttribute('data-block-id');
+        if (!id) continue;
+        const clone = el.cloneNode(true);
+        // Preserve the loaded URL when srcset or lazy loading selected it.
+        const originals = el.querySelectorAll('img');
+        clone.querySelectorAll('img').forEach((img, i) => {
+          const src = originals[i].currentSrc || originals[i].src;
+          if (src && !src.startsWith('blob:')) img.setAttribute('src', src);
+        });
+        collected.set(id, clone);
+      }
+      const bottom = scroller.scrollHeight - scroller.clientHeight;
+      if (scroller.scrollTop >= bottom - 2) {
+        if (++bottomPasses >= 3) {
+          const result = parseNotion([...collected.values()]);
+          if (!result.blocks.length) throw new Error('Notion 正文尚未加载，请稍后重试');
+          return result;
+        }
+      } else {
+        bottomPasses = 0;
+        scroller.scrollTop = Math.min(bottom, scroller.scrollTop + Math.max(200, scroller.clientHeight * 0.7));
+      }
+      await settle();
+    }
+    throw new Error('Notion 正文未能完整加载，请稍后重试');
+  } finally {
+    scroller.scrollTop = original;
+  }
 }
 
 function getNotionTitle() {
@@ -379,11 +440,15 @@ function parseNotionImage(el) {
   //   - class 里没有 caption 字样，靠 class 找是空的
   // 实测：真实页面 6 张图里 4 张有图注，都在图片块内部，
   // 剩下 2 张是作者本来就没写，块内只有一个空 div。
-  const captionEl = el.querySelector(
-    '[placeholder="Write a caption\u2026"], [placeholder="Add a caption"], ' +
-    '[placeholder*="caption" i], figcaption, [class*="caption"]'
-  );
-  const caption = captionEl ? captionEl.textContent.trim() : '';
+  // aria-labelledby survives localized placeholder text and read-only views.
+  const figure = el.querySelector('[role="figure"], figure');
+  const labelled = (figure?.getAttribute('aria-labelledby') || '').split(/\s+/)
+    .map(id => id && Array.from(el.querySelectorAll('[id]')).find(node => node.id === id))
+    .filter(Boolean);
+  const candidates = [...labelled, ...el.querySelectorAll(
+    '[placeholder*="caption" i], figcaption, [class*="caption"], [data-content-editable-leaf]'
+  )];
+  const caption = candidates.map(node => node.textContent.trim()).find(Boolean) || '';
 
   return { type: 'image', url: src, caption };
 }

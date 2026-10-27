@@ -24,7 +24,7 @@
       const pageType = detectPageType();
       const run = async () => {
         if (pageType === 'notion') {
-          return parseNotion();
+          return collectNotionPage();
         } else if (pageType === 'feishu') {
           const title = getFeishuTitle();
           const { blocks, links } = await scrollAndCollect();
